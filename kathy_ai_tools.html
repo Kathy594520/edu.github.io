@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>凱西老師的教學應用助手</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #fdfbfb; /* 淺灰帶一點點暖色 */
+        }
+        .gradient-text {
+            background: linear-gradient(to right, #db2777, #4b5563); /* Pink-600 to Gray-600 */
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .accordion-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+        .accordion-button.active + .accordion-content {
+            max-height: 1000px; /* Adjust as needed */
+        }
+        .prompt-card {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .prompt-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+        }
+        .file-input-label {
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body class="antialiased text-gray-700">
+    <div class="container mx-auto p-4 md:p-8 max-w-5xl">
+
+        <!-- Header -->
+        <header class="text-center mb-10">
+            <div class="inline-block p-4 bg-pink-100 rounded-full mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-pink-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                </svg>
+            </div>
+            <h1 class="text-4xl md:text-5xl font-extrabold gradient-text">凱西老師的教學應用助手</h1>
+            <p class="mt-4 text-lg text-gray-500">您的專屬 AI 夥伴，旨在減輕教學與行政負擔，提升師生效率。</p>
+        </header>
+
+        <!-- Prompt Template -->
+        <div class="bg-white p-6 rounded-2xl shadow-lg border border-pink-100 mb-10">
+            <h2 class="text-xl font-bold text-gray-800 mb-3 flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2 text-pink-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
+                </svg>
+                推薦的 Prompt 模板
+            </h2>
+            <div class="bg-pink-50 border-l-4 border-pink-400 text-pink-800 p-4 rounded-lg space-y-2">
+                <p>你現在是一位 <strong class="text-pink-900">[科目]</strong> 老師，教授 <strong class="text-pink-900">[年級]</strong> 學生。</p>
+                <p>你的任務是幫助我 <strong class="text-pink-900">[教學目標]</strong>。</p>
+                <p>請根據學生的程度與需求，提供適合的 <strong class="text-pink-900">[內容形式]</strong> (例如：教案大綱、討論題、練習題)。</p>
+                <p>請使用 <strong class="text-pink-900">[語氣或風格]</strong> (例如：簡單易懂、鼓勵性、適合小學生的語言)。</p>
+            </div>
+        </div>
+
+        <!-- Main Interaction Area -->
+        <div class="bg-white p-6 rounded-2xl shadow-lg border border-gray-200 space-y-8">
+            <div id="accordion-container">
+                <!-- Accordion items will be generated here by JavaScript -->
+            </div>
+            
+            <div>
+                 <label for="prompt-input" class="block text-lg font-semibold text-gray-700 mb-2">步驟 2: 輸入或修改您的指令</label>
+                <textarea id="prompt-input" rows="5" class="w-full p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-400 focus:border-pink-400 transition" placeholder="請點擊上方的範例，或在此輸入您的客製化指令..."></textarea>
+            </div>
+
+            <div>
+                <label class="block text-lg font-semibold text-gray-700 mb-2">步驟 3: 上傳參考檔案 (選填)</label>
+                <p class="text-sm text-gray-500 mb-3">若您希望 AI 參考特定圖片（如圖表、題目截圖）來生成內容，請由此上傳。目前僅支援圖片檔案。</p>
+                <input type="file" id="file-input" class="hidden" accept="image/*">
+                <label for="file-input" class="file-input-label w-full flex items-center justify-center px-4 py-6 bg-gray-50 border-2 border-gray-300 border-dashed rounded-lg text-gray-500 hover:bg-gray-100 hover:border-gray-400 transition">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                    </svg>
+                    <span>點擊此處選擇圖片</span>
+                </label>
+                <div id="file-preview-container" class="mt-4 hidden"></div>
+            </div>
+
+            <div>
+                <label class="block text-lg font-semibold text-gray-700 mb-2">步驟 4: 生成教學圖片 (選填)</label>
+                <p class="text-sm text-gray-500 mb-3">需要教學輔助圖片嗎？AI 將自動分析步驟 2 的指令並為您生成圖片。</p>
+                <button id="generate-image-btn" data-mode="enhance" class="w-full bg-gray-600 text-white font-bold py-3 px-5 rounded-lg hover:bg-gray-700 focus:outline-none focus:ring-4 focus:ring-gray-300 transition-all duration-300 flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    生成圖片
+                </button>
+                <div id="enhanced-prompt-container" class="mt-3 hidden">
+                     <div id="detected-theme-container" class="mb-2 text-sm text-gray-600"></div>
+                    <label class="block text-sm font-medium text-gray-600 mb-1">AI 潤飾後的提示詞 (可編輯)：</label>
+                    <textarea id="enhanced-prompt-display" rows="3" class="w-full p-2 bg-gray-50 border border-gray-300 rounded-lg text-sm text-gray-700 focus:ring-1 focus:ring-gray-500 focus:border-gray-500 transition"></textarea>
+                </div>
+                <div id="image-output-container" class="mt-4 w-full"></div>
+            </div>
+
+            <div>
+                <button id="generate-btn" class="w-full bg-pink-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-pink-700 focus:outline-none focus:ring-4 focus:ring-pink-300 transition-all duration-300 transform hover:scale-105 flex items-center justify-center text-lg">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M14 10l-2 1m0 0l-2-1m2 1v2.5M20 7l-2 1m2-1l-2-1m2 1v2.5M14 4l-2-1-2 1M4 7l2 1M4 7l2-1M4 7v2.5M12 21v-2.5M12 18.5l-2-1m2 1l2-1" />
+                    </svg>
+                    步驟 5: 生成內容
+                </button>
+            </div>
+
+            <div id="output-container" class="mt-8 hidden">
+                <div class="flex justify-between items-center mb-2">
+                    <h3 class="text-lg font-semibold text-gray-800">AI 生成結果：</h3>
+                    <div class="flex items-center space-x-2">
+                         <button id="copy-btn" class="bg-gray-200 text-gray-700 text-sm font-medium py-1 px-3 rounded-lg hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400 transition flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                            </svg>
+                            複製
+                        </button>
+                        <button id="download-btn" class="bg-pink-100 text-pink-800 text-sm font-medium py-1 px-3 rounded-lg hover:bg-pink-200 focus:outline-none focus:ring-2 focus:ring-pink-400 transition flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                            </svg>
+                            下載 .txt
+                        </button>
+                    </div>
+                </div>
+                <div id="output-content" class="w-full p-4 bg-gray-50 border border-gray-200 rounded-lg min-h-[150px] whitespace-pre-wrap text-gray-700">
+                    <!-- Loading or result will be shown here -->
+                </div>
+            </div>
+
+        </div>
+
+        <footer class="text-center mt-10 text-gray-400 text-sm space-y-1">
+            <p>
+                仙姑凱西的教學小工具：<a href="https://kathy594520.github.io/new.github.io/AI/AI" target="_blank" class="text-pink-600 hover:underline">https://kathy594520.github.io/new.github.io/AI/AI</a>
+            </p>
+            <p>
+                提示詞引自翻轉教育：<a href="https://flipedu.parenting.com.tw/article/010290" target="_blank" class="text-pink-600 hover:underline">https://flipedu.parenting.com.tw/article/010290</a>
+            </p>
+        </footer>
+    </div>
+
+    <script>
+        const promptData = [
+            {
+                category: "創意課程規劃",
+                icon: `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-3 text-pink-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v11.494m-9-5.747h18" /></svg>`,
+                prompts: [
+                    "為高中公民課「媒體識讀」設計一個跨領域的 PBL 專題架構。",
+                    "請幫我設計三個針對「視覺型」與「聽覺型」學生的差異化教學活動，主題是光學。",
+                    "生成一份結合聯合國 SDGs 目標的國小社會科教案大綱。",
+                    "幫我把枯燥的「元素週期表」記憶轉化為一首饒舌歌詞或順口溜。",
+                    "設計一個運用 Google Earth 的地理課虛擬校外教學行程。",
+                    "請提供五個能引發學生對「機率」產生興趣的生活實例。",
+                    "為特教生調整這份閱讀測驗的難度與排版，使其更易於閱讀。",
+                    "設計一個結合生成式 AI 工具的現代詩創作課程。",
+                    "幫我規劃一學期的「情緒教育」晨光時間主題。",
+                    "請列出適合國中生進行的「簡易化學廚房」實驗清單。"
+                ]
+            },
+            {
+                category: "班級經營遊戲",
+                icon: `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-3 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>`,
+                prompts: [
+                    "設計一個「尋寶遊戲」規則，用來複習段考範圍。",
+                    "提供五個處理學生上課滑手機的幽默化解話術。",
+                    "幫我設計一套班級獎勵制度，不使用物質獎勵，而是榮譽或特權。",
+                    "生成三個「兩難情境」辯論題目，適合綜合活動課討論道德抉擇。",
+                    "設計一個讓內向學生也能自在參與的破冰暖身活動。",
+                    "請提供五個「課堂最後五分鐘」的反思收心活動點子。",
+                    "幫我想一個全班共同創作「班歌」或「班徽」的引導流程。",
+                    "設計一個角色扮演劇本，讓學生體驗歷史人物的決策過程。",
+                    "提供三個運用 Kahoot! 或 Quizizz 的創新玩法。",
+                    "幫我規劃一個「感恩週」的班級小天使活動細節。"
+                ]
+            },
+            {
+                category: "學習鷹架與評量",
+                icon: `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-3 text-rose-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>`,
+                prompts: [
+                    "製作一份「康乃爾筆記法」的空白引導學習單。",
+                    "為「科展製作」設計一份分階段的進度檢核表。",
+                    "生成一份「同儕互評回饋單」，用於作文或口頭報告。",
+                    "幫我設計一個引導學生進行「專題探究」的六步驟提問單。",
+                    "將這篇長文摘要成三個不同難度的版本（簡易、普通、學術）。",
+                    "設計一份「錯題分析表」，引導學生找出錯誤原因而非只改答案。",
+                    "提供五個能激發學生批判性思考的閱讀引導問題。",
+                    "幫我出十題關於「氣候變遷」的素養導向情境題。",
+                    "設計一份讓學生規劃寒暑假自主學習計畫的模板。",
+                    "生成一份「英文單字樹」的學習單架構，以字根字首為核心。"
+                ]
+            },
+            {
+                category: "行政效率與溝通",
+                icon: `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-3 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>`,
+                prompts: [
+                    "草擬一封溫和但堅定的信，與家長溝通孩子的遲到問題。",
+                    "幫我把這篇生硬的校務公告改寫成溫馨易讀的 LINE 訊息。",
+                    "設計一份期初班親會的邀請函，包含回條與議題調查。",
+                    "生成一段關於「正向教養」的短文，適合放在班級電子報中。",
+                    "幫我撰寫一份學生突發受傷事件的校安通報初稿。",
+                    "提供五個回應家長對於「功課太多」質疑的專業說法。",
+                    "設計一份戶外教學的緊急聯絡網與行前檢查表。",
+                    "幫我寫一封感謝家長志工協助校慶活動的謝卡內容。",
+                    "撰寫一份針對學生霸凌事件的初步輔導紀錄格式。",
+                    "生成一份學期末給家長的「個別化讚美」評語資料庫。"
+                ]
+            },
+            {
+                category: "教師增能與舒壓",
+                icon: `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-3 text-pink-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>`,
+                prompts: [
+                    "推薦五本適合教師閱讀的心理學或溝通技巧書籍，並附簡介。",
+                    "幫我規劃一個「高效改作業」的時間管理流程。",
+                    "提供三個在辦公室也能做的簡易伸展操或冥想引導。",
+                    "列出目前最熱門的五個教育科技 (EdTech) 趨勢與應用。",
+                    "幫我設計一份個人教學檔案 (Portfolio) 的目錄架構。",
+                    "生成一份「教師倦怠感」自我檢測量表。",
+                    "提供五個跨校共備社群的討論主題建議。",
+                    "幫我整理一份申請「創新教學獎」的計畫書撰寫大綱。",
+                    "如何利用 ChatGPT 協助撰寫學術論文或行動研究報告？",
+                    "設計一份每週「小確幸」清單，提升教學生活品質。"
+                ]
+            }
+        ];
+
+        const accordionContainer = document.getElementById('accordion-container');
+        const promptInput = document.getElementById('prompt-input');
+        const fileInput = document.getElementById('file-input');
+        const filePreviewContainer = document.getElementById('file-preview-container');
+        let uploadedFile = null;
+        let currentGeneratedImageUrl = null;
+
+        function createAccordion() {
+            let html = '<h3 class="text-lg font-semibold text-gray-700 mb-2">步驟 1: 選擇一個應用情境與範例</h3>';
+            promptData.forEach((item, index) => {
+                html += `
+                    <div class="border-t border-gray-200">
+                        <button class="accordion-button w-full flex justify-between items-center text-left py-4 px-2 hover:bg-pink-50 focus:outline-none" data-index="${index}">
+                            <span class="text-lg font-semibold text-gray-600 flex items-center">${item.icon} ${item.category}</span>
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-400 transform transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </button>
+                        <div class="accordion-content">
+                            <div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-3">
+                                ${item.prompts.map(p => `<button class="prompt-card text-left p-3 bg-white border border-gray-200 rounded-lg hover:bg-pink-50 hover:border-pink-300 focus:outline-none focus:ring-2 focus:ring-pink-300 transition text-gray-600">${p}</button>`).join('')}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            accordionContainer.innerHTML = html;
+        }
+
+        createAccordion();
+
+        accordionContainer.addEventListener('click', (e) => {
+            if (e.target.closest('.accordion-button')) {
+                const button = e.target.closest('.accordion-button');
+                const allButtons = document.querySelectorAll('.accordion-button');
+                const wasActive = button.classList.contains('active');
+
+                allButtons.forEach(btn => {
+                    btn.classList.remove('active');
+                    btn.querySelector('svg').style.transform = 'rotate(0deg)';
+                });
+
+                if (!wasActive) {
+                    button.classList.add('active');
+                    button.querySelector('svg').style.transform = 'rotate(180deg)';
+                }
+            }
+
+            if (e.target.classList.contains('prompt-card')) {
+                promptInput.value = e.target.textContent;
+                promptInput.focus();
+                window.scrollTo({
+                    top: promptInput.getBoundingClientRect().top + window.scrollY - 100,
+                    behavior: 'smooth'
+                });
+            }
+        });
+
+        // Open first accordion by default
+        const firstButton = document.querySelector('.accordion-button');
+        if(firstButton) {
+            firstButton.classList.add('active');
+            firstButton.querySelector('svg').style.transform = 'rotate(180deg)';
+        }
+        
+        // File upload logic
+        fileInput.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                uploadedFile = {
+                    base64: e.target.result.split(',')[1],
+                    mimeType: file.type,
+                    name: file.name
+                };
+                showFilePreview();
+            };
+            reader.readAsDataURL(file);
+        });
+        
+        function showFilePreview() {
+            filePreviewContainer.classList.remove('hidden');
+            filePreviewContainer.innerHTML = `
+                <div class="flex items-center justify-between p-3 bg-pink-50 border border-pink-200 rounded-lg">
+                    <div class="flex items-center overflow-hidden">
+                        <img src="data:${uploadedFile.mimeType};base64,${uploadedFile.base64}" class="w-10 h-10 object-cover rounded-md mr-3">
+                        <span class="text-sm text-gray-700 truncate">${uploadedFile.name}</span>
+                    </div>
+                    <button id="remove-file-btn" class="text-gray-500 hover:text-red-600 focus:outline-none">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </button>
+                </div>
+            `;
+            document.getElementById('remove-file-btn').addEventListener('click', removeFile);
+        }
+
+        function removeFile() {
+            uploadedFile = null;
+            fileInput.value = ''; // Reset file input
+            filePreviewContainer.classList.add('hidden');
+            filePreviewContainer.innerHTML = '';
+        }
+
+
+        // --- Common AI Call Logic ---
+        const generateBtn = document.getElementById('generate-btn');
+        const outputContainer = document.getElementById('output-container');
+        const outputContent = document.getElementById('output-content');
+        const copyBtn = document.getElementById('copy-btn');
+        const downloadBtn = document.getElementById('download-btn');
+        const originalBtnText = generateBtn.innerHTML;
+
+        const generateImageBtn = document.getElementById('generate-image-btn');
+        const imageOutputContainer = document.getElementById('image-output-container');
+        const enhancedPromptContainer = document.getElementById('enhanced-prompt-container');
+        const enhancedPromptDisplay = document.getElementById('enhanced-prompt-display');
+        const detectedThemeContainer = document.getElementById('detected-theme-container');
+        const originalImageBtnText = generateImageBtn.innerHTML;
+        
+        async function fetchWithBackoff(apiUrl, payload, retries = 5, delay = 1000) {
+            for (let i = 0; i < retries; i++) {
+                try {
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (response.ok) {
+                        return await response.json();
+                    } else if (response.status === 429 || response.status >= 500) {
+                        console.warn(`API call failed with status ${response.status}. Retrying in ${delay / 1000}s...`);
+                        await new Promise(resolve => setTimeout(resolve, delay));
+                        delay *= 2;
+                    } else {
+                        throw new Error(`API 請求失敗，狀態碼: ${response.status}`);
+                    }
+                } catch (error) {
+                    if (i === retries - 1) throw error;
+                    console.warn(`Fetch error: ${error.message}. Retrying in ${delay / 1000}s...`);
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                    delay *= 2;
+                }
+            }
+            throw new Error('API 請求在多次重試後失敗。');
+        }
+
+        // --- Image Generation Logic ---
+        
+        function downloadCurrentImage() {
+            if (!currentGeneratedImageUrl) return;
+
+            const link = document.createElement('a');
+            link.href = currentGeneratedImageUrl;
+            
+            const promptSummary = (promptInput.value.trim() || 'AI生成圖片').substring(0, 20).replace(/[^a-z0-9\u4e00-\u9fa5]/gi, '_');
+            const now = new Date();
+            const dateStr = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')}`;
+            link.download = `Casey-AI-${promptSummary}-${dateStr}.png`;
+            
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        async function generateFinalImage() {
+            const finalPrompt = enhancedPromptDisplay.value.trim();
+            if (!finalPrompt) {
+                imageOutputContainer.innerHTML = `<p class="text-red-600 font-semibold p-2">潤飾後的提示詞不可為空！</p>`;
+                return;
+            }
+            
+            imageOutputContainer.innerHTML = `
+                <div class="flex items-center justify-center p-4 bg-gray-50 rounded-lg">
+                    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-pink-600"></div>
+                    <span class="ml-3 text-gray-600">正在生成最終圖片...</span>
+                </div>`;
+            generateImageBtn.disabled = true;
+            generateImageBtn.innerHTML = `<svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>生成中...`;
+
+            try {
+                // To generate the final image, we need to translate the Chinese prompt back to English for the model.
+                const textApiKey = "";
+                const textApiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${textApiKey}`;
+                const finalTranslationInstruction = `Translate the following Traditional Chinese text to English. Return only the translated text, with no other explanations.\n\nText:\n"${finalPrompt}"`;
+                const textPayload = { contents: [{ parts: [{ text: finalTranslationInstruction }] }] };
+                const textResult = await fetchWithBackoff(textApiUrl, textPayload);
+                const finalPromptEN = textResult.candidates?.[0]?.content?.parts?.[0]?.text.trim();
+
+                if (!finalPromptEN) {
+                    throw new Error("無法將最終提示詞翻譯回英文。");
+                }
+
+
+                const imageApiKey = "";
+                const imageApiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image-preview:generateContent?key=${imageApiKey}`;
+                const imagePayload = {
+                  contents: [{ parts: [{ text: finalPromptEN }] }],
+                  generationConfig: { responseModalities: ['IMAGE'] },
+                };
+                const imageResult = await fetchWithBackoff(imageApiUrl, imagePayload);
+                const candidate = imageResult?.candidates?.[0];
+                const base64Data = candidate?.content?.parts?.find(p => p.inlineData)?.inlineData?.data;
+
+                if (base64Data) {
+                    const imageUrl = `data:image/png;base64,${base64Data}`;
+                    currentGeneratedImageUrl = imageUrl;
+                    imageOutputContainer.innerHTML = `
+                        <div class="space-y-4">
+                            <img src="${imageUrl}" class="rounded-lg shadow-md w-full max-w-md mx-auto" alt="AI 生成的圖片">
+                            <div class="flex justify-center items-center space-x-3">
+                                <button id="regenerate-image-btn" class="bg-gray-200 text-gray-700 text-sm font-medium py-2 px-4 rounded-lg hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400 transition flex items-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h5M20 12a8.956 8.956 0 01-2.932 6.556m-11.136-2.5A8.956 8.956 0 0112 4a8.956 8.956 0 018 8" /></svg>
+                                    重新生圖
+                                </button>
+                                <button id="download-image-btn" class="bg-pink-100 text-pink-800 text-sm font-medium py-2 px-4 rounded-lg hover:bg-pink-200 focus:outline-none focus:ring-2 focus:ring-pink-400 transition flex items-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                                    下載圖片
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    document.getElementById('regenerate-image-btn').addEventListener('click', generateFinalImage);
+                    document.getElementById('download-image-btn').addEventListener('click', downloadCurrentImage);
+                } else {
+                    console.error("Unexpected image API response:", JSON.stringify(imageResult, null, 2));
+                    let errorMessage = "抱歉，圖片生成失敗，原因未知，請稍後再試。";
+                    const finishReason = candidate?.finishReason;
+                    if (finishReason === 'SAFETY' || finishReason === 'RECITATION' || finishReason === 16) {
+                        errorMessage = "圖片生成失敗。您的提示詞可能觸發了安全或政策限制，請嘗試修改後再重新生成。";
+                    } else if (imageResult.error) {
+                        errorMessage = `圖片生成出錯： ${imageResult.error.message}`;
+                    }
+                    imageOutputContainer.innerHTML = `<p class="text-red-600 font-semibold p-2">${errorMessage}</p>`;
+                }
+            } catch (error) {
+                 console.error("Error during final image generation:", error);
+                imageOutputContainer.innerHTML = `<p class="text-red-600 font-semibold p-2">圖片生成過程中出錯：${error.message}</p>`;
+            } finally {
+                generateImageBtn.disabled = false;
+                generateImageBtn.dataset.mode = 'enhance'; // Reset mode
+                generateImageBtn.innerHTML = originalImageBtnText; // Reset button text
+            }
+        }
+
+        generateImageBtn.addEventListener('click', async () => {
+            if (generateImageBtn.dataset.mode === 'generate') {
+                await generateFinalImage();
+                return;
+            }
+
+            const mainContext = promptInput.value.trim();
+            if (!mainContext) {
+                imageOutputContainer.innerHTML = `<p class="text-red-600 font-semibold p-2">請先在步驟 2 輸入教學指令！</p>`;
+                return;
+            }
+
+            // UI Loading State
+            enhancedPromptContainer.classList.add('hidden');
+            imageOutputContainer.innerHTML = `
+                <div class="flex items-center justify-center p-4 bg-gray-50 rounded-lg">
+                    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-pink-600"></div>
+                    <span class="ml-3 text-gray-600">步驟 1/3: 正在分析指令核心主題...</span>
+                </div>`;
+            generateImageBtn.disabled = true;
+            generateImageBtn.innerHTML = `<svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>處理中...`;
+
+            try {
+                const textApiKey = "";
+                const textApiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${textApiKey}`;
+                
+                // Step 1: Extract core theme
+                const themeExtractionInstruction = `從以下這段教學指令中，抽取出最核心的教學主題或名詞。例如，若指令是「請為五年級數學課「分數乘法」設計一份40分鐘的教案」，你就回傳「分數乘法」。請只回傳主題名詞，不要有任何其他說明文字。\n\n教學指令：\n"${mainContext}"`;
+                let textPayload = { contents: [{ parts: [{ text: themeExtractionInstruction }] }] };
+                let textResult = await fetchWithBackoff(textApiUrl, textPayload);
+                const userPrompt = textResult.candidates?.[0]?.content?.parts?.[0]?.text.trim();
+
+                if (!userPrompt) {
+                    throw new Error("無法從指令中分析出核心主題。");
+                }
+                
+                detectedThemeContainer.innerHTML = `AI分析出的核心主題為：「<strong class="text-pink-700">${userPrompt}</strong>」`;
+                imageOutputContainer.innerHTML = `
+                <div class="flex items-center justify-center p-4 bg-gray-50 rounded-lg">
+                    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-pink-600"></div>
+                    <span class="ml-3 text-gray-600">步驟 2/3: 正在潤飾與翻譯提示詞...</span>
+                </div>`;
+
+
+                // Step 2: Enhance the prompt
+                const enhancementInstruction = `你是一位提示詞工程師。請根據主要的教學指令：「${mainContext}」，將以下的核心主題「${userPrompt}」擴寫成一段詳細、具體、適合AI生成圖片的英文提示詞。讓圖片能符合教學情境。請只回傳擴寫後的英文提示詞，不要包含任何其他說明文字。`;
+                textPayload = { contents: [{ parts: [{ text: enhancementInstruction }] }] };
+                textResult = await fetchWithBackoff(textApiUrl, textPayload);
+                const enhancedPromptEN = textResult.candidates?.[0]?.content?.parts?.[0]?.text.trim();
+
+                if (!enhancedPromptEN) {
+                    throw new Error("無法生成潤飾後的提示詞。");
+                }
+
+                // Step 3: Translate the enhanced prompt to Traditional Chinese
+                const translationInstruction = `請將以下的英文提示詞，翻譯成流暢、專業的繁體中文。請只回傳翻譯後的文字，不要包含任何其他說明。\n\n英文提示詞：\n"${enhancedPromptEN}"`;
+                textPayload = { contents: [{ parts: [{ text: translationInstruction }] }] };
+                textResult = await fetchWithBackoff(textApiUrl, textPayload);
+                const enhancedPromptZH = textResult.candidates?.[0]?.content?.parts?.[0]?.text.trim();
+
+                if (!enhancedPromptZH) {
+                    throw new Error("無法翻譯潤飾後的提示詞。");
+                }
+
+                // Update UI
+                enhancedPromptDisplay.value = enhancedPromptZH;
+                enhancedPromptContainer.classList.remove('hidden');
+                imageOutputContainer.innerHTML = '';
+
+                // Change button mode and text
+                generateImageBtn.dataset.mode = 'generate';
+                generateImageBtn.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                       <path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    使用此提示詞生圖`;
+
+            } catch (error) {
+                console.error("Error during prompt enhancement/translation:", error);
+                imageOutputContainer.innerHTML = `<p class="text-red-600 font-semibold p-2">提示詞處理過程中出錯：${error.message}</p>`;
+            } finally {
+                generateImageBtn.disabled = false;
+                 if (generateImageBtn.dataset.mode !== 'generate') {
+                    generateImageBtn.innerHTML = originalImageBtnText;
+                 }
+            }
+        });
+        
+        promptInput.addEventListener('input', () => {
+             if (generateImageBtn.dataset.mode === 'generate') {
+                generateImageBtn.dataset.mode = 'enhance';
+                generateImageBtn.innerHTML = originalImageBtnText;
+                enhancedPromptContainer.classList.add('hidden');
+                imageOutputContainer.innerHTML = '';
+            }
+        });
+
+
+        // --- Text Generation Logic ---
+        generateBtn.addEventListener('click', async () => {
+            const userQuery = promptInput.value.trim();
+            if (!userQuery) {
+                outputContainer.classList.remove('hidden');
+                outputContent.textContent = '請先輸入或選擇一個指令！';
+                outputContent.classList.add('text-red-600', 'font-semibold');
+                return;
+            }
+            outputContent.classList.remove('text-red-600', 'font-semibold');
+
+            outputContainer.classList.remove('hidden');
+            outputContent.innerHTML = `
+                <div class="flex items-center justify-center h-full">
+                    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-pink-600"></div>
+                    <span class="ml-3 text-gray-600">凱西正在為您生成內容...</span>
+                </div>
+            `;
+            generateBtn.disabled = true;
+            generateBtn.innerHTML = `
+                <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                生成中...
+            `;
+
+            try {
+                const apiKey = ""; 
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+                
+                const parts = [{ text: userQuery }];
+                if (uploadedFile) {
+                    parts.push({
+                        inlineData: {
+                            mimeType: uploadedFile.mimeType,
+                            data: uploadedFile.base64
+                        }
+                    });
+                }
+                
+                const payload = { contents: [{ parts: parts }] };
+
+                const result = await fetchWithBackoff(apiUrl, payload);
+                const candidate = result.candidates?.[0];
+
+                if (candidate && candidate.content?.parts?.[0]?.text) {
+                    outputContent.textContent = candidate.content.parts[0].text;
+                } else {
+                    console.error("Unexpected API response structure:", result);
+                    outputContent.textContent = "抱歉，從 AI 收到的回覆格式有誤，請稍後再試。";
+                }
+
+            } catch (error) {
+                console.error("Error calling Gemini API:", error);
+                outputContent.textContent = `發生錯誤：\n${error.message}\n\n請檢查您的網路連線或稍後再試。`;
+            } finally {
+                generateBtn.disabled = false;
+                generateBtn.innerHTML = originalBtnText;
+                 window.scrollTo({
+                    top: outputContainer.getBoundingClientRect().top + window.scrollY - 100,
+                    behavior: 'smooth'
+                });
+            }
+        });
+        
+        // Copy Button Logic
+        copyBtn.addEventListener('click', () => {
+            const textToCopy = outputContent.textContent;
+            const textArea = document.createElement("textarea");
+            textArea.value = textToCopy;
+            document.body.appendChild(textArea);
+            textArea.select();
+            try {
+                document.execCommand('copy');
+                copyBtn.textContent = '已複製!';
+                setTimeout(() => {
+                    copyBtn.innerHTML = `
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                        </svg>
+                        複製`;
+                }, 1500);
+            } catch (err) {
+                console.error('Fallback: Oops, unable to copy', err);
+            }
+            document.body.removeChild(textArea);
+        });
+
+        // Download Button Logic
+        downloadBtn.addEventListener('click', () => {
+            const textToSave = outputContent.textContent;
+            if (!textToSave) return;
+
+            const blob = new Blob([textToSave], { type: 'text/plain;charset=utf-8' });
+            
+            const now = new Date();
+            const dateStr = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')}`;
+            const promptSummary = promptInput.value.trim().substring(0, 15).replace(/[^a-z0-9\u4e00-\u9fa5]/gi, '_') || 'AI生成內容';
+            const filename = `${dateStr}-${promptSummary}.txt`;
+
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(link.href);
+        });
+
+    </script>
+</body>
+</html>
