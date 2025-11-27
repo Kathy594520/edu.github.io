@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>立方體最短路徑演示 (修正版)</title>
+    <style>
+        body { margin: 0; overflow: hidden; font-family: "Microsoft JhengHei", Arial, sans-serif; background-color: #f5f5f5; }
+        #container { width: 100vw; height: 100vh; }
+        
+        /* UI 面板樣式 */
+        #ui-panel {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+            width: 300px;
+            transition: all 0.3s ease;
+            max-height: 90vh;
+            overflow-y: auto;
+            z-index: 100;
+        }
+
+        .question-box {
+            font-size: 13px;
+            color: #333;
+            margin-bottom: 15px;
+            padding: 10px;
+            background: #e8f0fe;
+            border-radius: 6px;
+            text-align: left;
+            line-height: 1.5;
+        }
+        .question-box strong {
+            color: #000;
+            font-size: 14px;
+        }
+
+        h3 { margin: 0 0 10px 0; color: #333; font-size: 16px; display: flex; justify-content: space-between; align-items: center; }
+        
+        #toggle-btn {
+            background: #fff;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            padding: 2px 8px;
+            color: #555;
+        }
+        #toggle-btn:hover { background: #eee; }
+
+        .content-area.collapsed { display: none; }
+        
+        input[type=range] { width: 100%; margin: 10px 0; cursor: pointer; }
+        .legend { display: flex; flex-direction: column; gap: 5px; margin-bottom: 10px; font-size: 13px; }
+        .item { display: flex; align-items: center; }
+        .dot { width: 10px; height: 10px; border-radius: 50%; margin-right: 8px; }
+        
+        .math-info { 
+            font-size: 12px; 
+            color: #444; 
+            margin-top: 10px; 
+            text-align: left; 
+            background: rgba(0,0,0,0.05); 
+            padding: 8px; 
+            border-radius: 4px;
+            line-height: 1.4;
+        }
+
+        /* 標籤樣式 */
+        #label-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            overflow: hidden;
+            z-index: 50;
+        }
+        .vertex-label {
+            position: absolute;
+            color: #000;
+            font-weight: bold;
+            font-size: 16px;
+            text-shadow: 2px 2px 0px #fff, -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff;
+            padding: 2px 5px;
+            transform: translate(-50%, -50%);
+            white-space: nowrap;
+            pointer-events: none;
+        }
+    </style>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+</head>
+<body>
+    <div id="label-container"></div>
+    <div id="container"></div>
+
+    <div id="ui-panel">
+        <div class="question-box">
+            <strong>原始題目：</strong><br>
+            有一隻螞蟻和一隻蜜蜂在邊長為 2 的正方體紙盒裡，則：<br>
+            (1) 此螞蟻沿著正方體的表面由 A 走到 G 的最短距離為多少？<br>
+            (2) 此蜜蜂從正方體的內部由 A 飛到 G 的最短距離為多少？
+        </div>
+
+        <h3>
+            <span>控制與解析</span>
+            <button id="toggle-btn">收起</button>
+        </h3>
+        
+        <div class="content-area" id="panel-content">
+            <div class="legend">
+                <div class="item"><div class="dot" style="background:blue;"></div> <span>(1) 螞蟻 (表面最短路徑)</span></div>
+                <div class="item"><div class="dot" style="background:red;"></div> <span>(2) 蜜蜂 (內部飛行路徑)</span></div>
+            </div>
+            
+            <hr style="border:0; border-top:1px solid #ddd; margin: 10px 0;">
+            
+            <label for="unfoldSlider" style="font-size: 13px; font-weight: bold;">拖動拉桿展開立體圖：</label>
+            <input type="range" id="unfoldSlider" min="0" max="1" step="0.01" value="0">
+            
+            <div class="math-info">
+                <strong>計算說明 (邊長 = 2)：</strong><br>
+                <div style="margin-top:4px;">
+                <strong>1. 螞蟻 (表面)：</strong><br>
+                原理：將立體表面攤平成平面。<br>
+                計算：√(2² + 4²) = √20 = 2√5 ≈ 4.47
+                </div>
+                <div style="margin-top:4px;">
+                <strong>2. 蜜蜂 (內部)：</strong><br>
+                原理：空間中的直線距離 (體對角線)。<br>
+                計算：√(2² + 2² + 2²) = √12 = 2√3 ≈ 3.46
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const toggleBtn = document.getElementById('toggle-btn');
+        const panelContent = document.getElementById('panel-content');
+        let isCollapsed = false;
+
+        toggleBtn.addEventListener('click', () => {
+            isCollapsed = !isCollapsed;
+            if (isCollapsed) {
+                panelContent.classList.add('collapsed');
+                toggleBtn.textContent = "展開";
+            } else {
+                panelContent.classList.remove('collapsed');
+                toggleBtn.textContent = "收起";
+            }
+        });
+
+        // --- 場景設置 ---
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xf5f5f5);
+
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        // 相機位置設定 (放大效果)
+        camera.position.set(3.5, 3, 5); 
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.getElementById('container').appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.target.set(0, 0, 0);
+
+        // --- 幾何與材質 ---
+        const size = 2;
+        const half = size / 2;
+        
+        const faceMaterial = new THREE.MeshBasicMaterial({ 
+            color: 0xcccccc, 
+            transparent: true, 
+            opacity: 0.4, 
+            side: THREE.DoubleSide,
+            depthWrite: false 
+        });
+        
+        const edgeMaterial = new THREE.LineBasicMaterial({ color: 0x333333, linewidth: 2 });
+        const antLineMat = new THREE.LineBasicMaterial({ color: 0x0000ff, linewidth: 3 });
+        const beeLineMat = new THREE.LineBasicMaterial({ color: 0xff0000, linewidth: 2 });
+
+        function createFaceMesh(name) {
+            const geometry = new THREE.PlaneGeometry(size, size);
+            const mesh = new THREE.Mesh(geometry, faceMaterial);
+            const edges = new THREE.EdgesGeometry(geometry);
+            const line = new THREE.LineSegments(edges, edgeMaterial);
+            mesh.add(line);
+            mesh.name = name;
+            return mesh;
+        }
+
+        // --- 構建結構 (Pivot System) ---
+        
+        // 1. 底面 (Base)
+        const baseGroup = new THREE.Group();
+        scene.add(baseGroup);
+        const bottomFace = createFaceMesh("Bottom");
+        
+        // 【修正】將底面位置往下移到 -half，與側面對齊
+        bottomFace.position.set(0, -half, 0);
+        bottomFace.rotation.x = -Math.PI / 2;
+        baseGroup.add(bottomFace);
+
+        // 2. 側面 Pivot 點 (位於底面邊緣，y = -half)
+        const frontPivot = new THREE.Group();
+        frontPivot.position.set(0, -half, half); 
+        baseGroup.add(frontPivot);
+        const frontFace = createFaceMesh("Front");
+        frontFace.position.set(0, half, 0); 
+        frontPivot.add(frontFace);
+
+        const topPivot = new THREE.Group();
+        topPivot.position.set(0, size, 0); 
+        frontPivot.add(topPivot);
+        const topFace = createFaceMesh("Top");
+        topFace.position.set(0, half, 0); 
+        topPivot.add(topFace);
+        
+        const backPivot = new THREE.Group();
+        backPivot.position.set(0, -half, -half);
+        baseGroup.add(backPivot);
+        const backFace = createFaceMesh("Back");
+        backFace.position.set(0, half, 0);
+        backFace.rotation.y = Math.PI; 
+        backPivot.add(backFace);
+
+        const leftPivot = new THREE.Group();
+        leftPivot.position.set(-half, -half, 0);
+        baseGroup.add(leftPivot);
+        const leftFace = createFaceMesh("Left");
+        leftFace.position.set(0, half, 0);
+        leftFace.rotation.y = -Math.PI / 2;
+        leftPivot.add(leftFace);
+
+        const rightPivot = new THREE.Group();
+        rightPivot.position.set(half, -half, 0);
+        baseGroup.add(rightPivot);
+        const rightFace = createFaceMesh("Right");
+        rightFace.position.set(0, half, 0);
+        rightFace.rotation.y = Math.PI / 2;
+        rightPivot.add(rightFace);
+
+        // --- 路徑 ---
+        const antGeo1 = new THREE.BufferGeometry().setFromPoints([
+            new THREE.Vector3(-1, 0, 0.05), // A
+            new THREE.Vector3(0, 2, 0.05)   // 中點
+        ]);
+        const antLine1 = new THREE.Line(antGeo1, antLineMat);
+        frontPivot.add(antLine1);
+
+        const antGeo2 = new THREE.BufferGeometry().setFromPoints([
+            new THREE.Vector3(0, 0, 0.05),  // 中點
+            new THREE.Vector3(1, 2, 0.05)   // G
+        ]);
+        const antLine2 = new THREE.Line(antGeo2, antLineMat);
+        topPivot.add(antLine2);
+
+        const beeGeo = new THREE.BufferGeometry().setFromPoints([
+            new THREE.Vector3(-1, -1, 1), // A
+            new THREE.Vector3(1, 1, -1)   // G
+        ]);
+        const beeLine = new THREE.Line(beeGeo, beeLineMat);
+        scene.add(beeLine);
+
+        // --- 標籤 ---
+        const labelContainer = document.getElementById('label-container');
+        function createLabel(text) {
+            const div = document.createElement('div');
+            div.className = 'vertex-label';
+            div.textContent = text;
+            labelContainer.appendChild(div);
+            return div;
+        }
+        const labelA = createLabel("A");
+        const labelG = createLabel("G");
+        const trackerA = new THREE.Object3D();
+        trackerA.position.set(-1, 0, 0);
+        frontPivot.add(trackerA);
+        const trackerG = new THREE.Object3D();
+        trackerG.position.set(1, 2, 0);
+        topPivot.add(trackerG);
+
+        // --- 動畫 ---
+        const slider = document.getElementById('unfoldSlider');
+        function updateUnfold() {
+            const val = parseFloat(slider.value);
+            const angleBase = val * (Math.PI / 2);
+
+            frontPivot.rotation.x = -angleBase;
+            topPivot.rotation.x = -Math.PI/2 + (val * Math.PI/2);
+            backPivot.rotation.x = angleBase;
+            rightPivot.rotation.z = -angleBase;
+            leftPivot.rotation.z = angleBase;
+
+            beeLine.visible = (val < 0.1);
+        }
+        topPivot.rotation.x = -Math.PI/2;
+        updateUnfold();
+        slider.addEventListener('input', updateUnfold);
+
+        // --- Render Loop ---
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            updateLabel(labelA, trackerA);
+            updateLabel(labelG, trackerG);
+            renderer.render(scene, camera);
+        }
+
+        function updateLabel(div, obj) {
+            const tempV = new THREE.Vector3();
+            obj.getWorldPosition(tempV);
+            tempV.project(camera);
+            const x = (tempV.x * .5 + .5) * window.innerWidth;
+            const y = (tempV.y * -.5 + .5) * window.innerHeight;
+            if(Math.abs(tempV.z) > 1) {
+                div.style.display = 'none';
+            } else {
+                div.style.display = 'block';
+                div.style.left = x + 'px';
+                div.style.top = y + 'px';
+            }
+        }
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        animate();
+    </script>
+</body>
+</html>
