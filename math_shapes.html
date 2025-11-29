@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>幾何圖形實驗室 (仙姑凱西教學版)</title>
+    <style>
+        body {
+            font-family: "Microsoft JhengHei", sans-serif;
+            margin: 0;
+            overflow: hidden;
+            background-color: #f0f2f5;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        /* --- 工具列 --- */
+        #toolbar {
+            background: #fff;
+            padding: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .category-row {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 6px;
+            padding-bottom: 5px;
+            border-bottom: 1px dashed #eee;
+        }
+        
+        .category-row:last-child {
+            border-bottom: none;
+        }
+
+        .cat-label {
+            font-size: 13px;
+            font-weight: bold;
+            color: #555;
+            background: #eee;
+            padding: 4px 8px;
+            border-radius: 4px;
+            margin-right: 5px;
+            min-width: 60px;
+            text-align: center;
+        }
+
+        button {
+            padding: 5px 10px;
+            font-size: 14px;
+            cursor: pointer;
+            border: 1px solid #ccc;
+            background: #fff;
+            border-radius: 4px;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+        }
+
+        button:hover {
+            background-color: #e6f7ff;
+            border-color: #1890ff;
+            color: #1890ff;
+        }
+
+        /* 刪除與清空按鈕 */
+        .btn-danger { color: #ff4d4f; border-color: #ffccc7; }
+        .btn-danger:hover { background-color: #fff1f0; border-color: #ff4d4f; }
+
+        /* --- 設計者連結樣式 (右下角) --- */
+        #credit-link {
+            position: absolute;
+            bottom: 10px;
+            right: 15px;
+            font-size: 14px;
+            color: #555;
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 6px 12px;
+            border-radius: 20px;
+            text-decoration: none;
+            z-index: 3000; /* 確保在最上層 */
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            border: 1px solid #ddd;
+            transition: all 0.3s;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        #credit-link:hover {
+            background-color: #1890ff;
+            color: #fff;
+            border-color: #1890ff;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(24, 144, 255, 0.3);
+        }
+
+        #credit-link::before {
+            content: '🔗'; /* 加個小圖示增加點擊感 */
+            font-size: 12px;
+        }
+
+        /* --- 懸浮控制區 --- */
+        #controls {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 12px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            z-index: 2000;
+            width: 230px;
+            backdrop-filter: blur(5px);
+            visibility: hidden;
+            transform: translateY(-20px);
+            transition: all 0.3s;
+            opacity: 0;
+        }
+        
+        #controls.active {
+            visibility: visible;
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .control-group {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .control-section-title {
+            font-weight:bold; 
+            color:#333; 
+            font-size: 15px;
+            border-bottom: 2px solid #1890ff;
+            padding-bottom: 5px;
+            margin-bottom: 5px;
+        }
+
+        input[type=range] { width: 100%; margin: 5px 0; cursor: pointer; }
+
+        /* --- 畫布 --- */
+        #canvas-area {
+            flex-grow: 1;
+            position: relative;
+            background-image: 
+                linear-gradient(#e8e8e8 1px, transparent 1px),
+                linear-gradient(90deg, #e8e8e8 1px, transparent 1px),
+                linear-gradient(#d0d0d0 1px, transparent 1px),
+                linear-gradient(90deg, #d0d0d0 1px, transparent 1px);
+            background-size: 20px 20px, 20px 20px, 100px 100px, 100px 100px;
+            overflow: hidden;
+            touch-action: none;
+        }
+
+        /* --- 圖形容器 --- */
+        .shape-container {
+            position: absolute;
+            cursor: grab;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            user-select: none;
+            pointer-events: auto; 
+            transition: box-shadow 0.2s;
+        }
+
+        .shape-container:active { cursor: grabbing; }
+
+        /* 選取效果 */
+        .shape-container.selected .svg-shape {
+            stroke: #1890ff;
+            stroke-width: 3;
+            stroke-dasharray: 6, 4;
+        }
+        
+        /* 中心點標記 */
+        .shape-container.selected::after {
+            content: '';
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            background: #1890ff;
+            border-radius: 50%;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+        }
+
+        svg { overflow: visible; pointer-events: none; }
+        
+        .svg-shape {
+            stroke: #555;
+            stroke-width: 2;
+            fill-opacity: 0.6;
+            transition: fill 0.2s, stroke 0.2s;
+        }
+
+        /* 顏色定義 */
+        .fill-red { fill: #ff7875; }
+        .fill-pink { fill: #ffadd2; }
+        .fill-orange { fill: #ffc069; }
+        .fill-yellow { fill: #fff566; }
+        .fill-green { fill: #95de64; }      /* 90度扇形 */
+        .fill-lime { fill: #bae637; }       /* 60度扇形 */
+        .fill-blue { fill: #69c0ff; }
+        .fill-cyan { fill: #5cdbd3; }
+        .fill-purple { fill: #b37feb; }
+        .fill-indigo { fill: #85a5ff; }     /* 45度扇形 */
+        .fill-magenta { fill: #eb2f96; }    /* 小半圓 */
+        .fill-gray { fill: #d9d9d9; }
+
+    </style>
+</head>
+<body>
+
+    <div id="toolbar">
+        <div class="category-row">
+            <span class="cat-label">四邊形</span>
+            <button onclick="addShape('square')">正方形 (200)</button>
+            <button onclick="addShape('square-small')">小正方形 (100)</button>
+            <button onclick="addShape('rect')">長方形 (200x100)</button>
+            <button onclick="addShape('trapezoid')">直角梯形</button>
+            <button onclick="addShape('parallelogram')">平行四邊形</button>
+        </div>
+        <div class="category-row">
+            <span class="cat-label">圓與弧</span>
+            <button onclick="addShape('circle-big')">大圓 (Ø200)</button>
+            <button onclick="addShape('circle-small')">小圓 (Ø100)</button>
+            <button onclick="addShape('semicircle')">半圓 (Ø200)</button>
+            <button onclick="addShape('semicircle-small')">小半圓 (Ø100)</button>
+            <button onclick="addShape('sector-90')">1/4 扇形</button>
+            <button onclick="addShape('sector-60')">60° 扇形</button>
+            <button onclick="addShape('sector-45')">45° 扇形</button>
+            <button onclick="addShape('ring')">圓環</button>
+        </div>
+        <div class="category-row">
+            <span class="cat-label">三角形</span>
+            <button onclick="addShape('tri-iso')">等腰直角</button>
+            <button onclick="addShape('tri-right')">直角 (半矩形)</button>
+            <button onclick="addShape('tri-eq')">正三角形</button>
+        </div>
+        <div class="category-row">
+            <span class="cat-label">功能</span>
+            <button class="btn-danger" onclick="deleteSelected()">刪除選取</button>
+            <button class="btn-danger" onclick="clearCanvas()">全部清空</button>
+            <span style="font-size:12px; color:#888; margin-left:auto;">💡 點選圖形使用右側面板</span>
+        </div>
+    </div>
+
+    <div id="controls">
+        <div class="control-section-title">圖形設定</div>
+        
+        <div class="control-group">
+            <label>旋轉角度</label>
+            <span id="rotate-val" style="font-family:monospace;">0°</span>
+        </div>
+        <input type="range" id="rotate-slider" min="0" max="360" value="0">
+        
+        <div class="control-group">
+            <button style="flex:1" onclick="stepRotate(-45)">↺ -45°</button>
+            <button style="flex:1" onclick="stepRotate(45)">↻ +45°</button>
+        </div>
+
+        <div class="control-group" style="margin-top:5px; border-top:1px solid #eee; padding-top:10px;">
+            <label>鏡像與層級</label>
+        </div>
+        <div class="control-group">
+            <button style="flex:1; font-weight:bold; color:#1890ff;" onclick="toggleFlip('x')">⇄ 左右</button>
+            <button style="flex:1; font-weight:bold; color:#1890ff;" onclick="toggleFlip('y')">↕ 上下</button>
+        </div>
+        
+        <div class="control-group" style="margin-top:5px;">
+             <button style="flex:1" onclick="bringToFront()">置頂</button>
+             <button style="flex:1" onclick="sendToBack()">置底</button>
+        </div>
+    </div>
+
+    <div id="canvas-area" onclick="handleBgClick(event)"></div>
+
+    <a id="credit-link" href="https://kathy594520.github.io/new.github.io/AI/AI" target="_blank">
+        仙姑凱西設計
+    </a>
+
+    <script>
+        const canvas = document.getElementById('canvas-area');
+        const controls = document.getElementById('controls');
+        const rotateSlider = document.getElementById('rotate-slider');
+        const rotateValDisplay = document.getElementById('rotate-val');
+        
+        let selectedEl = null;
+        let zIndexCounter = 10;
+
+        // --- 圖形庫定義 ---
+        const library = {
+            'square': { w:200, h:200, c:'fill-red', svg: '<rect x="0" y="0" width="200" height="200"/>' },
+            'square-small': { w:100, h:100, c:'fill-pink', svg: '<rect x="0" y="0" width="100" height="100"/>' },
+            'rect': { w:200, h:100, c:'fill-orange', svg: '<rect x="0" y="0" width="200" height="100"/>' },
+            'trapezoid': { w:200, h:100, c:'fill-yellow', svg: '<path d="M0,0 L100,0 L200,100 L0,100 Z"/>' },
+            'parallelogram': { w:250, h:100, c:'fill-purple', svg: '<path d="M50,0 L250,0 L200,100 L0,100 Z"/>' },
+            
+            'circle-big': { w:200, h:200, c:'fill-blue', svg: '<circle cx="100" cy="100" r="100"/>' },
+            'circle-small': { w:100, h:100, c:'fill-cyan', svg: '<circle cx="50" cy="50" r="50"/>' },
+            'ring': { w:200, h:200, c:'fill-gray', svg: '<path d="M100,100 m-100,0 a100,100 0 1,0 200,0 a100,100 0 1,0 -200,0 M100,100 m-50,0 a50,50 0 1,1 100,0 a50,50 0 1,1 -100,0" fill-rule="evenodd"/>' },
+            
+            'semicircle': { w:200, h:100, c:'fill-green', svg: '<path d="M0,100 A100,100 0 0,1 200,100 Z"/>' },
+            'semicircle-small': { w:100, h:50, c:'fill-magenta', svg: '<path d="M0,50 A50,50 0 0,1 100,50 Z"/>' },
+            
+            'sector-90': { w:200, h:200, c:'fill-green', svg: '<path d="M0,200 L0,0 A200,200 0 0,1 200,200 Z"/>' }, 
+            'sector-60': { w:200, h:200, c:'fill-lime', svg: '<path d="M0,200 L200,200 A200,200 0 0,0 100,26.8 L0,200 Z" />' },
+            'sector-45': { w:200, h:200, c:'fill-indigo', svg: '<path d="M0,200 L0,0 A200,200 0 0,1 141.4,58.6 Z" />' },
+            
+            'tri-iso': { w:200, h:200, c:'fill-orange', svg: '<path d="M0,0 L0,200 L200,200 Z"/>' },
+            'tri-right': { w:200, h:100, c:'fill-yellow', svg: '<path d="M0,0 L0,100 L200,100 Z"/>' },
+            'tri-eq': { w:200, h:174, c:'fill-red', svg: '<path d="M0,173.2 L100,0 L200,173.2 Z"/>' },
+        };
+
+        function addShape(type) {
+            const data = library[type];
+            const div = document.createElement('div');
+            div.className = 'shape-container';
+            div.style.width = data.w + 'px';
+            div.style.height = data.h + 'px';
+            div.style.left = (50 + Math.random()*50) + 'px';
+            div.style.top = (50 + Math.random()*50) + 'px';
+            div.style.zIndex = zIndexCounter++;
+            
+            div.dataset.rotation = 0;
+            div.dataset.flipX = 1;
+            div.dataset.flipY = 1;
+
+            div.innerHTML = `<svg width="${data.w}" height="${data.h}"><g class="svg-shape ${data.c}">${data.svg}</g></svg>`;
+
+            div.addEventListener('mousedown', (e) => startDrag(e, div));
+            div.addEventListener('touchstart', (e) => startDrag(e, div));
+
+            canvas.appendChild(div);
+            selectElement(div);
+        }
+
+        function updateTransform() {
+            if (!selectedEl) return;
+            const deg = parseInt(selectedEl.dataset.rotation) || 0;
+            const fx = parseInt(selectedEl.dataset.flipX) || 1;
+            const fy = parseInt(selectedEl.dataset.flipY) || 1;
+            selectedEl.style.transform = `rotate(${deg}deg) scaleX(${fx}) scaleY(${fy})`;
+            let displayDeg = (deg % 360 + 360) % 360;
+            rotateSlider.value = displayDeg;
+            rotateValDisplay.innerText = displayDeg + '°';
+        }
+
+        function toggleFlip(axis) {
+            if (!selectedEl) return;
+            if (axis === 'x') {
+                let current = parseInt(selectedEl.dataset.flipX) || 1;
+                selectedEl.dataset.flipX = current * -1;
+            } else if (axis === 'y') {
+                let current = parseInt(selectedEl.dataset.flipY) || 1;
+                selectedEl.dataset.flipY = current * -1;
+            }
+            updateTransform();
+        }
+
+        rotateSlider.oninput = function() {
+            if (!selectedEl) return;
+            selectedEl.dataset.rotation = this.value;
+            updateTransform();
+        };
+
+        function stepRotate(step) {
+            if (!selectedEl) return;
+            let current = parseInt(selectedEl.dataset.rotation) || 0;
+            let target = current + step;
+            if (target % 45 !== 0 && Math.abs(target % 45) < 5) {
+                target = Math.round(target / 45) * 45;
+            }
+            selectedEl.dataset.rotation = target;
+            updateTransform();
+        }
+
+        function startDrag(e, el) {
+            e.preventDefault();
+            selectElement(el);
+            let startX = e.clientX || e.touches[0].clientX;
+            let startY = e.clientY || e.touches[0].clientY;
+            let initLeft = el.offsetLeft;
+            let initTop = el.offsetTop;
+
+            const moveHandler = (ev) => {
+                let cx = ev.clientX || ev.touches[0].clientX;
+                let cy = ev.clientY || ev.touches[0].clientY;
+                el.style.left = (initLeft + cx - startX) + 'px';
+                el.style.top = (initTop + cy - startY) + 'px';
+            };
+
+            const upHandler = () => {
+                window.removeEventListener('mousemove', moveHandler);
+                window.removeEventListener('mouseup', upHandler);
+                window.removeEventListener('touchmove', moveHandler);
+                window.removeEventListener('touchend', upHandler);
+            };
+
+            window.addEventListener('mousemove', moveHandler);
+            window.addEventListener('mouseup', upHandler);
+            window.addEventListener('touchmove', moveHandler, {passive: false});
+            window.addEventListener('touchend', upHandler);
+        }
+
+        function selectElement(el) {
+            if (selectedEl) selectedEl.classList.remove('selected');
+            selectedEl = el;
+            selectedEl.classList.add('selected');
+            updateTransform(); 
+            controls.classList.add('active');
+        }
+
+        function handleBgClick(e) {
+            if (e.target === canvas) {
+                if (selectedEl) selectedEl.classList.remove('selected');
+                selectedEl = null;
+                controls.classList.remove('active');
+            }
+        }
+
+        function bringToFront() { if (selectedEl) selectedEl.style.zIndex = zIndexCounter++; }
+        function sendToBack() { if (selectedEl) selectedEl.style.zIndex = 1; }
+
+        function deleteSelected() {
+            if (selectedEl) {
+                selectedEl.remove();
+                selectedEl = null;
+                controls.classList.remove('active');
+            }
+        }
+
+        function clearCanvas() {
+            canvas.innerHTML = '';
+            selectedEl = null;
+            controls.classList.remove('active');
+        }
+    </script>
+</body>
+</html>
