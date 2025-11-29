@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>等積圖形配對偵探</title>
+    
+    <!-- 1. 載入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- 2. 設定 Import Map 以支援 React 和 Lucide 圖示 -->
+    <script type="importmap">
+    {
+      "imports": {
+        "react": "https://esm.sh/react@18.2.0",
+        "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+        "lucide-react": "https://esm.sh/lucide-react@0.292.0"
+      }
+    }
+    </script>
+    
+    <!-- 3. 設定 Babel 以便瀏覽器看不懂 JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <style>
+        /* 補充動畫樣式 */
+        @keyframes shake {
+          0%, 100% { transform: translateX(0); }
+          25% { transform: translateX(-5px); }
+          75% { transform: translateX(5px); }
+        }
+        .animate-shake { animation: shake 0.4s ease-in-out; }
+        .animate-ping-slow { animation: ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite; }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in-up { animation: fadeInUp 0.5s ease-out forwards; }
+        @keyframes bounceIn {
+          0% { opacity: 0; transform: scale(0.3); }
+          50% { opacity: 1; transform: scale(1.05); }
+          70% { transform: scale(0.9); }
+          100% { transform: scale(1); }
+        }
+        .animate-bounce-in { animation: bounceIn 0.6s cubic-bezier(0.215, 0.610, 0.355, 1.000) both; }
+    </style>
+</head>
+<body class="bg-slate-100">
+    <div id="root"></div>
+
+    <!-- 4. 主要程式碼邏輯 -->
+    <script type="text/babel" data-type="module">
+        import React, { useState, useEffect, useRef } from 'react';
+        import { createRoot } from 'react-dom/client';
+        import { Lightbulb, RotateCcw, Trophy, Timer, HelpCircle, X, Check, Star, XCircle, ArrowRight, Layers } from 'lucide-react';
+
+        // --- 粒子特效組件 ---
+        const ParticleSystem = ({ active }) => {
+          const [particles, setParticles] = useState([]);
+
+          useEffect(() => {
+            if (active) {
+              const newParticles = Array.from({ length: 20 }).map((_, i) => ({
+                id: i,
+                x: 50,
+                y: 50,
+                vx: (Math.random() - 0.5) * 20,
+                vy: (Math.random() - 0.5) * 20,
+                color: ['#FFD700', '#FFA500', '#FFFFFF'][Math.floor(Math.random() * 3)],
+                size: Math.random() * 6 + 2,
+              }));
+              setParticles(newParticles);
+              
+              const timer = setTimeout(() => setParticles([]), 1000);
+              return () => clearTimeout(timer);
+            }
+          }, [active]);
+
+          if (particles.length === 0) return null;
+
+          return (
+            <div className="absolute inset-0 pointer-events-none overflow-hidden z-50">
+              {particles.map((p) => (
+                <div
+                  key={p.id}
+                  className="absolute rounded-full animate-ping-slow"
+                  style={{
+                    left: `${p.x}%`,
+                    top: `${p.y}%`,
+                    width: `${p.size}px`,
+                    height: `${p.size}px`,
+                    backgroundColor: p.color,
+                    transform: `translate(${p.vx * 10}px, ${p.vy * 10}px)`,
+                    opacity: 0,
+                    transition: 'all 0.8s ease-out'
+                  }}
+                />
+              ))}
+            </div>
+          );
+        };
+
+        // --- 圖形繪製組件 (SVGs) ---
+        const ShapeRender = ({ type, showHint }) => {
+          const strokeColor = "#475569"; 
+          const fillColor = type.startsWith('problem') ? "#FDBA74" : "#93C5FD"; 
+          const hintColor = "#DC2626"; 
+
+          const svgProps = {
+            viewBox: "0 0 100 100",
+            className: "w-full h-full drop-shadow-sm",
+          };
+
+          const HintPath = ({ d }) => (
+            <path d={d} fill="none" stroke={hintColor} strokeWidth="2" strokeDasharray="4,4" className="animate-pulse" />
+          );
+
+          return (
+            <div className="w-24 h-24 sm:w-32 sm:h-32 mx-auto relative p-1">
+              <svg {...svgProps}>
+                <defs>
+                  <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+                    <path d="M0,0 L0,6 L9,3 z" fill={hintColor} />
+                  </marker>
+                </defs>
+
+                {/* LEVEL 1 */}
+                {type === 'problem-translation' && (
+                  <>
+                    <path d="M10,50 A40,40 0 0 1 90,50" fill={fillColor} stroke={strokeColor} strokeWidth="2" />
+                    <path d="M90,50 A20,20 0 0 1 50,50" fill={fillColor} stroke={strokeColor} strokeWidth="2" />
+                    <path d="M50,50 A20,20 0 0 0 10,50" fill="white" stroke={strokeColor} strokeWidth="2" />
+                    <path d="M10,50 A40,40 0 0 1 90,50 A20,20 0 0 1 50,50 A20,20 0 0 1 10,50 Z" fill="none" stroke={strokeColor} strokeWidth="2"/>
+                    {showHint && (
+                      <>
+                        <path d="M50,50 A20,20 0 0 0 10,50" fill={hintColor} fillOpacity="0.2" stroke="none" />
+                        <path d="M10,50 L50,50" stroke={hintColor} strokeDasharray="4,4" />
+                        <path d="M70,60 Q 50,80 30,60" fill="none" stroke={hintColor} strokeWidth="1.5" markerEnd="url(#arrow)" strokeDasharray="3,3"/>
+                      </>
+                    )}
+                  </>
+                )}
+                {type === 'answer-semicircle' && (
+                  <>
+                    <path d="M10,50 A40,40 0 0 1 90,50 L10,50 Z" fill={fillColor} stroke={strokeColor} strokeWidth="2" />
+                    <text x="50" y="75" fontSize="10" textAnchor="middle" fill="#555">半圓</text>
+                  </>
+                )}
+                {type === 'problem-leaf' && (
+                  <>
+                    <rect x="10" y="10" width="80" height="80" fill="none" stroke={strokeColor} strokeWidth="1" strokeDasharray="2,2"/>
+                    <path d="M10,10 M 10,90 A 80,80 0 0 0 90,10 A 80,80 0 0 0 10,90 Z" fill={fillColor} stroke={strokeColor} strokeWidth="2" />
+                    {showHint && (
+                       <>
+                         <path d="M10,90 A80,80 0 0 0 90,10" fill="none" stroke={hintColor} strokeDasharray="4,4" />
+                         <path d="M90,10 A80,80 0 0 0 10,90" fill="none" stroke={hintColor} strokeDasharray="4,4" />
+                       </>
+                    )}
+                  </>
+                )}
+                {type === 'answer-leaf-formula' && (
+                  <>
+                     <g transform="translate(15, 30) scale(0.35)">
+                      <path d="M0,50 H50 A50,50 0 0 0 0,0 V50 Z" fill={fillColor} stroke={strokeColor}/>
+                     </g>
+                     <text x="40" y="50" fontSize="12" textAnchor="middle" fill="#555">×2 -</text>
+                     <g transform="translate(55, 30) scale(0.35)">
+                      <rect x="0" y="0" width="50" height="50" fill="none" stroke={strokeColor} strokeWidth="2"/>
+                     </g>
+                     <text x="50" y="75" fontSize="8" textAnchor="middle" fill="#555">扇形×2 - 正方形</text>
+                  </>
+                )}
+                {type === 'problem-ring' && (
+                  <>
+                    <path d="M50,10 A40,40 0 1,1 50,90 A40,40 0 1,1 50,10 M50,30 A20,20 0 1,1 50,70 A20,20 0 1,1 50,30" 
+                          fill={fillColor} stroke={strokeColor} strokeWidth="2" fillRule="evenodd" />
+                    {showHint && (
+                      <>
+                         <line x1="50" y1="50" x2="90" y2="50" stroke={hintColor} strokeWidth="1" />
+                         <line x1="50" y1="50" x2="65" y2="65" stroke={hintColor} strokeWidth="1" />
+                      </>
+                    )}
+                  </>
+                )}
+                {type === 'answer-ring-formula' && (
+                  <>
+                    <circle cx="35" cy="40" r="15" fill={fillColor} stroke={strokeColor} />
+                    <text x="55" y="45" fontSize="14" textAnchor="middle" fill="#555">-</text>
+                    <circle cx="75" cy="40" r="10" fill="white" stroke={strokeColor} strokeWidth="1" />
+                    <text x="50" y="75" fontSize="8" textAnchor="middle" fill="#555">大圓 - 小圓</text>
+                  </>
+                )}
+                {type === 'problem-track' && (
+                  <>
+                    <rect x="30" y="30" width="40" height="40" fill={fillColor} stroke="none" />
+                    <path d="M30,30 A20,20 0 0 0 30,70 L70,70 A20,20 0 0 0 70,30 Z" fill={fillColor} stroke={strokeColor} strokeWidth="2" />
+                    {showHint && (
+                      <>
+                        <line x1="30" y1="30" x2="30" y2="70" stroke={hintColor} strokeDasharray="4,4" />
+                        <line x1="70" y1="30" x2="70" y2="70" stroke={hintColor} strokeDasharray="4,4" />
+                        <text x="15" y="50" fontSize="8" textAnchor="middle" fill={hintColor}>半</text>
+                        <text x="85" y="50" fontSize="8" textAnchor="middle" fill={hintColor}>半</text>
+                      </>
+                    )}
+                  </>
+                )}
+                {type === 'answer-track-split' && (
+                  <>
+                     <rect x="25" y="40" width="25" height="20" fill={fillColor} stroke={strokeColor} />
+                     <text x="55" y="55" fontSize="14" textAnchor="middle" fill="#555">+</text>
+                     <circle cx="75" cy="50" r="10" fill={fillColor} stroke={strokeColor} />
+                     <text x="50" y="75" fontSize="8" textAnchor="middle" fill="#555">矩形 + 圓</text>
+                  </>
+                )}
+
+                {/* LEVEL 2 */}
+                {type === 'problem-para' && (
+                  <>
+                    <path d="M30,70 L50,30 L90,30 L70,70 Z" fill={fillColor} stroke={strokeColor} strokeWidth="2" />
+                    {showHint && (
+                      <>
+                        <path d="M50,30 L50,70" stroke={hintColor} strokeDasharray="4,4" />
+                        <path d="M30,70 L50,70 L50,30 Z" fill={hintColor} fillOpacity="0.2" />
+                        <path d="M40,60 Q 70,80 85,60" fill="none" stroke={hintColor} markerEnd="url(#arrow)" strokeDasharray="3,3"/>
+                        <text x="60" y="90" fontSize="8" textAnchor="middle" fill={hintColor}>割下左邊補右邊</text>
+                      </>
+                    )}
+                  </>
+                )}
+                {type === 'answer-rect-base' && (
+                  <>
+                     <rect x="30" y="30" width="40" height="40" fill={fillColor} stroke={strokeColor} strokeWidth="2" />
+                     <text x="50" y="50" fontSize="10" textAnchor="middle" fill="white">長方形</text>
+                     <text x="50" y="85" fontSize="8" textAnchor="middle" fill="#555">底 × 高</text>
+                  </>
+                )}
+                {type === 'problem-tri-split' && (
+                  <>
+                    <path d="M20,80 L80,80 L50,20 Z" fill={fillColor} stroke={strokeColor} strokeWidth="2" />
+                    {showHint && (
+                      <>
+                         <line x1="35" y1="50" x2="65" y2="50" stroke={hintColor} strokeDasharray="4,4" strokeWidth="2" />
+                         <path d="M50,35 A 10,10 0 0 1 60,45" stroke={hintColor} markerEnd="url(#arrow)" fill="none"/>
+                         <text x="80" y="40" fontSize="8" fill={hintColor}>切半旋轉</text>
+                      </>
+                    )}
+                  </>
+                )}
+                {type === 'answer-rect-half' && (
+                  <>
+                    <rect x="20" y="50" width="60" height="30" fill={fillColor} stroke={strokeColor} strokeWidth="2" />
+                    <text x="50" y="65" fontSize="10" textAnchor="middle" fill="white">半高矩形</text>
+                    <text x="50" y="90" fontSize="8" textAnchor="middle" fill="#555">底 × (高÷2)</text>
+                  </>
+                )}
+                {type === 'problem-cross' && (
+                  <>
+                    <rect x="10" y="10" width="80" height="80" fill={fillColor} stroke={strokeColor} />
+                    <rect x="40" y="10" width="20" height="80" fill="white" />
+                    <rect x="10" y="40" width="80" height="20" fill="white" />
+                    <rect x="10" y="10" width="80" height="80" fill="none" stroke={strokeColor} strokeWidth="2"/>
+                    {showHint && (
+                       <>
+                         <path d="M25,25 L35,35" stroke={hintColor} markerEnd="url(#arrow)"/>
+                         <path d="M75,25 L65,35" stroke={hintColor} markerEnd="url(#arrow)"/>
+                         <path d="M25,75 L35,65" stroke={hintColor} markerEnd="url(#arrow)"/>
+                         <path d="M75,75 L65,65" stroke={hintColor} markerEnd="url(#arrow)"/>
+                         <text x="50" y="95" fontSize="8" textAnchor="middle" fill={hintColor}>往中間擠壓</text>
+                       </>
+                    )}
+                  </>
+                )}
+                {type === 'answer-cross-combine' && (
+                  <>
+                     <rect x="20" y="20" width="60" height="60" fill={fillColor} stroke={strokeColor} strokeWidth="2" />
+                     <text x="50" y="50" fontSize="10" textAnchor="middle" fill="white">小正方形</text>
+                     <text x="50" y="90" fontSize="8" textAnchor="middle" fill="#555">(邊長-路寬)×(邊長-路寬)</text>
+                  </>
+                )}
+                {type === 'problem-circle-slice' && (
+                  <>
+                    <circle cx="50" cy="50" r="35" fill={fillColor} stroke={strokeColor} strokeWidth="2" />
+                    <path d="M50,15 L50,85 M15,50 L85,50 M25,25 L75,75 M25,75 L75,25" stroke="white" strokeWidth="1" />
+                    {showHint && (
+                       <>
+                         <text x="50" y="95" fontSize="8" textAnchor="middle" fill={hintColor}>切成許多小扇形</text>
+                         <path d="M85,50 Q 95,50 95,70" fill="none" stroke={hintColor} markerEnd="url(#arrow)" strokeDasharray="3,3"/>
+                       </>
+                    )}
+                  </>
+                )}
+                {type === 'answer-circle-rect' && (
+                  <>
+                     <path d="M10,40 L15,35 L20,40 L25,35 L30,40 L35,35 L40,40 L45,35 L50,40 L55,35 L60,40 L65,35 L70,40 L75,35 L80,40 L85,35 L90,40 
+                              L90,60 L85,65 L80,60 L75,65 L70,60 L65,65 L60,60 L55,65 L50,60 L45,65 L40,60 L35,65 L30,60 L25,65 L20,60 L15,65 L10,60 Z" 
+                           fill={fillColor} stroke={strokeColor} />
+                     <text x="50" y="50" fontSize="8" textAnchor="middle" fill="white">長≒周長一半</text>
+                     <text x="50" y="80" fontSize="8" textAnchor="middle" fill="#555">拼成長方形 (πr²)</text>
+                  </>
+                )}
+              </svg>
+            </div>
+          );
+        };
+
+        // --- 主程式 EqualAreaDetective ---
+        function EqualAreaDetective() {
+          // Level 1 Data
+          const level1Pairs = [
+            { id: 'L1', type: 'problem', logicTag: 'translation', title: '太極變形', desc: '半圓的平移', hint: '將凸出的半圓剪下，平移補到凹陷處', svgType: 'problem-translation' },
+            { id: 'R1', type: 'answer', logicTag: 'translation', title: '完整半圓', desc: '還原後的形狀', svgType: 'answer-semicircle' },
+            { id: 'L2', type: 'problem', logicTag: 'leaf', title: '葉形 (橄欖形)', desc: '重疊的部分', hint: '這是兩個1/4圓重疊的部分', svgType: 'problem-leaf' },
+            { id: 'R2', type: 'answer', logicTag: 'leaf', title: '重疊公式', desc: '(扇形 × 2) - 正方形', svgType: 'answer-leaf-formula' },
+            { id: 'L3', type: 'problem', logicTag: 'ring', title: '圓環', desc: '同心圓中空', hint: '算出外面的大圓，挖掉裡面的小圓', svgType: 'problem-ring' },
+            { id: 'R3', type: 'answer', logicTag: 'ring', title: '大圓減小圓', desc: '外圓面積 - 內圓面積', svgType: 'answer-ring-formula' },
+            { id: 'L4', type: 'problem', logicTag: 'track', title: '跑道形', desc: '兩側接半圓', hint: '左右兩個半圓合起來，剛好是一個整圓', svgType: 'problem-track' },
+            { id: 'R4', type: 'answer', logicTag: 'track', title: '矩形加圓', desc: '長方形 + 圓形面積', svgType: 'answer-track-split' },
+          ];
+
+          // Level 2 Data
+          const level2Pairs = [
+            { id: 'L5', type: 'problem', logicTag: 'para', title: '平行四邊形', desc: '歪斜的矩形', hint: '沿著高剪下三角形，平移到另一邊', svgType: 'problem-para' },
+            { id: 'R5', type: 'answer', logicTag: 'para', title: '長方形', desc: '底 × 高 (同矩形)', svgType: 'answer-rect-base' },
+            { id: 'L6', type: 'problem', logicTag: 'tri', title: '三角形', desc: '標準三角形', hint: '沿著中線切開，旋轉上半部補成矩形', svgType: 'problem-tri-split' },
+            { id: 'R6', type: 'answer', logicTag: 'tri', title: '半高矩形', desc: '底 × (高÷2)', svgType: 'answer-rect-half' },
+            { id: 'L7', type: 'problem', logicTag: 'cross', title: '十字路口', desc: '求草地面積', hint: '把白色道路拿掉，將剩下的草地擠在一起', svgType: 'problem-cross' },
+            { id: 'R7', type: 'answer', logicTag: 'cross', title: '完整正方形', desc: '扣除道路後的邊長', svgType: 'answer-cross-combine' },
+            { id: 'L8', type: 'problem', logicTag: 'circle', title: '圓形切割', desc: '圓面積推導', hint: '將圓切成無數小扇形，上下交錯拼合', svgType: 'problem-circle-slice' },
+            { id: 'R8', type: 'answer', logicTag: 'circle', title: '類長方形', desc: '長=周長一半, 寬=半徑', svgType: 'answer-circle-rect' },
+          ];
+
+          // States
+          const [level, setLevel] = useState(1);
+          const [currentPairs, setCurrentPairs] = useState([]);
+          const [leftCards, setLeftCards] = useState([]);
+          const [rightCards, setRightCards] = useState([]);
+          const [selectedId, setSelectedId] = useState(null);
+          const [matchedIds, setMatchedIds] = useState([]);
+          const [mistakes, setMistakes] = useState(0);
+          const [hintCounts, setHintCounts] = useState(0);
+          const [activeHintCardId, setActiveHintCardId] = useState(null);
+          const [hintsUsedOnCard, setHintsUsedOnCard] = useState({});
+          const [timer, setTimer] = useState(0);
+          const [gameState, setGameState] = useState('intro'); // intro, playing, level_complete, finished
+          const [lastFeedback, setLastFeedback] = useState("");
+          const [shakeId, setShakeId] = useState(null);
+          const timerRef = useRef(null);
+
+          useEffect(() => { initLevel(1); }, []);
+
+          useEffect(() => {
+            if (gameState === 'playing') {
+              timerRef.current = setInterval(() => { setTimer(t => t + 1); }, 1000);
+            } else {
+              clearInterval(timerRef.current);
+            }
+            return () => clearInterval(timerRef.current);
+          }, [gameState]);
+
+          useEffect(() => {
+            if (currentPairs.length > 0 && matchedIds.length === currentPairs.length) {
+              if (level === 1) {
+                setGameState('level_complete');
+              } else {
+                setGameState('finished');
+              }
+            }
+          }, [matchedIds, currentPairs, level]);
+
+          const initLevel = (lvl) => {
+            setLevel(lvl);
+            const pairs = lvl === 1 ? level1Pairs : level2Pairs;
+            setCurrentPairs(pairs);
+            const problems = pairs.filter(p => p.type === 'problem');
+            const answers = pairs.filter(p => p.type === 'answer');
+            setLeftCards(problems.sort(() => Math.random() - 0.5));
+            setRightCards(answers.sort(() => Math.random() - 0.5));
+            setMatchedIds([]);
+            setSelectedId(null);
+            setHintsUsedOnCard({});
+            setGameState('intro');
+            setLastFeedback("");
+            if (lvl === 1) {
+              setMistakes(0);
+              setHintCounts(0);
+              setTimer(0);
+            }
+          };
+
+          const startNextLevel = () => {
+            initLevel(2);
+            setGameState('playing');
+          };
+
+          const startGame = () => {
+            setGameState('playing');
+          };
+
+          const handleBackgroundClick = () => {
+            if (selectedId) {
+              setSelectedId(null);
+              setLastFeedback("");
+            }
+          };
+
+          const handleCardClick = (e, card) => {
+            e.stopPropagation();
+            if (gameState !== 'playing') return;
+            if (matchedIds.includes(card.id)) return;
+
+            if (!selectedId) {
+              setSelectedId(card.id);
+              setLastFeedback("請選擇另一邊對應的卡片");
+              return;
+            }
+            if (selectedId === card.id) {
+              setSelectedId(null);
+              setLastFeedback("");
+              return;
+            }
+            const card1 = [...leftCards, ...rightCards].find(c => c.id === selectedId);
+            const card2 = card;
+
+            if (card1.type === card2.type) {
+              setSelectedId(card.id);
+              return;
+            }
+
+            if (card1.logicTag === card2.logicTag) {
+              setMatchedIds(prev => [...prev, card1.id, card2.id]);
+              setSelectedId(null);
+              setLastFeedback("配對成功！面積相等！");
+            } else {
+              setMistakes(prev => prev + 1);
+              setShakeId(card2.id);
+              setTimeout(() => setShakeId(null), 500);
+              setLastFeedback("再試試看... 結構不太一樣");
+              setSelectedId(null);
+            }
+          };
+
+          const handleCancelSelection = (e) => {
+            e.stopPropagation();
+            setSelectedId(null);
+            setLastFeedback("");
+          };
+
+          const handleHint = (e, cardId) => {
+            e.stopPropagation();
+            if (matchedIds.includes(cardId)) return;
+            const currentUses = hintsUsedOnCard[cardId] || 0;
+            if (currentUses >= 2) {
+              setLastFeedback("此題提示次數已用完！");
+              return;
+            }
+            setHintCounts(prev => prev + 1);
+            setHintsUsedOnCard(prev => ({...prev, [cardId]: currentUses + 1}));
+            setActiveHintCardId(cardId);
+            setLastFeedback("觀察虛線補形部分...");
+            setTimeout(() => { setActiveHintCardId(null); }, 4000);
+          };
+
+          const getStars = () => {
+            if (mistakes <= 1 && hintCounts <= 2) return 3;
+            if (mistakes <= 3 && hintCounts <= 5) return 2;
+            return 1;
+          };
+
+          const formatTime = (s) => {
+            const min = Math.floor(s / 60);
+            const sec = s % 60;
+            return `${min}:${sec.toString().padStart(2, '0')}`;
+          };
+
+          // Inner Card Component
+          const Card = ({ data }) => {
+            const isMatched = matchedIds.includes(data.id);
+            const isSelected = selectedId === data.id;
+            const isProblem = data.type === 'problem';
+            const isShaking = shakeId === data.id;
+            const showingHint = activeHintCardId === data.id;
+
+            let baseClass = "relative w-full aspect-[4/5] rounded-xl shadow-md border-4 transition-all duration-300 cursor-pointer flex flex-col items-center justify-between p-2 sm:p-4 select-none touch-manipulation";
+            
+            if (isMatched) {
+              baseClass += " bg-green-50 border-green-400 opacity-80 scale-95";
+            } else if (isSelected) {
+              baseClass += " border-indigo-500 -translate-y-2 shadow-xl z-10 bg-white ring-4 ring-indigo-200 ring-opacity-50";
+            } else if (isProblem) {
+              baseClass += " bg-orange-50 border-orange-200 hover:border-orange-300 hover:shadow-lg";
+            } else {
+              baseClass += " bg-blue-50 border-blue-200 hover:border-blue-300 hover:shadow-lg";
+            }
+            if (isShaking) baseClass += " animate-shake";
+
+            return (
+              <div className={baseClass} onClick={(e) => handleCardClick(e, data)}>
+                {isMatched && <ParticleSystem active={true} />}
+                <div className="w-full flex justify-between items-start">
+                  <span className="text-xs font-bold text-gray-500 bg-white/80 px-2 py-1 rounded-md">{isProblem ? "題目" : "解釋"}</span>
+                  <div className="flex gap-1">
+                     {isSelected && !isMatched && (
+                        <button onClick={handleCancelSelection} className="p-1.5 bg-red-100 rounded-full hover:bg-red-200 text-red-600 transition-colors animate-pulse">
+                          <X size={18} />
+                        </button>
+                     )}
+                     {isProblem && !isMatched && (
+                      <button onClick={(e) => handleHint(e, data.id)} className="p-1.5 bg-yellow-100 rounded-full hover:bg-yellow-200 text-yellow-600 transition-colors">
+                        <Lightbulb size={18} />
+                      </button>
+                    )}
+                  </div>
+                </div>
+                <div className="flex-1 flex items-center justify-center w-full my-2">
+                   <ShapeRender type={data.svgType} showHint={showingHint} />
+                </div>
+                <div className="w-full text-center">
+                  <h3 className="font-bold text-gray-800 text-sm sm:text-base mb-1">{data.title}</h3>
+                  <p className="text-xs text-gray-500 leading-tight">{showingHint ? data.hint : data.area_text || data.desc}</p>
+                </div>
+                {isMatched && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-green-500/20 rounded-lg">
+                    <div className="bg-white p-2 rounded-full shadow-sm animate-bounce">
+                       <Check className="text-green-600" size={24} />
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          };
+
+          return (
+            <div className="min-h-screen bg-slate-100 font-sans text-slate-800 flex flex-col" onClick={handleBackgroundClick}>
+              
+              {/* Intro Modal */}
+              {gameState === 'intro' && (
+                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={(e) => e.stopPropagation()}>
+                  <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 text-center animate-fade-in-up">
+                    <div className="w-20 h-20 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <Trophy size={40} className="text-indigo-600" />
+                    </div>
+                    <h1 className="text-2xl font-bold text-indigo-900 mb-2">等積圖形偵探</h1>
+                    <div className="flex justify-center items-center gap-2 mb-4">
+                       <span className="bg-blue-100 text-blue-800 text-xs font-bold px-2 py-1 rounded-full">第 {level} 回合</span>
+                    </div>
+                    <p className="text-gray-600 mb-6">
+                      {level === 1 ? "找出面積相等的圖形。善用「平移」與「互補」的概念！" : "進入進階關卡！這次需要用到「切割」、「旋轉」與「公式推導」喔！"}
+                    </p>
+                    <button onClick={startGame} className="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold text-lg hover:bg-indigo-700 transform hover:scale-105 transition-all shadow-lg">
+                      {level === 1 ? "開始挑戰" : "開始第二回合"}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Level Complete Modal */}
+              {gameState === 'level_complete' && (
+                <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={(e) => e.stopPropagation()}>
+                   <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 text-center animate-bounce-in">
+                      <h2 className="text-2xl font-bold text-indigo-800 mb-2">第一回合過關！</h2>
+                      <p className="text-gray-500 mb-6">做得好！準備好挑戰更難的進階圖形了嗎？</p>
+                      <button onClick={startNextLevel} className="flex items-center justify-center gap-2 w-full bg-orange-500 text-white py-3 rounded-xl font-bold text-lg hover:bg-orange-600 shadow-lg">
+                        前往第二回合 <ArrowRight size={20} />
+                      </button>
+                   </div>
+                </div>
+              )}
+
+              {/* Game Over Modal */}
+              {gameState === 'finished' && (
+                <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={(e) => e.stopPropagation()}>
+                  <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 text-center animate-bounce-in">
+                    <h2 className="text-3xl font-bold text-indigo-800 mb-2">全數通關！</h2>
+                    <p className="text-gray-500 mb-6">你是幾何大師！所有謎題都難不倒你！</p>
+                    
+                    <div className="flex justify-center gap-2 mb-6">
+                      {[1, 2, 3].map((star) => (
+                        <Star key={star} size={48} className={`${star <= getStars() ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'} drop-shadow-md`} />
+                      ))}
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4 mb-8 text-left bg-gray-50 p-4 rounded-xl">
+                      <div><p className="text-xs text-gray-500">本局耗時</p><p className="font-mono font-bold text-lg">{formatTime(timer)}</p></div>
+                      <div><p className="text-xs text-gray-500">失誤</p><p className="font-mono font-bold text-lg">{mistakes}</p></div>
+                      <div><p className="text-xs text-gray-500">提示</p><p className="font-mono font-bold text-lg">{hintCounts}</p></div>
+                      <div><p className="text-xs text-gray-500">評分</p><p className="font-bold text-lg text-indigo-600">{getStars()} 星級</p></div>
+                    </div>
+
+                    <button onClick={() => initLevel(1)} className="flex items-center justify-center gap-2 w-full bg-green-500 text-white py-3 rounded-xl font-bold text-lg hover:bg-green-600 shadow-lg">
+                      <RotateCcw size={20} /> 從頭開始
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Navbar */}
+              <header className="bg-white shadow-sm px-4 py-3 flex justify-between items-center sticky top-0 z-40" onClick={(e) => e.stopPropagation()}>
+                <div className="flex items-center gap-2">
+                  <div className="bg-indigo-100 p-2 rounded-lg flex items-center gap-2">
+                    <Layers size={18} className="text-indigo-600"/>
+                    <span className="font-bold text-indigo-900 text-sm hidden sm:inline">Level {level}</span>
+                  </div>
+                  <div className="bg-gray-100 p-2 rounded-lg flex items-center gap-1">
+                     <Timer size={18} className="text-gray-600" />
+                     <span className="font-mono font-bold text-gray-900">{formatTime(timer)}</span>
+                  </div>
+                </div>
+                <div className="flex-1 flex justify-center mx-2">
+                   {selectedId ? (
+                     <button onClick={handleCancelSelection} className="flex items-center gap-2 bg-red-100 hover:bg-red-200 text-red-600 px-3 py-1.5 rounded-full transition-colors text-sm font-bold shadow-sm">
+                       <XCircle size={16} /> 取消選取
+                     </button>
+                   ) : (
+                     <div className="text-sm font-bold text-gray-500 hidden sm:block">
+                        {lastFeedback || (level===1 ? "找出相同面積的配對 (第一回合)" : "進階挑戰：切割與公式 (第二回合)")}
+                     </div>
+                   )}
+                </div>
+                <div className="flex items-center gap-4">
+                   <div className="flex items-center gap-1 text-red-500">
+                     <X size={18} />
+                     <span className="font-bold">{mistakes}</span>
+                   </div>
+                   <button onClick={() => setGameState('intro')} className="p-2 text-gray-400 hover:text-gray-600">
+                     <HelpCircle size={24} />
+                   </button>
+                </div>
+              </header>
+              
+              {!selectedId && (
+                <div className="sm:hidden bg-indigo-50 text-indigo-800 text-xs py-1 text-center font-bold px-2 truncate">
+                  {lastFeedback || (level===1 ? "第一回合：點擊卡片配對" : "第二回合：進階等積挑戰")}
+                </div>
+              )}
+
+              {/* Board */}
+              <main className="flex-1 max-w-6xl mx-auto w-full p-2 sm:p-6 grid grid-cols-2 gap-4 sm:gap-8 overflow-y-auto">
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 mb-2 px-2">
+                    <div className={`w-3 h-8 rounded-full ${level===1 ? 'bg-orange-400' : 'bg-pink-500'}`}></div>
+                    <h2 className="font-bold text-gray-700">圖形卡 (題目)</h2>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-3 sm:gap-4">
+                    {leftCards.map(card => (
+                      <Card key={card.id} data={card} />
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                   <div className="flex items-center gap-2 mb-2 px-2">
+                    <div className={`w-3 h-8 rounded-full ${level===1 ? 'bg-blue-400' : 'bg-purple-500'}`}></div>
+                    <h2 className="font-bold text-gray-700">等積卡 (答案)</h2>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-3 sm:gap-4">
+                    {rightCards.map(card => (
+                      <Card key={card.id} data={card} />
+                    ))}
+                  </div>
+                </div>
+              </main>
+            </div>
+          );
+        }
+
+        const root = createRoot(document.getElementById('root'));
+        root.render(<EqualAreaDetective />);
+    </script>
+</body>
+</html>
