@@ -1,0 +1,569 @@
+
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>靜謐貓語 Whisper Cat</title>
+    <style>
+        :root {
+            /* --- 配色調整區 --- */
+            /* 背景：淺薰衣草紫 */
+            --bg-color: #F3E5F5; 
+            /* 文字：深紫灰色，保持閱讀舒適度 */
+            --text-color: #5E5475; 
+            
+            /* 貓咪 & 主色調：調整為「寧靜藍紫」，與背景更融合 */
+            --cat-color: #7986CB; 
+            
+            /* 強調色（按鈕選取時）：稍微深一點的藍紫色 */
+            --active-color: #5C6BC0;
+            
+            --bubble-bg: #FFFFFF;
+            
+            /* 能量條配色：保持柔和粉嫩 */
+            --hp-high: #A5D6A7; /* 柔和綠 */
+            --hp-med: #FFCC80;  /* 柔和橘 */
+            --hp-low: #EF9A9A;  /* 柔和紅 */
+            
+            --tail-speed: 2s; /* 預設尾巴速度 */
+        }
+
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Helvetica Neue', Arial, 'Heiti TC', sans-serif;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+            overflow-y: auto; 
+            overflow-x: hidden;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 480px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            padding: 20px;
+            position: relative;
+            gap: 20px;
+            padding-bottom: 80px; /* 為浮動標籤預留底部空間 */
+        }
+
+        /* --- 頂部標題 --- */
+        header {
+            text-align: center;
+            margin-top: 15px; /* 稍微增加頂部空間 */
+            flex-shrink: 0;
+        }
+
+        h1 {
+            /* 放大標題字體 */
+            font-size: 1.8rem; 
+            margin: 0;
+            font-weight: 600; /* 加粗 */
+            letter-spacing: 2px;
+            color: var(--active-color); 
+        }
+
+        .subtitle {
+            font-size: 0.9rem; /* 副標題微調 */
+            color: #8E84A3; 
+            margin-top: 5px;
+        }
+
+        /* --- 貓咪展示區 --- */
+        .stage {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            flex-shrink: 0; 
+        }
+
+        /* 對話氣泡 */
+        .bubble {
+            background: var(--bubble-bg);
+            padding: 20px 30px; /* 增加內距讓泡泡更大 */
+            border-radius: 25px;
+            box-shadow: 0 8px 20px rgba(121, 134, 203, 0.2); /* 陰影調整為貓咪色系 */
+            margin-bottom: 25px;
+            position: relative;
+            max-width: 95%;
+            text-align: center;
+            
+            /* 字體放大與加粗 */
+            font-size: 1.3rem; 
+            font-weight: 700; 
+            color: var(--text-color);
+            
+            line-height: 1.4;
+            transition: all 0.3s ease;
+            opacity: 0;
+            transform: translateY(10px);
+            z-index: 10;
+        }
+
+        .bubble.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .bubble::after {
+            content: '';
+            position: absolute;
+            bottom: -12px; /* 箭頭位置微調 */
+            left: 50%;
+            transform: translateX(-50%);
+            border-width: 12px 12px 0; /* 箭頭放大 */
+            border-style: solid;
+            border-color: var(--bubble-bg) transparent transparent transparent;
+        }
+
+        /* 貓咪 SVG */
+        .cat-wrapper {
+            width: 100%; 
+            max-width: 400px;
+            aspect-ratio: 1/1;
+            position: relative;
+            margin-bottom: 10px;
+        }
+
+        #cat-svg {
+            width: 100%;
+            height: 100%;
+            overflow: visible;
+        }
+
+        .cat-body {
+            fill: var(--cat-color);
+        }
+
+        .cat-tail {
+            fill: none;
+            stroke: var(--cat-color);
+            stroke-width: 12; 
+            stroke-linecap: round;
+            transform-origin: 145px 145px; 
+            animation: tail-wag var(--tail-speed) infinite ease-in-out alternate;
+        }
+
+        @keyframes tail-wag {
+            0% { transform: rotate(-15deg); }
+            100% { transform: rotate(15deg); }
+        }
+
+        /* --- 控制面板 --- */
+        .controls {
+            width: 100%;
+            background: #ffffff;
+            border-radius: 25px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(121, 134, 203, 0.15); /* 陰影色調調整 */
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+            flex-shrink: 0;
+            margin-bottom: 10px;
+            border: 1px solid #E8EAF6; /* 邊框調整為極淡藍紫 */
+        }
+
+        /* 1. 能量血條 */
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .label {
+            font-size: 0.95rem; /* 標籤字體微調 */
+            color: #7986CB; /* 標籤顏色改為貓咪主色，更和諧 */
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .hp-bar {
+            display: flex;
+            gap: 8px;
+            height: 36px;
+        }
+
+        .hp-unit {
+            flex: 1;
+            background: #E8EAF6; /* 未選取狀態改為淡藍紫 */
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.3s ease, transform 0.1s;
+        }
+
+        .hp-unit:active {
+            transform: scale(0.95);
+        }
+
+        /* 2. 心情滑桿 */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+            margin-top: 5px;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 28px;
+            width: 28px;
+            border-radius: 50%;
+            background: var(--cat-color);
+            cursor: pointer;
+            margin-top: -12px;
+            box-shadow: 0 2px 8px rgba(121, 134, 203, 0.4);
+            border: 3px solid #fff;
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 6px;
+            background: #C5CAE9; /* 軌道顏色加深一點點以便識別 */
+            border-radius: 3px;
+        }
+
+        /* 3. 語句選擇區 */
+        .phrase-scroll {
+            display: flex;
+            flex-wrap: wrap; 
+            justify-content: center;
+            gap: 10px;
+            padding-bottom: 5px;
+        }
+
+        .phrase-btn {
+            white-space: normal;
+            padding: 12px 18px; /* 按鈕稍微加大 */
+            border: 1px solid #E8EAF6;
+            border-radius: 14px;
+            background: #FAFAFF; 
+            color: var(--text-color);
+            font-size: 1rem; /* 按鈕文字微調 */
+            cursor: pointer;
+            transition: all 0.2s;
+            flex-grow: 1;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        .phrase-btn:active, .phrase-btn.active {
+            background: var(--cat-color);
+            color: #fff;
+            border-color: var(--cat-color);
+            transform: translateY(1px);
+            box-shadow: 0 4px 12px rgba(121, 134, 203, 0.3);
+        }
+
+        /* 4. 自訂輸入 */
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            padding: 14px 18px; /* 輸入框加大 */
+            border: 1px solid #C5CAE9;
+            border-radius: 14px;
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.3s;
+            background: #FAFAFA;
+            color: var(--text-color);
+        }
+
+        input[type="text"]:focus {
+            border-color: var(--cat-color);
+            background: #fff;
+            box-shadow: 0 0 0 3px rgba(121, 134, 203, 0.1);
+        }
+
+        .send-btn {
+            background: var(--cat-color);
+            color: white;
+            border: none;
+            border-radius: 14px;
+            padding: 0 24px;
+            cursor: pointer;
+            font-size: 1.3rem;
+            transition: background 0.2s;
+        }
+        
+        .send-btn:active {
+            background: var(--active-color);
+        }
+
+        /* --- 版權資訊 --- */
+        .copyright {
+            font-size: 0.75rem;
+            color: #9FA8DA;
+            text-align: center;
+            width: 100%;
+            opacity: 0.8;
+            padding-bottom: 10px;
+            letter-spacing: 0.5px;
+        }
+
+        /* --- 浮動標籤 (仙姑凱西設計) --- */
+        .floating-label {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: var(--cat-color);
+            color: white;
+            padding: 10px 18px;
+            border-radius: 30px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            text-decoration: none;
+            box-shadow: 0 4px 15px rgba(121, 134, 203, 0.4);
+            transition: all 0.3s ease;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            border: 2px solid #fff;
+        }
+
+        .floating-label:hover {
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 0 6px 20px rgba(121, 134, 203, 0.5);
+            background-color: var(--active-color);
+        }
+
+        .floating-label span {
+            font-size: 1rem;
+        }
+
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>Whisper Cat</h1>
+        <div class="subtitle">靜謐角落 · 能量觀測</div>
+    </header>
+
+    <div class="stage">
+        <!-- 對話氣泡 -->
+        <div class="bubble" id="bubble">...</div>
+        
+        <!-- 貓咪 SVG (放大版) -->
+        <div class="cat-wrapper">
+            <svg id="cat-svg" viewBox="0 0 220 220">
+                <!-- 地板陰影 -->
+                <ellipse cx="110" cy="195" rx="70" ry="8" fill="rgba(121, 134, 203, 0.2)" />
+
+                <!-- 尾巴 (放在身體後面) -->
+                <path class="cat-tail" d="M145 145 C 145 110, 170 100, 180 70" />
+                
+                <!-- 身體 -->
+                <path class="cat-body" d="
+                    M 70 190
+                    C 40 190, 30 140, 50 100
+                    C 60 80, 75 70, 95 65
+                    L 80 30
+                    L 115 55
+                    C 125 55, 135 55, 145 65
+                    L 180 40
+                    L 165 75
+                    C 185 90, 195 130, 180 170
+                    C 170 190, 140 190, 110 190
+                    Z
+                " />
+            </svg>
+        </div>
+    </div>
+
+    <div class="controls">
+        <!-- 能量血條 -->
+        <div class="control-group">
+            <div class="label">
+                <span>社交能量</span>
+                <span id="hp-text">50%</span>
+            </div>
+            <div class="hp-bar" id="hp-bar">
+                <div class="hp-unit" data-index="1"></div>
+                <div class="hp-unit" data-index="2"></div>
+                <div class="hp-unit" data-index="3"></div>
+                <div class="hp-unit" data-index="4"></div>
+                <div class="hp-unit" data-index="5"></div>
+            </div>
+        </div>
+
+        <!-- 心情滑桿 -->
+        <div class="control-group">
+            <div class="label">
+                <span>內心波動</span>
+                <span id="mood-text">平靜</span>
+            </div>
+            <input type="range" id="mood-slider" min="1" max="10" value="3" step="1">
+        </div>
+
+        <!-- 短語選擇 (內建語句) -->
+        <div class="label" style="margin-top: 5px;">內建狀態語錄：</div>
+        <div class="phrase-scroll" id="phrase-container">
+            <!-- JS 會自動生成按鈕 -->
+        </div>
+
+        <!-- 自訂輸入 -->
+        <div class="label" style="margin-top: 5px;">自訂語句：</div>
+        <div class="input-group">
+            <input type="text" id="custom-input" placeholder="輸入你想說的話...">
+            <button class="send-btn" id="send-btn">💬</button>
+        </div>
+    </div>
+
+    <!-- 版權聲明 -->
+    <div class="copyright">© 2025 Kathy's Whisper Cat Built with Gemini AI.</div>
+</div>
+
+<!-- 浮動標籤 (固定在視窗右下角) -->
+<a href="https://kathy594520.github.io/new.github.io/AI/AI" target="_blank" class="floating-label">
+    <span>✨</span> 仙姑凱西設計
+</a>
+
+<script>
+    // --- 資料設定 ---
+    const phrases = [
+        "充電中 🔌",
+        "無法說話 🤐",
+        "電池耗盡 🪫",
+        "給點空間 🌵",
+        "觀察中 👀",
+        "心情維修 🛠️",
+        "需要安靜 🤫",
+        "緊急聯絡 ⚠️",
+        "放空中 ☁️",
+        "已打烊 💤"
+    ];
+
+    // --- DOM 元素 ---
+    const root = document.documentElement;
+    const hpUnits = document.querySelectorAll('.hp-unit');
+    const hpText = document.getElementById('hp-text');
+    const moodSlider = document.getElementById('mood-slider');
+    const moodText = document.getElementById('mood-text');
+    const phraseContainer = document.getElementById('phrase-container');
+    const bubble = document.getElementById('bubble');
+    const customInput = document.getElementById('custom-input');
+    const sendBtn = document.getElementById('send-btn');
+
+    // --- 功能 1: 能量血條 (HP) ---
+    function updateHP(level) {
+        // 未點亮時的底色，改為極淡的藍紫
+        let color = '#E8EAF6'; 
+        
+        // 點亮時的顏色
+        if (level <= 2) color = 'var(--hp-low)';
+        else if (level <= 4) color = 'var(--hp-med)';
+        else color = 'var(--hp-high)';
+
+        hpUnits.forEach((unit, index) => {
+            if (index < level) {
+                unit.style.backgroundColor = color;
+            } else {
+                unit.style.backgroundColor = '#E8EAF6';
+            }
+        });
+
+        hpText.textContent = (level * 20) + '%';
+    }
+
+    // 綁定點擊事件
+    hpUnits.forEach(unit => {
+        unit.addEventListener('click', () => {
+            const level = parseInt(unit.getAttribute('data-index'));
+            updateHP(level);
+        });
+    });
+
+    // 初始化 HP
+    updateHP(3);
+
+    // --- 功能 2: 心情滑桿與尾巴速度 ---
+    function updateMood(val) {
+        // val 1 (平靜) -> speed 3s
+        // val 10 (焦慮) -> speed 0.2s
+        const speed = 3.2 - (val * 0.3); 
+        root.style.setProperty('--tail-speed', `${speed}s`);
+
+        let status = "平靜";
+        if (val > 3) status = "微波動";
+        if (val > 6) status = "焦慮";
+        if (val > 8) status = "極度混亂";
+        
+        moodText.textContent = status + " (" + val + ")";
+    }
+
+    moodSlider.addEventListener('input', (e) => {
+        updateMood(e.target.value);
+    });
+
+    // --- 功能 3: 說話氣泡 ---
+    let bubbleTimeout;
+
+    function showBubble(text) {
+        bubble.textContent = text;
+        bubble.classList.add('show');
+        
+        if (bubbleTimeout) clearTimeout(bubbleTimeout);
+    }
+
+    // 生成預設短語按鈕
+    phrases.forEach(text => {
+        const btn = document.createElement('button');
+        btn.className = 'phrase-btn';
+        btn.textContent = text;
+        btn.addEventListener('click', () => {
+            showBubble(text);
+            document.querySelectorAll('.phrase-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+        });
+        phraseContainer.appendChild(btn);
+    });
+
+    // --- 功能 4: 自訂輸入 ---
+    function sendCustomMessage() {
+        const text = customInput.value.trim();
+        if (text) {
+            showBubble(text);
+            customInput.value = '';
+            document.querySelectorAll('.phrase-btn').forEach(b => b.classList.remove('active'));
+        }
+    }
+
+    sendBtn.addEventListener('click', sendCustomMessage);
+    customInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') sendCustomMessage();
+    });
+
+    // 初始歡迎語
+    setTimeout(() => {
+        showBubble("... ( 尾巴輕輕擺動 )");
+    }, 1000);
+
+</script>
+
+</body>
+</html>
