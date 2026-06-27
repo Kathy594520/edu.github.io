@@ -1,5 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&display=swap');
-
 :root {
   --bg-primary: #FFF8E7;
   --bg-secondary: #FFEAA7;
@@ -78,7 +76,7 @@ body {
   height: 100%;
   background: #fff;
   border-radius: 20px;
-  animation: loadFill 1.5s ease forwards;
+  animation: loadFill 0.5s ease forwards;
 }
 @keyframes loadFill { to { width: 100%; } }
 @keyframes bounce {

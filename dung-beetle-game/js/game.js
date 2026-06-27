@@ -11,12 +11,15 @@ const Game = {
   inventory: JSON.parse(localStorage.getItem('dbInventory')) || [],
 
   init() {
-    setTimeout(() => {
+    const skipLoading = () => {
       document.getElementById('loading-screen').classList.add('hidden');
       document.getElementById('main-menu').classList.remove('hidden');
       this.state = 'menu';
       this.updateStats();
-    }, 2000);
+    };
+    const loadEl = document.getElementById('loading-screen');
+    loadEl.addEventListener('click', skipLoading);
+    setTimeout(skipLoading, 600);
 
     this.canvas = document.getElementById('gameCanvas');
     this.ctx = this.canvas.getContext('2d');
