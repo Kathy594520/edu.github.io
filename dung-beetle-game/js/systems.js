@@ -1,7 +1,44 @@
 // ============================================================
-// 邀請碼系統 (Invitation Code System)
+// 邀請碼系統 — 完整跨分頁多人配對 (BroadcastChannel)
 // ============================================================
 let currentInviteCode = '';
+const MULTI_CHANNEL = 'dung-beetle-multi';
+let multiChannel = null;
+let isRoomHost = false;
+let roomPlayers = [{ id: 'p1', name: '你', emoji: '🐞', ready: true }];
+
+function initMultiplayerChannel() {
+  try {
+    multiChannel = new BroadcastChannel(MULTI_CHANNEL);
+    multiChannel.onmessage = onMultiMessage;
+  } catch(e) { /* BroadcastChannel not supported */ }
+}
+
+function onMultiMessage(e) {
+  const msg = e.data;
+  switch (msg.type) {
+    case 'room_available':
+      showAvailableRoom(msg);
+      break;
+    case 'join_request':
+      if (isRoomHost) handleJoinRequest(msg);
+      break;
+    case 'join_accepted':
+      handleJoinAccepted(msg);
+      break;
+    case 'join_rejected':
+      handleJoinRejected(msg);
+      break;
+    case 'player_list_update':
+      if (!isRoomHost) updatePlayerListUI(msg.players);
+      break;
+    case 'game_start':
+      if (!isRoomHost) remoteStartGame(msg);
+      break;
+  }
+}
+
+// ---- Room Host ----
 
 function generateInviteCode() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -12,8 +49,13 @@ function generateInviteCode() {
   currentInviteCode = code;
   document.getElementById('invite-code').textContent = code;
 
-  // Store in game system
-  if (!Game.invites) Game.invites = [];
+  isRoomHost = true;
+  roomPlayers = [{ id: 'p1', name: '你', emoji: '🐞', ready: true }];
+
+  if (multiChannel) {
+    multiChannel.postMessage({ type: 'room_available', code, tabId: getTabId() });
+  }
+
   Game.invites.push({ code, time: Date.now(), players: 1 });
   localStorage.setItem('dbInvites', JSON.stringify(Game.invites));
 
@@ -27,7 +69,6 @@ function copyInviteCode() {
     navigator.clipboard.writeText(code).then(() => {
       showToast('✅ 已複製邀請碼：' + code);
     }).catch(() => {
-      // Fallback
       const ta = document.createElement('textarea');
       ta.value = code;
       document.body.appendChild(ta);
@@ -39,6 +80,38 @@ function copyInviteCode() {
   }
 }
 
+function handleJoinRequest(msg) {
+  if (roomPlayers.length >= 4) {
+    if (multiChannel) multiChannel.postMessage({ type: 'join_rejected', reason: 'full', tabId: msg.tabId });
+    return;
+  }
+  if (roomPlayers.find(p => p.name === msg.name)) {
+    if (multiChannel) multiChannel.postMessage({ type: 'join_rejected', reason: 'duplicate', tabId: msg.tabId });
+    return;
+  }
+
+  const playerNum = roomPlayers.length;
+  const emojis = ['🐞', '🐛', '🦗', '🦋'];
+  const newPlayer = {
+    id: 'p' + (playerNum + 1),
+    name: msg.name,
+    emoji: emojis[playerNum] || '🐞',
+    ready: true,
+    tabId: msg.tabId
+  };
+  roomPlayers.push(newPlayer);
+
+  updatePlayerListUI(roomPlayers);
+  if (multiChannel) {
+    multiChannel.postMessage({ type: 'join_accepted', player: newPlayer, players: roomPlayers, tabId: msg.tabId });
+    multiChannel.postMessage({ type: 'player_list_update', players: roomPlayers });
+  }
+
+  showToast(`🎉 ${msg.name} 加入了！ (${roomPlayers.length}/4)`);
+}
+
+// ---- Join Tab ----
+
 function joinGame() {
   const code = document.getElementById('join-code-input').value.toUpperCase().trim();
   const name = document.getElementById('player-name-input').value.trim() || '小糞鬥士';
@@ -48,45 +121,78 @@ function joinGame() {
     return;
   }
 
-  // Validate code exists
-  const found = Game.invites.find(i => i.code === code);
-  if (!found) {
-    showToast('🔍 找不到該房間，請檢查邀請碼');
-    return;
+  isRoomHost = false;
+  document.getElementById('join-code-input').disabled = true;
+  document.querySelector('#join-screen .btn-main').disabled = true;
+
+  if (multiChannel) {
+    multiChannel.postMessage({ type: 'join_request', code, name, tabId: getTabId() });
+    showToast('📡 正在連線到房間...');
+
+    joinTimeout = setTimeout(() => {
+      document.getElementById('join-code-input').disabled = false;
+      document.querySelector('#join-screen .btn-main').disabled = false;
+      showToast('⏰ 找不到房間，請確認邀請碼是否正確，且房主的分頁未關閉');
+    }, 5000);
+  } else {
+    document.getElementById('join-code-input').disabled = false;
+    document.querySelector('#join-screen .btn-main').disabled = false;
+    showToast('⚠️ 此瀏覽器不支援 BroadcastChannel，請改用 Chrome 或 Edge');
   }
+}
 
-  if (found.players >= 4) {
-    showToast('👥 房間已滿（最多4人）');
-    return;
-  }
+let joinTimeout = null;
 
-  found.players++;
-  localStorage.setItem('dbInvites', JSON.stringify(Game.invites));
+function handleJoinAccepted(msg) {
+  if (joinTimeout) { clearTimeout(joinTimeout); joinTimeout = null; }
 
-  // Add player
-  const playerNum = found.players;
-  const emojis = ['🐞', '🐛', '🦗', '🦋'];
-  Game.players.push({
-    id: 'p' + (playerNum + 1),
-    name: name,
-    emoji: emojis[playerNum] || '🐞',
-    ready: true
-  });
+  roomPlayers = msg.players;
+  Game.players = roomPlayers;
 
-  showToast(`🎉 ${name} 已加入房間！ (${found.players}/4)`);
+  showToast(`🎉 成功加入 ${roomPlayers[0].name} 的房間！ (${roomPlayers.length}/4)`);
 
-  // Update player list
-  updatePlayerList(Game.players);
-
-  // Show game screen after short delay
   setTimeout(() => {
-    showScreen('game');
-    Game.resizeCanvas();
-    loadMode('egg', Game.players);
+    showScreen('room');
+    currentInviteCode = '已加入 ' + roomPlayers[0].name + ' 的房間';
+    document.getElementById('invite-code').textContent = '已加入 ✅';
+    const box = document.querySelector('.invite-code-box');
+    box.querySelector('p').textContent = '📍 已連線到房間';
+    box.querySelectorAll('button').forEach(b => b.remove());
+    updatePlayerListUI(roomPlayers);
   }, 1000);
 }
 
-function updatePlayerList(players) {
+function handleJoinRejected(msg) {
+  if (joinTimeout) { clearTimeout(joinTimeout); joinTimeout = null; }
+  document.getElementById('join-code-input').disabled = false;
+  document.querySelector('#join-screen .btn-main').disabled = false;
+
+  if (msg.reason === 'full') showToast('👥 房間已滿（最多4人）');
+  else if (msg.reason === 'duplicate') showToast('⚠️ 此名稱已被使用');
+}
+
+function showAvailableRoom(msg) {
+  // Auto-discover rooms could be added here
+}
+
+function remoteStartGame(msg) {
+  Game.players = msg.players;
+  showToast(`🎮 ${msg.players[0].name} 開始遊戲了！到主螢幕一起玩吧！`);
+  setTimeout(() => showScreen('menu'), 1500);
+}
+
+// ---- Shared ----
+
+function getTabId() {
+  let id = sessionStorage.getItem('multiTabId');
+  if (!id) {
+    id = 'tab_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6);
+    sessionStorage.setItem('multiTabId', id);
+  }
+  return id;
+}
+
+function updatePlayerListUI(players) {
   const list = document.getElementById('player-list');
   if (!list) return;
   const emojis = ['🐞', '🐛', '🦗', '🦋'];
@@ -101,8 +207,18 @@ function updatePlayerList(players) {
   list.innerHTML = html;
 }
 
+function startMultiplayerGame() {
+  if (isRoomHost && multiChannel) {
+    multiChannel.postMessage({ type: 'game_start', mode: 'egg', players: roomPlayers });
+  }
+  Game.players = roomPlayers;
+  showScreen('game');
+  Game.resizeCanvas();
+  loadMode('egg', roomPlayers);
+}
+
 // ============================================================
-// 彩蛋積分與抽獎系統 (Egg Points & Lottery System)
+// 彩蛋積分與抽獎系統
 // ============================================================
 const LOTTERY_PRIZES = [
   { name: '💎 傳說糞金龜造型', type: 'legendary', weight: 2, icon: '💎' },
@@ -132,10 +248,8 @@ function spinLottery() {
   resultDiv.classList.add('hidden');
   eggRow.classList.add('spinning');
 
-  // Simulate spinning sound
-  playSuccessSound(); // reuse
+  playSuccessSound();
 
-  // Weighted random selection
   const totalWeight = LOTTERY_PRIZES.reduce((s, p) => s + p.weight, 0);
   let roll = Math.random() * totalWeight;
   let selected = LOTTERY_PRIZES[0];
@@ -144,10 +258,7 @@ function spinLottery() {
     if (roll <= 0) { selected = prize; break; }
   }
 
-  // Animate eggs
   const eggItems = eggRow.querySelectorAll('.egg-item');
-  const emojis = ['🥚', '🥚', '🥚'];
-
   let spins = 0;
   const spinInterval = setInterval(() => {
     for (let i = 0; i < eggItems.length; i++) {
@@ -158,7 +269,6 @@ function spinLottery() {
       clearInterval(spinInterval);
       eggRow.classList.remove('spinning');
 
-      // Show result
       for (let i = 0; i < eggItems.length; i++) {
         eggItems[i].textContent = i === 1 ? selected.icon : '🥚';
       }
@@ -171,29 +281,15 @@ function spinLottery() {
       spawnConfetti();
       lotterySpinning = false;
 
-      // Special effects for legendary
       if (selected.type === 'legendary') {
         showToast('💎💎💎 傳說級獎品！太幸運了！');
-        Game.addEggs(3); // Bonus eggs for legendary
+        Game.addEggs(3);
         spawnConfetti();
         setTimeout(spawnConfetti, 500);
         setTimeout(spawnConfetti, 1000);
       }
     }
   }, 100);
-}
-
-// ============================================================
-// 多人連線系統 (Multiplayer via WebRTC - signaling simplified)
-// ============================================================
-let peerConnections = {};
-let localStream = null;
-let dataChannels = {};
-
-async function setupMultiplayer() {
-  // For this prototype, we use local multiplayer (same device)
-  // In production, this would use WebRTC with a signaling server
-  showToast('👥 目前支援同裝置多人 (WASD + 方向鍵 + IJKL)');
 }
 
 // ============================================================
@@ -231,7 +327,7 @@ function showToast(msg) {
 }
 
 // ============================================================
-// 教育內容 (Educational Content About Dung Beetles)
+// 教育內容
 // ============================================================
 const DUNG_BEETLE_FACTS = [
   { stage: 'egg', fact: '🥚 糞金龜媽媽會把卵產在糞球裡，寶寶出生就有食物吃！' },
@@ -253,18 +349,25 @@ function showRandomFact(stage) {
 }
 
 // ============================================================
-// Screen transition hooks (called from HTML onclick)
+// Screen transition hooks
 // ============================================================
 function onShowRoom() {
-  if (!currentInviteCode) generateInviteCode();
-  updatePlayerList(Game.players);
+  if (!currentInviteCode && !document.querySelector('.invite-code-box p').textContent.includes('已連線')) {
+    generateInviteCode();
+  }
+  updatePlayerListUI(roomPlayers);
 }
 
 function onShowLottery() {
   Game.updateStats();
 }
 
+// ============================================================
+// Initialize multiplayer channel
+// ============================================================
+initMultiplayerChannel();
+
 console.log('🐞 屎殼郎大冒險 loaded!');
 console.log('🎮 遊戲模式: 卵排列 | 滾屎球 | 蛹之家 | 成蟲旅行');
-console.log('👥 支援最多 4 人同機遊玩');
+console.log('👥 支援跨分頁多人 (同瀏覽器開新分頁加入)');
 console.log('🎁 彩蛋抽獎系統已就緒');
