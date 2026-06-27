@@ -11,11 +11,15 @@ function initMultiplayerChannel() {
   try {
     multiChannel = new BroadcastChannel(MULTI_CHANNEL);
     multiChannel.onmessage = onMultiMessage;
-  } catch(e) { /* BroadcastChannel not supported */ }
+    console.log('[Multi] BroadcastChannel 已就緒');
+  } catch(e) {
+    console.warn('[Multi] BroadcastChannel 不支援，多人模式不可用');
+  }
 }
 
 function onMultiMessage(e) {
   const msg = e.data;
+  const myTab = getTabId();
   switch (msg.type) {
     case 'room_available':
       showAvailableRoom(msg);
@@ -24,10 +28,10 @@ function onMultiMessage(e) {
       if (isRoomHost) handleJoinRequest(msg);
       break;
     case 'join_accepted':
-      handleJoinAccepted(msg);
+      if (msg.tabId === myTab) handleJoinAccepted(msg);
       break;
     case 'join_rejected':
-      handleJoinRejected(msg);
+      if (msg.tabId === myTab) handleJoinRejected(msg);
       break;
     case 'player_list_update':
       if (!isRoomHost) updatePlayerListUI(msg.players);
@@ -108,6 +112,7 @@ function handleJoinRequest(msg) {
   }
 
   showToast(`🎉 ${msg.name} 加入了！ (${roomPlayers.length}/4)`);
+  console.log(`[Multi] Join accepted: ${msg.name} (${roomPlayers.length}/4)`);
 }
 
 // ---- Join Tab ----
@@ -132,7 +137,7 @@ function joinGame() {
     joinTimeout = setTimeout(() => {
       document.getElementById('join-code-input').disabled = false;
       document.querySelector('#join-screen .btn-main').disabled = false;
-      showToast('⏰ 找不到房間，請確認邀請碼是否正確，且房主的分頁未關閉');
+      showToast('⏰ 找不到房間 😅 請確認：①邀請碼輸入正確 ②房主的分頁還開著 ③你在同一個瀏覽器開新分頁');
     }, 5000);
   } else {
     document.getElementById('join-code-input').disabled = false;
