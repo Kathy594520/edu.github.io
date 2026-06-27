@@ -1,46 +1,12 @@
 // ============================================================
-// 邀請碼系統 — 完整跨分頁多人配對 (BroadcastChannel)
+// 邀請碼系統 — 跨瀏覽器多人配對 (PeerJS / WebRTC)
 // ============================================================
 let currentInviteCode = '';
-const MULTI_CHANNEL = 'dung-beetle-multi';
-let multiChannel = null;
-let isRoomHost = false;
+let isHost = false;
 let roomPlayers = [{ id: 'p1', name: '你', emoji: '🐞', ready: true }];
-
-function initMultiplayerChannel() {
-  try {
-    multiChannel = new BroadcastChannel(MULTI_CHANNEL);
-    multiChannel.onmessage = onMultiMessage;
-    console.log('[Multi] BroadcastChannel 已就緒');
-  } catch(e) {
-    console.warn('[Multi] BroadcastChannel 不支援，多人模式不可用');
-  }
-}
-
-function onMultiMessage(e) {
-  const msg = e.data;
-  const myTab = getTabId();
-  switch (msg.type) {
-    case 'room_available':
-      showAvailableRoom(msg);
-      break;
-    case 'join_request':
-      if (isRoomHost) handleJoinRequest(msg);
-      break;
-    case 'join_accepted':
-      if (msg.tabId === myTab) handleJoinAccepted(msg);
-      break;
-    case 'join_rejected':
-      if (msg.tabId === myTab) handleJoinRejected(msg);
-      break;
-    case 'player_list_update':
-      if (!isRoomHost) updatePlayerListUI(msg.players);
-      break;
-    case 'game_start':
-      if (!isRoomHost) remoteStartGame(msg);
-      break;
-  }
-}
+let peer = null;
+let peerConns = {};
+let joinTimeout = null;
 
 // ---- Room Host ----
 
@@ -53,12 +19,11 @@ function generateInviteCode() {
   currentInviteCode = code;
   document.getElementById('invite-code').textContent = code;
 
-  isRoomHost = true;
+  isHost = true;
   roomPlayers = [{ id: 'p1', name: '你', emoji: '🐞', ready: true }];
+  updatePlayerListUI(roomPlayers);
 
-  if (multiChannel) {
-    multiChannel.postMessage({ type: 'room_available', code, tabId: getTabId() });
-  }
+  startPeer(code);
 
   Game.invites.push({ code, time: Date.now(), players: 1 });
   localStorage.setItem('dbInvites', JSON.stringify(Game.invites));
@@ -84,35 +49,79 @@ function copyInviteCode() {
   }
 }
 
-function handleJoinRequest(msg) {
-  if (roomPlayers.length >= 4) {
-    if (multiChannel) multiChannel.postMessage({ type: 'join_rejected', reason: 'full', tabId: msg.tabId });
+function startPeer(id) {
+  destroyPeer();
+  if (typeof Peer === 'undefined') {
+    showToast('⚠️ 無法載入 PeerJS，請確認網路連線');
     return;
   }
-  if (roomPlayers.find(p => p.name === msg.name)) {
-    if (multiChannel) multiChannel.postMessage({ type: 'join_rejected', reason: 'duplicate', tabId: msg.tabId });
-    return;
+  showToast('📡 正在建立房間...');
+  try {
+    peer = new Peer(id, { debug: 0 });
+    peer.on('open', () => {
+      showToast('✅ 房間已建立！分享邀請碼給朋友');
+    });
+    peer.on('connection', handleIncomingConn);
+    peer.on('disconnected', () => {
+      showToast('🔌 連線中斷，嘗試重新連線...');
+      peer.reconnect();
+    });
+    peer.on('error', (err) => {
+      console.error('[Peer]', err);
+      if (err.type === 'unavailable-id') showToast('⚠️ 此邀請碼已被使用，請重新產生');
+    });
+  } catch(e) {
+    showToast('⚠️ 無法建立連線：' + e.message);
   }
+}
 
-  const playerNum = roomPlayers.length;
-  const emojis = ['🐞', '🐛', '🦗', '🦋'];
-  const newPlayer = {
-    id: 'p' + (playerNum + 1),
-    name: msg.name,
-    emoji: emojis[playerNum] || '🐞',
-    ready: true,
-    tabId: msg.tabId
-  };
-  roomPlayers.push(newPlayer);
+function handleIncomingConn(conn) {
+  const playerId = 'p' + (Object.keys(peerConns).length + 2);
+  peerConns[playerId] = conn;
 
-  updatePlayerListUI(roomPlayers);
-  if (multiChannel) {
-    multiChannel.postMessage({ type: 'join_accepted', player: newPlayer, players: roomPlayers, tabId: msg.tabId });
-    multiChannel.postMessage({ type: 'player_list_update', players: roomPlayers });
-  }
+  conn.on('data', (data) => {
+    if (data.type === 'join_request') {
+      if (roomPlayers.length >= 4) {
+        conn.send({ type: 'join_rejected', reason: 'full' });
+        return;
+      }
+      if (roomPlayers.find(p => p.name === data.name)) {
+        conn.send({ type: 'join_rejected', reason: 'duplicate' });
+        return;
+      }
+      const idx = roomPlayers.length;
+      const emojis = ['🐞', '🐛', '🦗', '🦋'];
+      const newPlayer = {
+        id: playerId, name: data.name,
+        emoji: emojis[idx] || '🐞', ready: true
+      };
+      roomPlayers.push(newPlayer);
+      conn.playerName = data.name;
+      updatePlayerListUI(roomPlayers);
+      broadcastToPeers({ type: 'player_list_update', players: roomPlayers });
+      conn.send({ type: 'join_accepted', players: roomPlayers });
+      showToast(`🎉 ${data.name} 加入了！ (${roomPlayers.length}/4)`);
+      console.log(`[Peer] ${data.name} joined (${roomPlayers.length}/4)`);
+    }
+  });
 
-  showToast(`🎉 ${msg.name} 加入了！ (${roomPlayers.length}/4)`);
-  console.log(`[Multi] Join accepted: ${msg.name} (${roomPlayers.length}/4)`);
+  conn.on('close', () => {
+    delete peerConns[playerId];
+    roomPlayers = roomPlayers.filter(p => p.id !== playerId);
+    updatePlayerListUI(roomPlayers);
+    broadcastToPeers({ type: 'player_list_update', players: roomPlayers });
+    showToast(`👋 ${conn.playerName || '某位玩家'} 離開了`);
+  });
+}
+
+function broadcastToPeers(data) {
+  Object.values(peerConns).forEach(c => { if (c.open) c.send(data); });
+}
+
+function destroyPeer() {
+  Object.values(peerConns).forEach(c => c.close());
+  peerConns = {};
+  if (peer) { peer.destroy(); peer = null; }
 }
 
 // ---- Join Tab ----
@@ -126,58 +135,82 @@ function joinGame() {
     return;
   }
 
-  isRoomHost = false;
+  isHost = false;
   document.getElementById('join-code-input').disabled = true;
   document.querySelector('#join-screen .btn-main').disabled = true;
 
-  if (multiChannel) {
-    multiChannel.postMessage({ type: 'join_request', code, name, tabId: getTabId() });
-    showToast('📡 正在連線到房間...');
-
-    joinTimeout = setTimeout(() => {
-      document.getElementById('join-code-input').disabled = false;
-      document.querySelector('#join-screen .btn-main').disabled = false;
-      showToast('⏰ 找不到房間 😅 請確認：①邀請碼輸入正確 ②房主的分頁還開著 ③你在同一個瀏覽器開新分頁');
-    }, 5000);
-  } else {
+  if (typeof Peer === 'undefined') {
     document.getElementById('join-code-input').disabled = false;
     document.querySelector('#join-screen .btn-main').disabled = false;
-    showToast('⚠️ 此瀏覽器不支援 BroadcastChannel，請改用 Chrome 或 Edge');
+    showToast('⚠️ 無法載入 PeerJS，請確認網路連線');
+    return;
   }
-}
 
-let joinTimeout = null;
+  showToast('📡 正在連線到房主...');
+  try {
+    peer = new Peer();
+    peer.on('open', () => {
+      const conn = peer.connect(code, { reliable: true });
+      const connId = 'join_' + Date.now();
+      peerConns[connId] = conn;
 
-function handleJoinAccepted(msg) {
-  if (joinTimeout) { clearTimeout(joinTimeout); joinTimeout = null; }
+      conn.on('open', () => {
+        conn.send({ type: 'join_request', name });
 
-  roomPlayers = msg.players;
-  Game.players = roomPlayers;
+        joinTimeout = setTimeout(() => {
+          document.getElementById('join-code-input').disabled = false;
+          document.querySelector('#join-screen .btn-main').disabled = false;
+          showToast('⏰ 找不到房間 😅 請確認：①邀請碼輸入正確 ②房主頁面還開著 ③網路正常');
+        }, 8000);
+      });
 
-  showToast(`🎉 成功加入 ${roomPlayers[0].name} 的房間！ (${roomPlayers.length}/4)`);
+      conn.on('data', (data) => {
+        if (data.type === 'join_accepted') {
+          if (joinTimeout) { clearTimeout(joinTimeout); joinTimeout = null; }
+          roomPlayers = data.players;
+          Game.players = roomPlayers;
+          showToast(`🎉 成功加入 ${roomPlayers[0].name} 的房間！`);
+          showScreen('room');
+          document.getElementById('invite-code').textContent = '已加入 ✅';
+          const box = document.querySelector('.invite-code-box');
+          box.querySelector('p').textContent = '📍 已連線到房間';
+          box.querySelectorAll('button').forEach(b => b.remove());
+          updatePlayerListUI(roomPlayers);
+        }
+        if (data.type === 'join_rejected') {
+          if (joinTimeout) { clearTimeout(joinTimeout); joinTimeout = null; }
+          document.getElementById('join-code-input').disabled = false;
+          document.querySelector('#join-screen .btn-main').disabled = false;
+          if (data.reason === 'full') showToast('👥 房間已滿（最多4人）');
+          else if (data.reason === 'duplicate') showToast('⚠️ 此名稱已被使用');
+        }
+        if (data.type === 'player_list_update') {
+          roomPlayers = data.players;
+          Game.players = roomPlayers;
+          updatePlayerListUI(roomPlayers);
+        }
+        if (data.type === 'game_start') {
+          remoteStartGame(data);
+        }
+      });
 
-  setTimeout(() => {
-    showScreen('room');
-    currentInviteCode = '已加入 ' + roomPlayers[0].name + ' 的房間';
-    document.getElementById('invite-code').textContent = '已加入 ✅';
-    const box = document.querySelector('.invite-code-box');
-    box.querySelector('p').textContent = '📍 已連線到房間';
-    box.querySelectorAll('button').forEach(b => b.remove());
-    updatePlayerListUI(roomPlayers);
-  }, 1000);
-}
+      conn.on('close', () => {
+        showToast('🔌 與房主的連線已中斷');
+      });
+    });
 
-function handleJoinRejected(msg) {
-  if (joinTimeout) { clearTimeout(joinTimeout); joinTimeout = null; }
-  document.getElementById('join-code-input').disabled = false;
-  document.querySelector('#join-screen .btn-main').disabled = false;
+    peer.on('error', (err) => {
+      console.error('[Peer]', err);
+      document.getElementById('join-code-input').disabled = false;
+      document.querySelector('#join-screen .btn-main').disabled = false;
+      showToast('⚠️ 連線失敗：' + (err.message || '請確認邀請碼'));
+    });
 
-  if (msg.reason === 'full') showToast('👥 房間已滿（最多4人）');
-  else if (msg.reason === 'duplicate') showToast('⚠️ 此名稱已被使用');
-}
-
-function showAvailableRoom(msg) {
-  // Auto-discover rooms could be added here
+  } catch(e) {
+    document.getElementById('join-code-input').disabled = false;
+    document.querySelector('#join-screen .btn-main').disabled = false;
+    showToast('⚠️ 連線錯誤：' + e.message);
+  }
 }
 
 function remoteStartGame(msg) {
@@ -187,15 +220,6 @@ function remoteStartGame(msg) {
 }
 
 // ---- Shared ----
-
-function getTabId() {
-  let id = sessionStorage.getItem('multiTabId');
-  if (!id) {
-    id = 'tab_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6);
-    sessionStorage.setItem('multiTabId', id);
-  }
-  return id;
-}
 
 function updatePlayerListUI(players) {
   const list = document.getElementById('player-list');
@@ -213,8 +237,8 @@ function updatePlayerListUI(players) {
 }
 
 function startMultiplayerGame() {
-  if (isRoomHost && multiChannel) {
-    multiChannel.postMessage({ type: 'game_start', mode: 'egg', players: roomPlayers });
+  if (isHost) {
+    broadcastToPeers({ type: 'game_start', mode: 'egg', players: roomPlayers });
   }
   Game.players = roomPlayers;
   showScreen('game');
@@ -363,16 +387,21 @@ function onShowRoom() {
   updatePlayerListUI(roomPlayers);
 }
 
+function leaveRoom() {
+  destroyPeer();
+  isHost = false;
+  currentInviteCode = '';
+  roomPlayers = [{ id: 'p1', name: '你', emoji: '🐞', ready: true }];
+  showScreen('menu');
+}
+
 function onShowLottery() {
   Game.updateStats();
 }
 
-// ============================================================
-// Initialize multiplayer channel
-// ============================================================
-initMultiplayerChannel();
+window.addEventListener('beforeunload', () => destroyPeer());
 
 console.log('🐞 屎殼郎大冒險 loaded!');
 console.log('🎮 遊戲模式: 卵排列 | 滾屎球 | 蛹之家 | 成蟲旅行');
-console.log('👥 支援跨分頁多人 (同瀏覽器開新分頁加入)');
+console.log('👥 支援跨裝置多人 (PeerJS WebRTC)');
 console.log('🎁 彩蛋抽獎系統已就緒');

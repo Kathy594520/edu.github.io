@@ -61,7 +61,7 @@
 
   <div id="room-screen" class="screen hidden">
     <div class="screen-header">
-      <button class="btn-back" onclick="showScreen('menu')">← 返回</button>
+      <button class="btn-back" onclick="leaveRoom()">← 返回</button>
       <h2>🎮 建立遊戲房間</h2>
     </div>
     <div class="room-content">
@@ -71,7 +71,7 @@
         <button class="btn-small" onclick="generateInviteCode()">🔄 產生新碼</button>
         <button class="btn-small" onclick="copyInviteCode()">📋 複製</button>
       </div>
-      <p style="font-size:13px;color:#888;text-align:center;margin-bottom:10px">💡 在同瀏覽器開新分頁，輸入此邀請碼即可加入</p>
+      <p style="font-size:13px;color:#888;text-align:center;margin-bottom:10px">💡 把邀請碼分享給朋友，任何裝置/瀏覽器都能加入</p>
       <div class="room-players">
         <h3>👥 玩家列表</h3>
         <div id="player-list">
@@ -93,7 +93,7 @@
       <h2>🔑 加入遊戲</h2>
     </div>
     <div class="join-content">
-      <p style="font-size:13px;color:#888;text-align:center;margin-bottom:15px">💡 請在「同一個瀏覽器」開新分頁，輸入房主的邀請碼</p>
+      <p style="font-size:13px;color:#888;text-align:center;margin-bottom:15px">💡 在任何瀏覽器/裝置輸入房主的邀請碼即可加入</p>
       <div class="input-group">
         <label>輸入邀請碼</label>
         <input type="text" id="join-code-input" maxlength="6" placeholder="例如: BUG123">
@@ -154,6 +154,7 @@
   </div>
 </div>
 
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <script src="js/game.js"></script>
 <script src="js/modes.js"></script>
 <script src="js/systems.js"></script>
