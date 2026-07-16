@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>九九乘法打怪大挑戰</title>
+    <!-- 引入 Tailwind CSS 快速建立 UI -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* 自訂字型與背景，營造童趣風格 */
+        body {
+            font-family: 'Nunito', 'Comic Sans MS', 'Microsoft JhengHei', sans-serif;
+            background-color: #fffaf0; /* 溫暖的米白色 */
+            touch-action: manipulation; /* 停用點擊兩下放大，提升平板體驗 */
+        }
+
+        /* 答錯時的震動動畫 */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-15px) rotate(-2deg); }
+            40%, 80% { transform: translateX(15px) rotate(2deg); }
+        }
+        .animate-shake {
+            animation: shake 0.5s ease-in-out;
+        }
+
+        /* 答對時怪獸受擊閃爍動畫 */
+        @keyframes hit {
+            0%, 100% { filter: brightness(1) drop-shadow(0 0 0 rgba(255,0,0,0)); transform: scale(1); }
+            50% { filter: brightness(1.3) drop-shadow(0 0 20px rgba(255,100,100,0.8)); transform: scale(0.9); }
+        }
+        .animate-hit {
+            animation: hit 0.4s ease-in-out;
+        }
+
+        /* 勝利畫面彩帶浮動動畫 */
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+        .animate-bounce-slow {
+            animation: bounce 2s infinite ease-in-out;
+        }
+
+        /* 童趣立體按鈕樣式 */
+        .btn-zakka {
+            transition: all 0.1s;
+            border-bottom-width: 6px;
+        }
+        .btn-zakka:active:not(:disabled) {
+            transform: translateY(4px);
+            border-bottom-width: 2px;
+        }
+        .btn-zakka:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body class="h-screen w-screen flex items-center justify-center overflow-hidden">
+
+    <!-- 遊戲主容器 -->
+    <div id="game-container" class="w-full max-w-2xl bg-white rounded-3xl shadow-2xl p-6 md:p-10 mx-4 border-4 border-amber-200 transition-transform">
+        
+        <!-- === 遊戲畫面 === -->
+        <div id="game-screen" class="flex flex-col items-center">
+            
+            <!-- 血條區 -->
+            <div class="w-full max-w-md mb-6">
+                <div class="flex justify-between items-center mb-2 font-bold text-gray-600 text-lg md:text-xl">
+                    <span>怪獸體力</span>
+                    <span id="health-text">100%</span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-6 border-2 border-gray-300 overflow-hidden">
+                    <div id="health-bar" class="bg-red-500 h-full rounded-full transition-all duration-500 ease-out" style="width: 100%;"></div>
+                </div>
+            </div>
+
+            <!-- 怪獸區 -->
+            <div id="monster" class="text-8xl md:text-9xl mb-6 transition-transform select-none drop-shadow-md">
+                🦖
+            </div>
+
+            <!-- 題目區 -->
+            <div class="bg-amber-100 border-4 border-amber-300 rounded-2xl p-4 md:p-8 w-full text-center mb-6 shadow-inner">
+                <h2 id="question" class="text-5xl md:text-7xl font-extrabold text-gray-800 tracking-wider">
+                    7 × 8 = ?
+                </h2>
+            </div>
+
+            <!-- 提示訊息區 (答錯時顯示) -->
+            <div id="message" class="text-rose-500 font-bold text-xl md:text-2xl h-8 mb-4 opacity-0 transition-opacity">
+                哎呀！再想一想喔～ 🤔
+            </div>
+
+            <!-- 選項按鈕區 (2x2 網格排列) -->
+            <div id="options" class="grid grid-cols-2 gap-4 md:gap-6 w-full">
+                <!-- 按鈕由 JS 動態生成 -->
+            </div>
+            
+        </div>
+
+        <!-- === 勝利畫面 (預設隱藏) === -->
+        <div id="victory-screen" class="hidden flex-col items-center justify-center py-10">
+            <div class="text-8xl md:text-9xl mb-6 animate-bounce-slow drop-shadow-lg">🎉</div>
+            <h1 class="text-4xl md:text-6xl font-extrabold text-green-500 mb-4 text-center">太棒了！</h1>
+            <p class="text-xl md:text-2xl text-gray-600 mb-10 text-center font-bold">你成功打敗了數學怪獸！</p>
+            <button onclick="initGame()" class="btn-zakka bg-blue-400 hover:bg-blue-500 border-blue-600 text-white font-bold py-4 px-10 rounded-2xl text-2xl md:text-3xl shadow-lg w-full md:w-auto">
+                再玩一次！ 🎮
+            </button>
+        </div>
+
+    </div>
+
+    <script>
+        // --- 狀態變數 ---
+        let currentHealth = 100;
+        let correctAnswer = 0;
+        let isAnimating = false; // 防呆鎖定
+
+        // --- DOM 元素 ---
+        const gameContainer = document.getElementById('game-container');
+        const gameScreen = document.getElementById('game-screen');
+        const victoryScreen = document.getElementById('victory-screen');
+        const healthBar = document.getElementById('health-bar');
+        const healthText = document.getElementById('health-text');
+        const monster = document.getElementById('monster');
+        const questionEl = document.getElementById('question');
+        const optionsContainer = document.getElementById('options');
+        const messageEl = document.getElementById('message');
+
+        // 怪獸庫 (每次重玩可以換不同的怪獸)
+        const monsters = ['🦖', '👾', '👹', '👻', '🐙', '🦇'];
+
+        // --- 初始化遊戲 ---
+        function initGame() {
+            currentHealth = 100;
+            updateHealthUI();
+            
+            // 隨機選一隻怪獸
+            monster.innerText = monsters[Math.floor(Math.random() * monsters.length)];
+            
+            // 切換畫面
+            victoryScreen.classList.add('hidden');
+            victoryScreen.classList.remove('flex');
+            gameScreen.classList.remove('hidden');
+            gameScreen.classList.add('flex');
+            
+            messageEl.style.opacity = 0; // 隱藏提示
+            isAnimating = false;
+            
+            generateQuestion();
+        }
+
+        // --- 產生新題目與選項 ---
+        function generateQuestion() {
+            // 產生 2~9 的隨機乘法
+            const a = Math.floor(Math.random() * 8) + 2; 
+            const b = Math.floor(Math.random() * 8) + 2;
+            correctAnswer = a * b;
+            
+            // 顯示題目
+            questionEl.innerText = `${a} × ${b} = ?`;
+
+            // 產生選項 (1正確 + 3誘答)
+            let options = [correctAnswer];
+            
+            while(options.length < 4) {
+                // 產生合理的誘答 (例如: a*(b+1), (a-1)*b, 或者單純的隨機鄰近數字)
+                let fakeAnswer;
+                const randomType = Math.random();
+                if (randomType < 0.3) {
+                    fakeAnswer = a * (b + (Math.random() > 0.5 ? 1 : -1)); // 乘數加減一
+                } else if (randomType < 0.6) {
+                    fakeAnswer = (a + (Math.random() > 0.5 ? 1 : -1)) * b; // 被乘數加減一
+                } else {
+                    // 隨機加減 1~5 的誤差
+                    fakeAnswer = correctAnswer + (Math.floor(Math.random() * 10) - 5); 
+                }
+
+                // 確保誘答大於0，且不與現有選項重複
+                if (fakeAnswer > 0 && !options.includes(fakeAnswer)) {
+                    options.push(fakeAnswer);
+                }
+            }
+
+            // 打亂選項陣列 (Fisher-Yates Shuffle)
+            for (let i = options.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [options[i], options[j]] = [options[j], options[i]];
+            }
+
+            // 渲染按鈕
+            optionsContainer.innerHTML = '';
+            const colors = [
+                'bg-rose-400 border-rose-600 hover:bg-rose-500', 
+                'bg-sky-400 border-sky-600 hover:bg-sky-500', 
+                'bg-emerald-400 border-emerald-600 hover:bg-emerald-500', 
+                'bg-amber-400 border-amber-600 hover:bg-amber-500'
+            ];
+            
+            options.forEach((opt, index) => {
+                const btn = document.createElement('button');
+                // 套用自訂 btn-zakka 樣式與 Tailwind 顏色
+                btn.className = `btn-zakka ${colors[index]} text-white font-extrabold text-3xl md:text-5xl py-4 md:py-6 rounded-2xl shadow-sm flex items-center justify-center`;
+                btn.innerText = opt;
+                btn.onclick = () => handleAnswer(opt);
+                optionsContainer.appendChild(btn);
+            });
+        }
+
+        // --- 處理玩家作答 ---
+        function handleAnswer(selectedAnswer) {
+            if (isAnimating) return; // 防呆：如果正在播動畫就不理會點擊
+            isAnimating = true;
+
+            const buttons = optionsContainer.querySelectorAll('button');
+            buttons.forEach(btn => btn.disabled = true); // 鎖定所有按鈕
+
+            if (selectedAnswer === correctAnswer) {
+                // 答對了
+                playDingSound();
+                messageEl.style.opacity = 0; // 清除錯誤提示
+                
+                // 怪獸受擊動畫
+                monster.classList.add('animate-hit');
+                
+                // 扣血 (每題扣 10%)
+                currentHealth = Math.max(0, currentHealth - 10);
+                updateHealthUI();
+
+                setTimeout(() => {
+                    monster.classList.remove('animate-hit');
+                    if (currentHealth <= 0) {
+                        showVictory();
+                    } else {
+                        generateQuestion();
+                        isAnimating = false; // 解鎖
+                    }
+                }, 500); // 動畫播完後換題
+
+            } else {
+                // 答錯了
+                // 遊戲框震動
+                gameContainer.classList.add('animate-shake');
+                
+                // 顯示提示
+                messageEl.style.opacity = 1;
+
+                setTimeout(() => {
+                    gameContainer.classList.remove('animate-shake');
+                    buttons.forEach(btn => btn.disabled = false); // 解鎖按鈕讓學生重按
+                    isAnimating = false;
+                }, 500);
+            }
+        }
+
+        // --- 更新血條 UI ---
+        function updateHealthUI() {
+            healthBar.style.width = `${currentHealth}%`;
+            healthText.innerText = `${currentHealth}%`;
+            
+            // 隨血量改變顏色
+            if (currentHealth > 50) {
+                healthBar.className = 'bg-green-500 h-full rounded-full transition-all duration-500 ease-out';
+            } else if (currentHealth > 20) {
+                healthBar.className = 'bg-yellow-500 h-full rounded-full transition-all duration-500 ease-out';
+            } else {
+                healthBar.className = 'bg-red-500 h-full rounded-full transition-all duration-500 ease-out';
+            }
+        }
+
+        // --- 顯示勝利畫面 ---
+        function showVictory() {
+            gameScreen.classList.add('hidden');
+            gameScreen.classList.remove('flex');
+            victoryScreen.classList.remove('hidden');
+            victoryScreen.classList.add('flex');
+        }
+
+        // --- 合成「叮咚」音效 (Web Audio API) ---
+        // 使用原生的 AudioContext 避免載入外部檔案，確保單一檔案獨立性
+        function playDingSound() {
+            try {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                if (!AudioContext) return;
+                
+                const ctx = new AudioContext();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+
+                // 設定頻率 (C5 -> E5 產生叮咚感)
+                osc.type = 'sine';
+                const now = ctx.currentTime;
+                osc.frequency.setValueAtTime(523.25, now); // C5
+                osc.frequency.setValueAtTime(659.25, now + 0.1); // E5 跳高音
+
+                // 設定音量包絡 (Fade out)
+                gain.gain.setValueAtTime(0, now);
+                gain.gain.linearRampToValueAtTime(0.5, now + 0.05);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+
+                osc.start(now);
+                osc.stop(now + 0.5);
+            } catch (e) {
+                console.log("Audio play failed:", e);
+            }
+        }
+
+        // 啟動遊戲
+        initGame();
+    </script>
+</body>
+</html>
