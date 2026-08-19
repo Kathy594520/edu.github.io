@@ -414,6 +414,7 @@
             const splitContainerRef = useRef(null);
             const noteEditorRef = useRef(null);
             const fileInputRef = useRef(null);
+            const backupFileInputRef = useRef(null);
 
             // ---------------------------------------------------------------------------
             // 字體與樣式系統
@@ -876,6 +877,118 @@
                 link.click();
             };
 
+            const clampNumber = (value, min, max, fallback) => {
+                const number = Number(value);
+                if (!Number.isFinite(number)) return fallback;
+                return Math.max(min, Math.min(max, number));
+            };
+
+            const sanitizeBackupFileName = (name) => {
+                const safeName = String(name || '班級自治小黑板').trim().replace(/[\\/:*?"<>|]/g, '-');
+                return safeName || '班級自治小黑板';
+            };
+
+            const normalizeBackupData = (payload) => {
+                const data = payload?.data || payload;
+                if (!data || !Array.isArray(data.students)) {
+                    throw new Error('這不是小黑板匯出的 JSON 備份檔。');
+                }
+
+                return {
+                    students: data.students,
+                    classNameTitle: typeof data.classNameTitle === 'string' ? data.classNameTitle : '班級自治小黑板',
+                    lateThreshold: typeof data.lateThreshold === 'string' && /^([01]\d|2[0-3]):[0-5]\d$/.test(data.lateThreshold) ? data.lateThreshold : DEFAULT_LATE_TIME,
+                    notesData: data.notesData && typeof data.notesData === 'object' && !Array.isArray(data.notesData) ? data.notesData : {},
+                    writingMode: data.writingMode === 'vertical' ? 'vertical' : 'horizontal',
+                    clockStyleIndex: clampNumber(data.clockStyleIndex, 0, CLOCK_STYLES.length - 1, 0),
+                    splitRatio: clampNumber(data.splitRatio, 20, 80, 50),
+                    notebookFontSize: clampNumber(data.notebookFontSize, 16, 72, 32),
+                    fontType: ['zhuyin', 'kai', 'rounded', 'sans'].includes(data.fontType) ? data.fontType : 'sans',
+                    homeworkData: data.homeworkData && Array.isArray(data.homeworkData.assignments) ? data.homeworkData : { assignments: [], activeId: null },
+                    scrapbookImages: Array.isArray(data.scrapbookImages) ? data.scrapbookImages : [],
+                    checkInMode: ['attendance', 'brushing', 'lunch', 'duty', 'correction'].includes(data.checkInMode) ? data.checkInMode : 'attendance',
+                    leftPanelMode: ['students', 'scrapbook', 'homework'].includes(data.leftPanelMode) ? data.leftPanelMode : 'students',
+                    viewMode: ['split', 'checkin', 'notebook'].includes(data.viewMode) ? data.viewMode : 'split'
+                };
+            };
+
+            const handleExportJSON = () => {
+                const exportedAt = new Date().toISOString();
+                const backup = {
+                    app: 'class-autonomy-blackboard',
+                    schemaVersion: 1,
+                    exportedAt,
+                    data: {
+                        students,
+                        classNameTitle,
+                        lateThreshold,
+                        notesData,
+                        writingMode,
+                        clockStyleIndex,
+                        splitRatio,
+                        notebookFontSize,
+                        fontType,
+                        homeworkData,
+                        scrapbookImages,
+                        checkInMode,
+                        leftPanelMode,
+                        viewMode
+                    }
+                };
+
+                const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json;charset=utf-8;' });
+                const link = document.createElement("a");
+                const stamp = exportedAt.slice(0, 19).replace(/[T:]/g, '-');
+                link.href = URL.createObjectURL(blob);
+                link.download = `${sanitizeBackupFileName(classNameTitle)}_小黑板備份_${stamp}.json`;
+                link.click();
+                URL.revokeObjectURL(link.href);
+            };
+
+            const applyImportedBackup = (data) => {
+                setStudents(data.students);
+                setClassNameTitle(data.classNameTitle);
+                setLateThreshold(data.lateThreshold);
+                setNotesData(data.notesData);
+                setWritingMode(data.writingMode);
+                setClockStyleIndex(data.clockStyleIndex);
+                setSplitRatio(data.splitRatio);
+                setNotebookFontSize(data.notebookFontSize);
+                setFontType(data.fontType);
+                setHomeworkData(data.homeworkData);
+                setScrapbookImages(data.scrapbookImages);
+                setCheckInMode(data.checkInMode);
+                setLeftPanelMode(data.leftPanelMode);
+                setViewMode(data.viewMode);
+                setShowSettings(false);
+                window.alert('JSON 備份已匯入完成。');
+            };
+
+            const handleImportJSON = (event) => {
+                const file = event.target.files?.[0];
+                event.target.value = null;
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.onload = () => {
+                    try {
+                        const payload = JSON.parse(reader.result);
+                        const data = normalizeBackupData(payload);
+                        setConfirmConfig({
+                            show: true,
+                            title: "匯入 JSON 備份",
+                            message: `確定要匯入「${file.name}」嗎？目前這台載具上的名冊、聯絡簿、作業、剪貼簿與版面設定會被備份檔覆蓋。`,
+                            type: "warning",
+                            action: () => applyImportedBackup(data)
+                        });
+                    } catch (error) {
+                        window.alert(error.message || 'JSON 匯入失敗，請確認檔案格式。');
+                    }
+                };
+                reader.onerror = () => window.alert('讀取 JSON 檔案失敗，請重新選擇檔案。');
+                reader.readAsText(file, 'utf-8');
+            };
+
             const getNoteDateKey = (date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
             const currentNoteKey = getNoteDateKey(notebookDate);
             const currentNoteContent = notesData[currentNoteKey] || ""; 
@@ -997,8 +1110,17 @@
                         <div className="w-0.5 h-8 bg-retro-ink/20 mx-1"></div>
 
                         <div className="flex items-center gap-2">
+                        <input
+                            type="file"
+                            ref={backupFileInputRef}
+                            accept="application/json,.json"
+                            className="hidden"
+                            onChange={handleImportJSON}
+                        />
                         <ToolButton onClick={() => setShowSettings(!showSettings)} icon={<Settings size={28} />} title="設定" />
                         <ToolButton onClick={handleExportCSV} icon={<FileSpreadsheet size={28} />} title="匯出報表" />
+                        <ToolButton onClick={handleExportJSON} icon={<Save size={28} />} title="匯出 JSON" />
+                        <ToolButton onClick={() => backupFileInputRef.current?.click()} icon={<Upload size={28} />} title="匯入 JSON" />
                         <ToolButton onClick={confirmResetMode} icon={<RotateCcw size={28} />} title="重置狀態" danger />
                         </div>
                     </div>
@@ -1577,6 +1699,7 @@
                 onClick={onClick} 
                 className={`w-12 h-12 inline-flex items-center justify-center border-2 shadow-hard-sm transition-transform active:translate-y-[2px] active:shadow-none bg-[#fcfbf9] rounded-lg ${danger ? 'text-[#a23a2a] border-[#a23a2a] hover:bg-[#f4dfd6]' : 'text-[#2c2418] border-[#2c2418] hover:bg-[#fff4c7]'}`} 
                 title={title}
+                aria-label={title}
             >
                 {icon}
             </button>
