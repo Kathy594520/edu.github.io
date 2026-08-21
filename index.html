@@ -1,4 +1,4 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="zh-Hant">
 <head>
   <meta charset="utf-8" />
@@ -1189,6 +1189,87 @@
     </section>
   </div>
 
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-app.js";
+    import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-auth.js";
+    import { getFirestore, doc, getDoc, onSnapshot, serverTimestamp, setDoc } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBxEz3CnYQLMFV0cwrWHwk3isLBqpgASx0",
+      authDomain: "live-coedit-whiteboard.firebaseapp.com",
+      projectId: "live-coedit-whiteboard",
+      storageBucket: "live-coedit-whiteboard.firebasestorage.app",
+      messagingSenderId: "292042694971",
+      appId: "1:292042694971:web:338bb343087734f27f971e",
+    };
+
+    const firebaseApp = initializeApp(firebaseConfig);
+    const firebaseAuth = getAuth(firebaseApp);
+    const firebaseDb = getFirestore(firebaseApp);
+    let firebaseRoomUid = "";
+    let firebaseUnsubscribe = null;
+
+    async function firebaseReady(){
+      if(!firebaseAuth.currentUser) await signInAnonymously(firebaseAuth);
+      return firebaseAuth.currentUser;
+    }
+
+    window.firebaseBridge = {
+      getUid: () => firebaseAuth.currentUser?.uid || "",
+      async connectRoom({ roomCode, initialState, profile, onState, onStatus }){
+        const user = await firebaseReady();
+        firebaseRoomUid = user.uid;
+        const roomRef = doc(firebaseDb, "rooms", roomCode);
+        const roomSnapshot = await getDoc(roomRef);
+        if(!roomSnapshot.exists()){
+          await setDoc(roomRef, {
+            hostUid: user.uid,
+            title: initialState?.meta?.title || "線上即時共編白板",
+            createdAt: serverTimestamp(),
+          });
+        }else{
+          firebaseRoomUid = roomSnapshot.data()?.hostUid || user.uid;
+        }
+        await setDoc(doc(firebaseDb, "rooms", roomCode, "members", user.uid), {
+          uid: user.uid,
+          name: profile?.name || "學生",
+          role: profile?.role || "student",
+          avatar: profile?.avatar || "🙂",
+          updatedAt: serverTimestamp(),
+        }, { merge: true });
+        const stateRef = doc(firebaseDb, "rooms", roomCode, "state", "main");
+        const stateSnapshot = await getDoc(stateRef);
+        if(!stateSnapshot.exists() && firebaseRoomUid === user.uid){
+          await setDoc(stateRef, { hostUid: user.uid, state: initialState, updatedAt: serverTimestamp() });
+        }
+        if(firebaseUnsubscribe) firebaseUnsubscribe();
+        firebaseUnsubscribe = onSnapshot(stateRef, snapshot => {
+          if(!snapshot.exists()) return;
+          const data = snapshot.data() || {};
+          onState?.(data.state, data.hostUid || firebaseRoomUid);
+        }, error => onStatus?.(`Firebase 連線錯誤：${error.message}`));
+        onStatus?.("Firebase 已連線");
+        return firebaseRoomUid;
+      },
+      async saveState({ roomCode, state, profile }){
+        const user = await firebaseReady();
+        await setDoc(doc(firebaseDb, "rooms", roomCode, "members", user.uid), {
+          uid: user.uid,
+          name: profile?.name || "學生",
+          role: profile?.role || "student",
+          avatar: profile?.avatar || "🙂",
+          updatedAt: serverTimestamp(),
+        }, { merge: true });
+        await setDoc(doc(firebaseDb, "rooms", roomCode, "state", "main"), {
+          state,
+          hostUid: firebaseRoomUid,
+          updatedAt: serverTimestamp(),
+        }, { merge: true });
+      },
+    };
+    window.dispatchEvent(new Event("firebase-ready"));
+  </script>
+
   <script>
     const $ = (selector, root = document) => root.querySelector(selector);
     const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
@@ -1231,6 +1312,8 @@
     let storageKey = storagePrefix + sessionCode;
     let channel = null;
     let state = loadState(sessionCode) || createDefaultState(sessionCode);
+    let firebaseConnected = false;
+    let firebaseHostUid = "";
     let drag = null;
     let canvasDraft = null;
     let diceDrag = null;
@@ -1245,8 +1328,10 @@
       roomInput.value = sessionCode;
       bindEvents();
       connectChannel();
+      window.addEventListener("firebase-ready", connectFirebaseRoom, { once: true });
       hydrateSelf();
       renderAll();
+      connectFirebaseRoom();
       announce("系統已就緒，請開始操作。", "system");
       startHeartbeat();
       startCleanup();
@@ -1479,6 +1564,9 @@
 
     function isHost(){
       normalizeHostState();
+      if(firebaseConnected && firebaseHostUid && window.firebaseBridge?.getUid){
+        return firebaseHostUid === window.firebaseBridge.getUid();
+      }
       return state.hostId === clientId;
     }
 
@@ -2136,6 +2224,69 @@
       }
     }
 
+    function serializeFirebaseState(source){
+      const payload = clone(source);
+      payload.boardByOwner = {};
+      (source.board || []).forEach(item => {
+        const ownerId = item.ownerId || source.hostId || clientId;
+        payload.boardByOwner[ownerId] ||= {};
+        payload.boardByOwner[ownerId][item.id] = clone(item);
+      });
+      delete payload.board;
+      payload.canvas ||= {};
+      payload.canvasByOwner = {};
+      (source.canvas?.items || []).forEach(item => {
+        const ownerId = item.ownerId || source.hostId || clientId;
+        payload.canvasByOwner[ownerId] ||= {};
+        payload.canvasByOwner[ownerId][item.id] = clone(item);
+      });
+      delete payload.canvas.items;
+      return payload;
+    }
+
+    function deserializeFirebaseState(payload){
+      const next = clone(payload || {});
+      next.board = Object.values(next.boardByOwner || {}).flatMap(items => Object.values(items || {}));
+      delete next.boardByOwner;
+      next.canvas ||= {};
+      next.canvas.items = Object.values(next.canvasByOwner || {}).flatMap(items => Object.values(items || {}));
+      delete next.canvasByOwner;
+      return next;
+    }
+
+    function connectFirebaseRoom(){
+      if(!window.firebaseBridge?.connectRoom) return;
+      window.firebaseBridge.connectRoom({
+        roomCode: sessionCode,
+        initialState: serializeFirebaseState(state),
+        profile: currentParticipant(),
+        onState: (payload, hostUid) => {
+          firebaseConnected = true;
+          firebaseHostUid = hostUid || "";
+          applyIncomingState(deserializeFirebaseState(payload));
+          renderHostControls();
+        },
+        onStatus: message => {
+          if(String(message).startsWith("Firebase 連線錯誤")){
+            firebaseConnected = false;
+            syncChip.innerHTML = "離線備援<strong>本機同步</strong>";
+            roomSynced.textContent = message;
+            renderHostControls();
+            return;
+          }
+          firebaseConnected = true;
+          syncChip.innerHTML = "Firebase<strong>跨網域即時同步</strong>";
+          roomSynced.textContent = message;
+          renderHostControls();
+        },
+      }).catch(error => {
+        firebaseConnected = false;
+        syncChip.innerHTML = "離線備援<strong>本機同步</strong>";
+        roomSynced.textContent = `Firebase 尚未啟用：${error.message}`;
+        renderHostControls();
+      });
+    }
+
     function persistState(broadcast = false){
       normalizeCanvasState();
       normalizeHostState();
@@ -2154,6 +2305,15 @@
       try{
         localStorage.setItem(storageKey, JSON.stringify(state));
       }catch{}
+      if(window.firebaseBridge?.saveState && firebaseConnected){
+        window.firebaseBridge.saveState({
+          roomCode: sessionCode,
+          state: serializeFirebaseState(state),
+          profile: currentParticipant(),
+        }).catch(error => {
+          roomSynced.textContent = `Firebase 儲存失敗：${error.message}`;
+        });
+      }
       roomSynced.textContent = "已儲存";
       roomUpdated.textContent = nowLabel(state.updatedAt);
       roomCount.textContent = `共 ${activeParticipants().length} 人`;
@@ -2199,7 +2359,9 @@
     function applyIncomingState(next){
       if(!next || typeof next !== "object") return;
       if((next.version || 0) < (state.version || 0)) return;
+      const localSelf = clone(state.self || {});
       state = next;
+      state.self = { ...state.self, ...localSelf, id: clientId };
       normalizeCanvasState();
       hydrateSelf();
       renderAll();
@@ -2237,6 +2399,7 @@
       connectChannel();
       hydrateSelf();
       renderAll();
+      connectFirebaseRoom();
       sendRealtime("presence", currentParticipant());
       announce(`系統已加入房間 ${sessionCode}`, "system");
       roomLabel.textContent = sessionCode;
@@ -3139,6 +3302,7 @@
   </script>
 </body>
 </html>
+
 
 
 
