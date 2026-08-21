@@ -684,6 +684,12 @@
       user-select:none;
     }
     .item-bar:active{cursor:grabbing}
+    .item-heading{
+      display:flex;
+      align-items:center;
+      gap:7px;
+      min-width:0;
+    }
     .tag{
       display:inline-flex;
       align-items:center;
@@ -694,6 +700,20 @@
       color:#652b98;
       font-size:12px;
       font-weight:900;
+    }
+    .item-owner{
+      display:inline-flex;
+      align-items:center;
+      max-width:130px;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+      padding:5px 8px;
+      border-radius:999px;
+      background:rgba(255,255,255,.74);
+      color:var(--muted);
+      font-size:11px;
+      font-weight:800;
     }
     .item-actions{display:flex;gap:6px}
     .item-actions button{
@@ -1213,7 +1233,7 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-app.js";
     import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-auth.js";
-    import { getFirestore, collection, doc, getDoc, getDocs, onSnapshot, serverTimestamp, setDoc } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore.js";
+    import { getFirestore, collection, doc, deleteDoc, getDoc, getDocs, onSnapshot, serverTimestamp, setDoc } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyBxEz3CnYQLMFV0cwrWHwk3isLBqpgASx0",
@@ -1230,6 +1250,7 @@
     let firebaseRoomUid = "";
     let firebaseUnsubscribe = null;
     let firebaseMembersUnsubscribe = null;
+    let firebaseDeletedItemsUnsubscribe = null;
     let firebaseSaveQueue = Promise.resolve();
 
     async function firebaseReady(){
@@ -1239,7 +1260,7 @@
 
     window.firebaseBridge = {
       getUid: () => firebaseAuth.currentUser?.uid || "",
-      async connectRoom({ roomCode, initialState, profile, onState, onMembers, onStatus }){
+      async connectRoom({ roomCode, initialState, profile, onState, onMembers, onDeletedBoardItems, onStatus }){
         const user = await firebaseReady();
         firebaseRoomUid = user.uid;
         const roomRef = doc(firebaseDb, "rooms", roomCode);
@@ -1271,6 +1292,7 @@
         }
         if(firebaseUnsubscribe) firebaseUnsubscribe();
         if(firebaseMembersUnsubscribe) firebaseMembersUnsubscribe();
+        if(firebaseDeletedItemsUnsubscribe) firebaseDeletedItemsUnsubscribe();
         firebaseUnsubscribe = onSnapshot(stateRef, snapshot => {
           if(!snapshot.exists()) return;
           const data = snapshot.data() || {};
@@ -1279,6 +1301,9 @@
         firebaseMembersUnsubscribe = onSnapshot(collection(firebaseDb, "rooms", roomCode, "members"), snapshot => {
           onMembers?.(snapshot.docs.map(member => ({ id: member.id, ...member.data() })));
         }, error => onStatus?.(`Firebase 成員同步錯誤：${error.message}`));
+        firebaseDeletedItemsUnsubscribe = onSnapshot(collection(firebaseDb, "rooms", roomCode, "deletedBoardItems"), snapshot => {
+          onDeletedBoardItems?.(snapshot.docs.map(item => ({ id: item.id, ...item.data() })));
+        }, error => onStatus?.(`Firebase 刪除同步錯誤：${error.message}`));
         onStatus?.("Firebase 已連線");
         return firebaseRoomUid;
       },
@@ -1301,6 +1326,27 @@
             hostUid: firebaseRoomUid,
             updatedAt: serverTimestamp(),
           }, { merge: true });
+        };
+        firebaseSaveQueue = firebaseSaveQueue.catch(() => {}).then(write);
+        return firebaseSaveQueue;
+      },
+      deleteBoardItem({ roomCode, itemId }){
+        const write = async () => {
+          const user = await firebaseReady();
+          await setDoc(doc(firebaseDb, "rooms", roomCode, "deletedBoardItems", itemId), {
+            ownerUid: user.uid,
+            deletedAt: serverTimestamp(),
+          }, { merge: true });
+        };
+        firebaseSaveQueue = firebaseSaveQueue.catch(() => {}).then(write);
+        return firebaseSaveQueue;
+      },
+      clearDeletedBoardItems({ roomCode }){
+        const write = async () => {
+          const user = await firebaseReady();
+          if(firebaseRoomUid !== user.uid) throw new Error("只有教室主持人可以還原已刪除便條。");
+          const snapshot = await getDocs(collection(firebaseDb, "rooms", roomCode, "deletedBoardItems"));
+          await Promise.all(snapshot.docs.map(item => deleteDoc(item.ref)));
         };
         firebaseSaveQueue = firebaseSaveQueue.catch(() => {}).then(write);
         return firebaseSaveQueue;
@@ -1381,6 +1427,7 @@
     let firebaseHostUid = "";
     let firebaseMembers = null;
     let firebasePollVotes = null;
+    let firebaseDeletedBoardItems = new Set();
     let pollEditing = false;
     let drag = null;
     let canvasDraft = null;
@@ -2377,9 +2424,10 @@
     function getDeletedBoardItems(){
       try{
         const value = JSON.parse(localStorage.getItem(deletedBoardItemsKey()) || "[]");
-        return Array.isArray(value) ? value : [];
+        const localIds = Array.isArray(value) ? value : [];
+        return [...new Set([...localIds, ...firebaseDeletedBoardItems])];
       }catch{
-        return [];
+        return [...firebaseDeletedBoardItems];
       }
     }
 
@@ -2449,6 +2497,7 @@
       if(!window.firebaseBridge?.connectRoom) return;
       firebaseMembers = null;
       firebasePollVotes = null;
+      firebaseDeletedBoardItems = new Set();
       window.firebaseBridge.connectRoom({
         roomCode: sessionCode,
         initialState: serializeFirebaseState(state),
@@ -2471,6 +2520,14 @@
         onMembers: members => {
           firebaseMembers = members;
           applyFirebaseMembers(members);
+        },
+        onDeletedBoardItems: items => {
+          firebaseDeletedBoardItems = new Set(items.map(item => item.id));
+          const filteredBoard = state.board.filter(item => !firebaseDeletedBoardItems.has(item.id));
+          if(filteredBoard.length !== state.board.length){
+            state.board = filteredBoard;
+            renderAll();
+          }
         },
         onStatus: message => {
           if(String(message).startsWith("Firebase 連線錯誤")){
@@ -2513,6 +2570,7 @@
         };
       });
       renderSidebars();
+      renderBoard();
     }
 
     function persistState(broadcast = false){
@@ -2521,6 +2579,7 @@
       state.roomCode = sessionCode;
       state.updatedAt = Date.now();
       state.version = (state.version || 0) + 1;
+      state.board.forEach(normalizeBoardItem);
       state.self.id = clientId;
       upsertParticipant({
         id: clientId,
@@ -2722,6 +2781,9 @@
       state.self.role = normalizeRole(state.self.role);
       state.self.name = $("#nameInput").value.trim() || defaultNameForRole(state.self.role);
       state.self.avatar = avatarForRole(state.self.role);
+      state.board.forEach(item => {
+        if(isOwnBoardItem(item)) item.ownerName = state.self.name;
+      });
       upsertParticipant(currentParticipant(), true);
       persistState(true);
     }
@@ -2844,6 +2906,7 @@
         h: preset.h || (type === "summary" ? 200 : 210),
         accent: preset.accent || palette[type] || "yellow",
         ownerId: clientId,
+        ownerName: state.self.name,
       };
       state.board.push(item);
       addActivity("board", `新增 ${labelForType(type)}`, "📝");
@@ -3105,6 +3168,10 @@
           const next = JSON.parse(String(reader.result || ""));
           if(!next || typeof next !== "object") throw new Error("invalid");
           clearDeletedBoardItems();
+          const clearRequest = window.firebaseBridge?.clearDeletedBoardItems?.({ roomCode: sessionCode });
+          clearRequest?.catch(error => {
+            roomSynced.textContent = `Firebase 刪除記錄清除失敗：${error.message}`;
+          });
           state = next;
           if(!state.roomCode) state.roomCode = sessionCode;
           normalizeCanvasState();
@@ -3128,6 +3195,10 @@
       }
       if(!confirm("確定要重設整個房間嗎？")) return;
       clearDeletedBoardItems();
+      const clearRequest = window.firebaseBridge?.clearDeletedBoardItems?.({ roomCode: sessionCode });
+      clearRequest?.catch(error => {
+        roomSynced.textContent = `Firebase 刪除記錄清除失敗：${error.message}`;
+      });
       state = createDefaultState(sessionCode);
       normalizeCanvasState();
       state.self.id = clientId;
@@ -3193,11 +3264,16 @@
 
     function removeBoardItem(itemId){
       rememberDeletedBoardItem(itemId);
+      firebaseDeletedBoardItems.add(itemId);
       state.board = state.board.filter(item => item.id !== itemId);
       const currentNode = nodeMap.get(itemId);
       if(currentNode) currentNode.remove();
       nodeMap.delete(itemId);
       addActivity("board", "已刪除看板項目", "🗑️");
+      const deleteRequest = window.firebaseBridge?.deleteBoardItem?.({ roomCode: sessionCode, itemId });
+      deleteRequest?.catch(error => {
+        roomSynced.textContent = `Firebase 刪除同步失敗：${error.message}`;
+      });
       persistState(true);
     }
 
@@ -3210,6 +3286,7 @@
         x: current.x + 24,
         y: current.y + 24,
         ownerId: clientId,
+        ownerName: state.self.name,
       };
       state.board.push(cloneItem);
       addActivity("board", "已複製看板項目", "📄");
@@ -3326,8 +3403,14 @@
       node.style.height = `${item.h}px`;
       const title = $(".item-input", node);
       const body = $(".item-body", node);
+      const owner = $(".item-owner", node);
       if(document.activeElement !== title) title.value = item.title || "";
       if(document.activeElement !== body) body.value = item.body || "";
+      if(owner){
+        const ownerName = getBoardItemOwnerName(item);
+        owner.textContent = `👤 ${ownerName}`;
+        owner.title = `顯示名稱：${ownerName}`;
+      }
       renderBoardItemActions(item, node);
     }
 
@@ -3348,10 +3431,26 @@
     }
 
     function normalizeBoardItem(item){
+      if(!item.ownerId && !item.firebaseOwnerUid) item.ownerId = state.hostId || clientId;
+      if(!item.ownerName && item.ownerId === clientId) item.ownerName = state.self.name || defaultNameForRole(state.self.role);
       item.x = Number.isFinite(Number(item.x)) ? Number(item.x) : 0;
       item.y = Number.isFinite(Number(item.y)) ? Number(item.y) : 0;
       item.w = Math.max(180, Number(item.w) || 260);
       item.h = Math.max(150, Number(item.h) || 190);
+    }
+
+    function getBoardItemOwnerName(item){
+      if(item.ownerName) return item.ownerName;
+      const currentUid = window.firebaseBridge?.getUid?.() || "";
+      if(item.ownerId === clientId || (currentUid && item.firebaseOwnerUid === currentUid)){
+        return state.self.name || defaultNameForRole(state.self.role);
+      }
+      const member = (firebaseMembers || []).find(person =>
+        (person.uid || person.id) === item.firebaseOwnerUid || person.clientId === item.ownerId
+      );
+      if(member?.name) return member.name;
+      if(item.firebaseOwnerUid && item.firebaseOwnerUid === firebaseHostUid) return "老師";
+      return "未命名成員";
     }
 
     function resolveBoardOverlap(item, rect, deltaX, deltaY){
@@ -3557,7 +3656,10 @@
       node.title = "右上 X 可刪除自己建立的便條；Shift+點選可刪除，Alt+點選可複製。";
       node.innerHTML = `
         <div class="item-bar">
-          <span class="tag">${escapeHtml(labelForType(item.type))}</span>
+          <div class="item-heading">
+            <span class="tag">${escapeHtml(labelForType(item.type))}</span>
+            <span class="item-owner" title="顯示名稱">👤 ${escapeHtml(getBoardItemOwnerName(item))}</span>
+          </div>
           <div class="item-actions"></div>
         </div>
         <input class="item-input" type="text" value="${escapeAttr(item.title || "")}" />
