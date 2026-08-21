@@ -987,7 +987,7 @@
               <span class="chip" id="clearBoardPasswordState">未設定</span>
             </div>
           </div>
-          <p class="host-reminder">操作提醒：老師先開啟房間，確認畫面顯示 Firebase 已連線，再設定清除密碼並複製房間連結給學生。清空白板、清空畫布與刪除便利貼由 Firebase 主持人權限控管；密碼只是主持人的額外確認，學生即使知道密碼也不能操作。房間連結請勿公開分享。</p>
+          <p class="host-reminder teacher-only" id="hostReminder">操作提醒：老師先開啟房間，確認畫面顯示 Firebase 已連線，再設定清除密碼並複製房間連結給學生。清空白板、清空畫布與刪除便利貼由 Firebase 主持人權限控管；密碼只是主持人的額外確認，學生即使知道密碼也不能操作。房間連結請勿公開分享。</p>
           <div class="summary" aria-live="polite">
             <div class="summary-row">
               <div class="value" id="statPeople">1</div>
@@ -1007,7 +1007,7 @@
             </div>
           </div>
 
-          <div class="panel" style="box-shadow:none;border-radius:22px">
+          <div class="panel teacher-only" id="dataAdminPanel" style="box-shadow:none;border-radius:22px">
             <header>
               <h4>成員名單</h4>
               <p>查看目前在線的老師與學生。</p>
@@ -1674,7 +1674,7 @@
       });
       $("#titleInput").title = manager ? "老師可編輯白板標題" : "只有老師可以編輯白板標題";
       $("#announcementInput").title = manager ? "老師可編輯課堂公告" : "只有老師可以編輯課堂公告";
-      [$("#btnLoadDemo"), $("#btnTemplate"), $("#announcementTools"), $("#pollEditor"), $("#dataAdminTools")].forEach(control => {
+      [$("#btnLoadDemo"), $("#btnTemplate"), $("#announcementTools"), $("#hostReminder"), $("#pollEditor"), $("#dataAdminPanel"), $("#dataAdminTools")].forEach(control => {
         if(control) control.hidden = !manager;
       });
     }
