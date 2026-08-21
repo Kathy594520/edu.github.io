@@ -1434,6 +1434,8 @@
     let diceDrag = null;
     let syncTimer = null;
     let presenceTimer = null;
+    let profileDraftTimer = 0;
+    let lastProfileSignature = "";
     let versionClock = 1;
     const nodeMap = new Map();
 
@@ -1445,6 +1447,7 @@
       connectChannel();
       window.addEventListener("firebase-ready", connectFirebaseRoom, { once: true });
       hydrateSelf();
+      lastProfileSignature = profileSignature();
       renderAll();
       connectFirebaseRoom();
       announce("系統已就緒，請開始操作。", "system");
@@ -1487,7 +1490,9 @@
       });
       $("#btnReset").addEventListener("click", resetRoom);
       $("#roleSelect").addEventListener("change", onRoleChange);
-      $("#nameInput").addEventListener("input", debounce(handleProfileChange, 120));
+      $("#nameInput").addEventListener("input", handleNameInput);
+      $("#nameInput").addEventListener("change", handleProfileChange);
+      $("#nameInput").addEventListener("blur", handleProfileChange);
       $("#titleInput").addEventListener("input", debounce(handleTitleChange, 120));
       $("#announcementInput").addEventListener("input", debounce(handleAnnouncementDraft, 120));
       const beginPollEditing = () => {
@@ -2777,6 +2782,21 @@
       }, 6000);
     }
 
+    function profileSignature(){
+      return `${normalizeRole(state.self.role)}\u0000${state.self.name || ""}`;
+    }
+
+    function handleNameInput(){
+      state.self.name = $("#nameInput").value;
+      state.self.avatar = avatarForRole(state.self.role);
+      state.board.forEach(item => {
+        if(isOwnBoardItem(item)) item.ownerName = state.self.name;
+      });
+      renderBoard();
+      clearTimeout(profileDraftTimer);
+      profileDraftTimer = setTimeout(handleProfileChange, 700);
+    }
+
     function handleProfileChange(){
       state.self.role = normalizeRole(state.self.role);
       state.self.name = $("#nameInput").value.trim() || defaultNameForRole(state.self.role);
@@ -2784,6 +2804,9 @@
       state.board.forEach(item => {
         if(isOwnBoardItem(item)) item.ownerName = state.self.name;
       });
+      const signature = profileSignature();
+      if(signature === lastProfileSignature) return;
+      lastProfileSignature = signature;
       upsertParticipant(currentParticipant(), true);
       persistState(true);
     }
