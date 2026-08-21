@@ -2577,6 +2577,7 @@
         if(member.pollVote) firebasePollVotes[memberUid] = member.pollVote;
         if(memberUid === currentUid) state.self.pollVote = member.pollVote || "";
       });
+      const activeCutoff = Date.now() - 15000;
       state.participants = members.map(member => {
         const memberRole = normalizeRole(member.role);
         return {
@@ -2588,7 +2589,7 @@
           pollVote: member.pollVote || "",
           lastSeen: memberLastSeen(member),
         };
-      });
+      }).filter(person => person.id === clientId || person.lastSeen >= activeCutoff);
       renderSidebars();
       renderBoard();
     }
