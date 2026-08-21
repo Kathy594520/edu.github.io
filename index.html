@@ -1023,17 +1023,19 @@
               <p>用來建立課堂投票與即時回饋。</p>
             </header>
             <div class="panel-body stack">
-              <div class="field">
-                <label for="pollQuestion">投票題目</label>
-                <input id="pollQuestion" type="text" />
-              </div>
-              <div class="field">
-                <label for="pollOptions">投票選項</label>
-                <textarea id="pollOptions" placeholder="每行一個選項，例如：&#10;A&#10;B&#10;C"></textarea>
-              </div>
-              <div class="toolbar">
-                <button class="primary-btn" id="btnSavePoll">儲存投票</button>
-                <button class="ghost-btn" id="btnResetPoll">重設投票</button>
+              <div class="teacher-only" id="pollEditor">
+                <div class="field">
+                  <label for="pollQuestion">投票題目</label>
+                  <input id="pollQuestion" type="text" />
+                </div>
+                <div class="field">
+                  <label for="pollOptions">投票選項</label>
+                  <textarea id="pollOptions" placeholder="每行一個選項，例如：&#10;A&#10;B&#10;C"></textarea>
+                </div>
+                <div class="toolbar">
+                  <button class="primary-btn" id="btnSavePoll">儲存投票</button>
+                  <button class="ghost-btn" id="btnResetPoll">重設投票</button>
+                </div>
               </div>
               <div class="list" id="pollList"></div>
             </div>
@@ -1045,7 +1047,7 @@
               <p>可匯出 JSON 備份資料，也可以匯入先前下載的檔案。</p>
             </header>
             <div class="panel-body stack">
-              <div class="toolbar">
+              <div class="toolbar teacher-only" id="dataAdminTools">
                 <button class="ghost-btn" id="btnExport">匯出 JSON</button>
                 <button class="ghost-btn" id="btnImport">匯入 JSON</button>
                 <button class="ghost-btn" id="btnReset">清空所有資料</button>
@@ -1199,7 +1201,7 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-app.js";
     import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-auth.js";
-    import { getFirestore, collection, doc, getDoc, onSnapshot, serverTimestamp, setDoc } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore.js";
+    import { getFirestore, collection, doc, getDoc, getDocs, onSnapshot, serverTimestamp, setDoc } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyBxEz3CnYQLMFV0cwrWHwk3isLBqpgASx0",
@@ -1245,6 +1247,7 @@
           role: profile?.role || "student",
           avatar: profile?.avatar || "🙂",
           handRaised: !!profile?.handRaised,
+          pollVote: profile?.pollVote || "",
           lastSeen: Date.now(),
           updatedAt: serverTimestamp(),
         }, { merge: true });
@@ -1275,6 +1278,7 @@
           role: profile?.role || "student",
           avatar: profile?.avatar || "🙂",
           handRaised: !!profile?.handRaised,
+          pollVote: profile?.pollVote || "",
           lastSeen: Date.now(),
           updatedAt: serverTimestamp(),
         }, { merge: true });
@@ -1293,9 +1297,19 @@
           role: profile?.role || "student",
           avatar: profile?.avatar || "🙂",
           handRaised: !!profile?.handRaised,
+          pollVote: profile?.pollVote || "",
           lastSeen: Date.now(),
           updatedAt: serverTimestamp(),
         }, { merge: true });
+      },
+      async clearPollVotes({ roomCode }){
+        const user = await firebaseReady();
+        if(firebaseRoomUid !== user.uid) throw new Error("只有教室主持人可以重設投票。");
+        const snapshot = await getDocs(collection(firebaseDb, "rooms", roomCode, "members"));
+        await Promise.all(snapshot.docs.map(member => setDoc(member.ref, {
+          pollVote: "",
+          updatedAt: serverTimestamp(),
+        }, { merge: true })));
       },
     };
     window.dispatchEvent(new Event("firebase-ready"));
@@ -1346,6 +1360,7 @@
     let firebaseConnected = false;
     let firebaseHostUid = "";
     let firebaseMembers = null;
+    let firebasePollVotes = null;
     let drag = null;
     let canvasDraft = null;
     let diceDrag = null;
@@ -1395,18 +1410,31 @@
       $("#btnSavePoll").addEventListener("click", savePoll);
       $("#btnResetPoll").addEventListener("click", resetPoll);
       $("#btnExport").addEventListener("click", exportJson);
-      $("#btnImport").addEventListener("click", () => importFile.click());
+      $("#btnImport").addEventListener("click", () => {
+        if(!canManageClass()){
+          alert("只有老師可以匯入資料。");
+          return;
+        }
+        importFile.click();
+      });
       $("#btnReset").addEventListener("click", resetRoom);
-      $("#btnSavePoll").addEventListener("click", () => persistState(true));
       $("#roleSelect").addEventListener("change", onRoleChange);
       $("#nameInput").addEventListener("input", debounce(handleProfileChange, 120));
       $("#titleInput").addEventListener("input", debounce(handleTitleChange, 120));
       $("#announcementInput").addEventListener("input", debounce(handleAnnouncementDraft, 120));
       $("#pollQuestion").addEventListener("input", debounce(() => {
+        if(!canManageClass()){
+          renderAll();
+          return;
+        }
         state.poll.question = $("#pollQuestion").value.trim();
         persistState(true);
       }, 160));
       $("#pollOptions").addEventListener("input", debounce(() => {
+        if(!canManageClass()){
+          renderAll();
+          return;
+        }
         state.poll.options = parseOptions($("#pollOptions").value);
         persistState(true);
       }, 160));
@@ -1645,6 +1673,9 @@
       });
       $("#titleInput").title = manager ? "老師可編輯白板標題" : "只有老師可以編輯白板標題";
       $("#announcementInput").title = manager ? "老師可編輯課堂公告" : "只有老師可以編輯課堂公告";
+      [$("#pollEditor"), $("#dataAdminTools")].forEach(control => {
+        if(control) control.hidden = !manager;
+      });
     }
 
     function setCanvasTool(tool){
@@ -2330,6 +2361,7 @@
     function connectFirebaseRoom(){
       if(!window.firebaseBridge?.connectRoom) return;
       firebaseMembers = null;
+      firebasePollVotes = null;
       window.firebaseBridge.connectRoom({
         roomCode: sessionCode,
         initialState: serializeFirebaseState(state),
@@ -2366,12 +2398,20 @@
     }
 
     function applyFirebaseMembers(members){
+      firebasePollVotes = {};
+      const currentUid = window.firebaseBridge?.getUid?.() || "";
+      members.forEach(member => {
+        const memberUid = member.uid || member.id;
+        if(member.pollVote) firebasePollVotes[memberUid] = member.pollVote;
+        if(memberUid === currentUid) state.self.pollVote = member.pollVote || "";
+      });
       state.participants = members.map(member => ({
             id: member.clientId || member.uid || member.id,
             name: member.name || "學生",
             role: member.role || "student",
             avatar: member.avatar || "🙂",
             handRaised: !!member.handRaised,
+            pollVote: member.pollVote || "",
             lastSeen: Number(member.lastSeen) || Date.now(),
           }));
       renderSidebars();
@@ -2523,6 +2563,7 @@
         role: state.self.role,
         avatar: state.self.avatar,
         handRaised: !!state.self.handRaised,
+        pollVote: state.self.pollVote || "",
         lastSeen: Date.now(),
       };
     }
@@ -2536,6 +2577,7 @@
         role: participant.role || "student",
         avatar: participant.avatar || "🙂",
         handRaised: !!participant.handRaised,
+        pollVote: participant.pollVote || "",
         lastSeen: participant.lastSeen || Date.now(),
       };
       if(index >= 0) list[index] = { ...list[index], ...record };
@@ -2727,6 +2769,10 @@
     }
 
     function applyTemplate(){
+      if(!canManageClass()){
+        alert("只有老師可以套用白板範本。");
+        return;
+      }
       state.board = [
         {
           id: uid("note"),
@@ -2796,6 +2842,10 @@
     }
 
     function loadDemoClass(){
+      if(!canManageClass()){
+        alert("只有老師可以載入示範班級。");
+        return;
+      }
       const base = Date.now();
       state.participants = [
         {
@@ -2860,6 +2910,10 @@
     }
 
     function savePoll(){
+      if(!canManageClass()){
+        alert("只有老師可以儲存投票設定。");
+        return;
+      }
       state.poll.question = $("#pollQuestion").value.trim() || "請輸入投票題目";
       state.poll.options = parseOptions($("#pollOptions").value);
       if(!state.poll.options.length){
@@ -2869,14 +2923,33 @@
           { id: uid("opt"), label: "選項 C", votes: 0 },
         ];
       }
+      state.self.pollVote = "";
+      firebasePollVotes = firebasePollVotes === null ? null : {};
+      clearRemotePollVotes().catch(error => {
+        roomSynced.textContent = `投票重設失敗：${error.message}`;
+      });
       addActivity("poll", "已儲存投票設定", "📊");
       persistState(true);
     }
 
     function resetPoll(){
+      if(!canManageClass()){
+        alert("只有老師可以重設投票。");
+        return;
+      }
       state.poll.options = state.poll.options.map(option => ({ ...option, votes: 0 }));
+      state.self.pollVote = "";
+      firebasePollVotes = firebasePollVotes === null ? null : {};
+      clearRemotePollVotes().catch(error => {
+        roomSynced.textContent = `投票重設失敗：${error.message}`;
+      });
       addActivity("poll", "已重設投票結果", "🔄");
       persistState(true);
+    }
+
+    function clearRemotePollVotes(){
+      if(!firebaseConnected || !window.firebaseBridge?.clearPollVotes) return Promise.resolve();
+      return window.firebaseBridge.clearPollVotes({ roomCode: sessionCode });
     }
 
     function parseOptions(text){
@@ -2889,6 +2962,10 @@
     }
 
     function exportJson(){
+      if(!canManageClass()){
+        alert("只有老師可以匯出資料。");
+        return;
+      }
       const blob = new Blob([JSON.stringify(state, null, 2)], { type: "application/json" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -2900,6 +2977,11 @@
     }
 
     function importJson(){
+      if(!canManageClass()){
+        alert("只有老師可以匯入資料。");
+        importFile.value = "";
+        return;
+      }
       const file = importFile.files?.[0];
       if(!file) return;
       const reader = new FileReader();
@@ -2924,6 +3006,10 @@
     }
 
     function resetRoom(){
+      if(!canManageClass()){
+        alert("只有老師可以清空所有資料。");
+        return;
+      }
       if(!confirm("確定要重設整個房間嗎？")) return;
       state = createDefaultState(sessionCode);
       normalizeCanvasState();
@@ -3257,12 +3343,13 @@
           <p>請在這裡輸入投票說明，讓學生了解要投什麼。</p>
         </div>
         ${items.map(option => {
-          const width = Math.round((option.votes / total) * 100);
+          const votes = getPollVoteCount(option);
+          const width = Math.round((votes / total) * 100);
           return `
             <div class="poll-option">
               <button type="button" data-vote="${option.id}">
                 <span>${escapeHtml(option.label)}</span>
-                <strong>${option.votes}</strong>
+                <strong>${votes}</strong>
               </button>
               <div class="poll-meter"><span style="width:${width}%"></span></div>
             </div>
@@ -3277,7 +3364,13 @@
     function vote(optionId){
       const item = state.poll.options.find(option => option.id === optionId);
       if(!item) return;
-      item.votes += 1;
+      const voteUid = window.firebaseBridge?.getUid?.() || clientId;
+      state.self.pollVote = optionId;
+      if(firebasePollVotes !== null){
+        firebasePollVotes[voteUid] = optionId;
+      }else{
+        item.votes = (Number(item.votes) || 0) + 1;
+      }
       addActivity("poll", `${state.self.name} 投給 ${item.label}`, "📊");
       persistState(true);
     }
@@ -3352,7 +3445,17 @@
     }
 
     function sumVotes(){
-      return (state.poll.options || []).reduce((total, option) => total + (option.votes || 0), 0);
+      if(firebasePollVotes !== null){
+        return Object.values(firebasePollVotes).filter(Boolean).length;
+      }
+      return (state.poll.options || []).reduce((total, option) => total + (Number(option.votes) || 0), 0);
+    }
+
+    function getPollVoteCount(option){
+      if(firebasePollVotes !== null){
+        return Object.values(firebasePollVotes).filter(value => value === option.id).length;
+      }
+      return Number(option.votes) || 0;
     }
 
     function escapeHtml(value){
