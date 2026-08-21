@@ -1229,6 +1229,7 @@
     let firebaseRoomUid = "";
     let firebaseUnsubscribe = null;
     let firebaseMembersUnsubscribe = null;
+    let firebaseSaveQueue = Promise.resolve();
 
     async function firebaseReady(){
       if(!firebaseAuth.currentUser) await signInAnonymously(firebaseAuth);
@@ -1280,24 +1281,28 @@
         onStatus?.("Firebase 已連線");
         return firebaseRoomUid;
       },
-      async saveState({ roomCode, state, profile }){
-        const user = await firebaseReady();
-        await setDoc(doc(firebaseDb, "rooms", roomCode, "members", user.uid), {
-          uid: user.uid,
-          clientId: profile?.id || "",
-          name: profile?.name || "學生",
-          role: profile?.role || "student",
-          avatar: profile?.avatar || "🙂",
-          handRaised: !!profile?.handRaised,
-          pollVote: profile?.pollVote || "",
-          lastSeen: Date.now(),
-          updatedAt: serverTimestamp(),
-        }, { merge: true });
-        await setDoc(doc(firebaseDb, "rooms", roomCode, "state", "main"), {
-          state,
-          hostUid: firebaseRoomUid,
-          updatedAt: serverTimestamp(),
-        }, { merge: true });
+      saveState({ roomCode, state, profile }){
+        const write = async () => {
+          const user = await firebaseReady();
+          await setDoc(doc(firebaseDb, "rooms", roomCode, "members", user.uid), {
+            uid: user.uid,
+            clientId: profile?.id || "",
+            name: profile?.name || "學生",
+            role: profile?.role || "student",
+            avatar: profile?.avatar || "🙂",
+            handRaised: !!profile?.handRaised,
+            pollVote: profile?.pollVote || "",
+            lastSeen: Date.now(),
+            updatedAt: serverTimestamp(),
+          }, { merge: true });
+          await setDoc(doc(firebaseDb, "rooms", roomCode, "state", "main"), {
+            state,
+            hostUid: firebaseRoomUid,
+            updatedAt: serverTimestamp(),
+          }, { merge: true });
+        };
+        firebaseSaveQueue = firebaseSaveQueue.catch(() => {}).then(write);
+        return firebaseSaveQueue;
       },
       async updateMember({ roomCode, profile }){
         const user = await firebaseReady();
@@ -2555,7 +2560,7 @@
 
     function applyIncomingState(next, force = false){
       if(!next || typeof next !== "object") return;
-      if(!force && (next.version || 0) < (state.version || 0)) return;
+      if((next.version || 0) < (state.version || 0)) return;
       const localSelf = clone(state.self || {});
       state = next;
       state.self = { ...state.self, ...localSelf, id: clientId };
