@@ -1192,7 +1192,7 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-app.js";
     import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-auth.js";
-    import { getFirestore, doc, getDoc, onSnapshot, serverTimestamp, setDoc } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore.js";
+    import { getFirestore, collection, doc, getDoc, onSnapshot, serverTimestamp, setDoc } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyBxEz3CnYQLMFV0cwrWHwk3isLBqpgASx0",
@@ -1208,6 +1208,7 @@
     const firebaseDb = getFirestore(firebaseApp);
     let firebaseRoomUid = "";
     let firebaseUnsubscribe = null;
+    let firebaseMembersUnsubscribe = null;
 
     async function firebaseReady(){
       if(!firebaseAuth.currentUser) await signInAnonymously(firebaseAuth);
@@ -1216,7 +1217,7 @@
 
     window.firebaseBridge = {
       getUid: () => firebaseAuth.currentUser?.uid || "",
-      async connectRoom({ roomCode, initialState, profile, onState, onStatus }){
+      async connectRoom({ roomCode, initialState, profile, onState, onMembers, onStatus }){
         const user = await firebaseReady();
         firebaseRoomUid = user.uid;
         const roomRef = doc(firebaseDb, "rooms", roomCode);
@@ -1232,9 +1233,12 @@
         }
         await setDoc(doc(firebaseDb, "rooms", roomCode, "members", user.uid), {
           uid: user.uid,
+          clientId: profile?.id || "",
           name: profile?.name || "學生",
           role: profile?.role || "student",
           avatar: profile?.avatar || "🙂",
+          handRaised: !!profile?.handRaised,
+          lastSeen: Date.now(),
           updatedAt: serverTimestamp(),
         }, { merge: true });
         const stateRef = doc(firebaseDb, "rooms", roomCode, "state", "main");
@@ -1243,11 +1247,15 @@
           await setDoc(stateRef, { hostUid: user.uid, state: initialState, updatedAt: serverTimestamp() });
         }
         if(firebaseUnsubscribe) firebaseUnsubscribe();
+        if(firebaseMembersUnsubscribe) firebaseMembersUnsubscribe();
         firebaseUnsubscribe = onSnapshot(stateRef, snapshot => {
           if(!snapshot.exists()) return;
           const data = snapshot.data() || {};
           onState?.(data.state, data.hostUid || firebaseRoomUid);
         }, error => onStatus?.(`Firebase 連線錯誤：${error.message}`));
+        firebaseMembersUnsubscribe = onSnapshot(collection(firebaseDb, "rooms", roomCode, "members"), snapshot => {
+          onMembers?.(snapshot.docs.map(member => ({ id: member.id, ...member.data() })));
+        }, error => onStatus?.(`Firebase 成員同步錯誤：${error.message}`));
         onStatus?.("Firebase 已連線");
         return firebaseRoomUid;
       },
@@ -1255,14 +1263,30 @@
         const user = await firebaseReady();
         await setDoc(doc(firebaseDb, "rooms", roomCode, "members", user.uid), {
           uid: user.uid,
+          clientId: profile?.id || "",
           name: profile?.name || "學生",
           role: profile?.role || "student",
           avatar: profile?.avatar || "🙂",
+          handRaised: !!profile?.handRaised,
+          lastSeen: Date.now(),
           updatedAt: serverTimestamp(),
         }, { merge: true });
         await setDoc(doc(firebaseDb, "rooms", roomCode, "state", "main"), {
           state,
           hostUid: firebaseRoomUid,
+          updatedAt: serverTimestamp(),
+        }, { merge: true });
+      },
+      async updateMember({ roomCode, profile }){
+        const user = await firebaseReady();
+        await setDoc(doc(firebaseDb, "rooms", roomCode, "members", user.uid), {
+          uid: user.uid,
+          clientId: profile?.id || "",
+          name: profile?.name || "學生",
+          role: profile?.role || "student",
+          avatar: profile?.avatar || "🙂",
+          handRaised: !!profile?.handRaised,
+          lastSeen: Date.now(),
           updatedAt: serverTimestamp(),
         }, { merge: true });
       },
@@ -1314,6 +1338,7 @@
     let state = loadState(sessionCode) || createDefaultState(sessionCode);
     let firebaseConnected = false;
     let firebaseHostUid = "";
+    let firebaseMembers = null;
     let drag = null;
     let canvasDraft = null;
     let diceDrag = null;
@@ -2282,6 +2307,7 @@
 
     function connectFirebaseRoom(){
       if(!window.firebaseBridge?.connectRoom) return;
+      firebaseMembers = null;
       window.firebaseBridge.connectRoom({
         roomCode: sessionCode,
         initialState: serializeFirebaseState(state),
@@ -2290,7 +2316,12 @@
           firebaseConnected = true;
           firebaseHostUid = hostUid || "";
           applyIncomingState(deserializeFirebaseState(payload), true);
+          if(firebaseMembers) applyFirebaseMembers(firebaseMembers);
           renderHostControls();
+        },
+        onMembers: members => {
+          firebaseMembers = members;
+          applyFirebaseMembers(members);
         },
         onStatus: message => {
           if(String(message).startsWith("Firebase 連線錯誤")){
@@ -2310,6 +2341,18 @@
         roomSynced.textContent = `Firebase 尚未啟用：${error.message}`;
         renderHostControls();
       });
+    }
+
+    function applyFirebaseMembers(members){
+      state.participants = members.map(member => ({
+            id: member.clientId || member.uid || member.id,
+            name: member.name || "學生",
+            role: member.role || "student",
+            avatar: member.avatar || "🙂",
+            handRaised: !!member.handRaised,
+            lastSeen: Number(member.lastSeen) || Date.now(),
+          }));
+      renderSidebars();
     }
 
     function persistState(broadcast = false){
@@ -2489,6 +2532,14 @@
       presenceTimer = setInterval(() => {
         upsertParticipant(currentParticipant(), true);
         sendRealtime("presence", currentParticipant());
+        if(firebaseConnected && window.firebaseBridge?.updateMember){
+          window.firebaseBridge.updateMember({
+            roomCode: sessionCode,
+            profile: currentParticipant(),
+          }).catch(error => {
+            roomSynced.textContent = `Firebase 成員同步失敗：${error.message}`;
+          });
+        }
         renderSidebars();
       }, 4500);
     }
