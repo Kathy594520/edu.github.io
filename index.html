@@ -334,6 +334,13 @@
       border-color:rgba(157,78,221,.55);
       box-shadow:0 0 0 4px rgba(157,78,221,.11);
     }
+    input:disabled, textarea:disabled, button:disabled{
+      cursor:not-allowed;
+      opacity:.62;
+    }
+    input:disabled, textarea:disabled{
+      background:#f3eff8;
+    }
     textarea{resize:vertical;min-height:110px;line-height:1.65}
     .inline-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
     .toolbar{display:flex;flex-wrap:wrap;gap:8px}
@@ -1382,7 +1389,7 @@
       $("#btnRaiseFocus").addEventListener("click", focusClassroom);
       $("#btnClearAnnouncement").addEventListener("click", clearAnnouncement);
       btnClearWorkspace.addEventListener("click", clearWorkspace);
-      $("#btnHandRaise").addEventListener("click", () => addActivity("raise", `${state.self.name} 舉手了`, "✋"));
+      $("#btnHandRaise").addEventListener("click", toggleHandRaise);
       $("#btnQuickNote").addEventListener("click", quickStudentNote);
       $("#btnReaction").addEventListener("click", addReaction);
       $("#btnSavePoll").addEventListener("click", savePoll);
@@ -1593,6 +1600,10 @@
       return firebaseHostUid === window.firebaseBridge.getUid();
     }
 
+    function canManageClass(){
+      return isHost() && state.self?.role === "teacher";
+    }
+
     function getClearBoardPassword(){
       return localStorage.getItem(clearBoardPasswordKey()) || "";
     }
@@ -1620,9 +1631,20 @@
     }
 
     function renderHostControls(){
-      const host = isHost();
-      btnClearWorkspace.hidden = !host;
-      hostClearSettings.hidden = !host;
+      const manager = canManageClass();
+      btnClearWorkspace.hidden = !manager;
+      hostClearSettings.hidden = !manager;
+      [
+        $("#titleInput"),
+        $("#announcementInput"),
+        $("#btnBroadcast"),
+        $("#btnRaiseFocus"),
+        $("#btnClearAnnouncement"),
+      ].forEach(control => {
+        if(control) control.disabled = !manager;
+      });
+      $("#titleInput").title = manager ? "老師可編輯白板標題" : "只有老師可以編輯白板標題";
+      $("#announcementInput").title = manager ? "老師可編輯課堂公告" : "只有老師可以編輯課堂公告";
     }
 
     function setCanvasTool(tool){
@@ -2571,22 +2593,38 @@
     }
 
     function handleTitleChange(){
+      if(!canManageClass()){
+        renderHostControls();
+        return;
+      }
       state.meta.title = $("#titleInput").value.trim() || "線上即時共編白板";
       persistState(true);
     }
 
     function handleAnnouncementDraft(){
+      if(!canManageClass()){
+        renderHostControls();
+        return;
+      }
       state.meta.announcement = $("#announcementInput").value.trim();
       roomSynced.textContent = "已編輯";
     }
 
     function sendBroadcast(){
+      if(!canManageClass()){
+        alert("只有老師可以發布課堂公告。");
+        return;
+      }
       state.meta.announcement = $("#announcementInput").value.trim() || state.meta.announcement || "歡迎使用白板";
       addActivity("announce", `老師廣播：${state.meta.announcement}`, "📣");
       persistState(true);
     }
 
     function focusClassroom(){
+      if(!canManageClass()){
+        alert("只有老師可以聚焦課堂。");
+        return;
+      }
       const text = $("#announcementInput").value.trim() || "請開始討論";
       state.meta.announcement = `提醒：${text}`;
       addActivity("focus", "聚焦課堂", "🎯");
@@ -2594,6 +2632,10 @@
     }
 
     function clearAnnouncement(){
+      if(!canManageClass()){
+        alert("只有老師可以清除課堂公告。");
+        return;
+      }
       state.meta.announcement = "";
       $("#announcementInput").value = "";
       addActivity("system", "已清除廣播", "🧹");
@@ -2803,6 +2845,17 @@
       const picked = items[Math.floor(Math.random() * items.length)];
       state.reactions[picked.key] = (state.reactions[picked.key] || 0) + 1;
       addActivity("reaction", `${state.self.name} 使用了 ${picked.label}`, picked.icon);
+      persistState(true);
+    }
+
+    function toggleHandRaise(){
+      state.self.handRaised = !state.self.handRaised;
+      upsertParticipant(currentParticipant(), true);
+      addActivity(
+        "raise",
+        state.self.handRaised ? `${state.self.name} 舉手了` : `${state.self.name} 放下手了`,
+        state.self.handRaised ? "✋" : "👋",
+      );
       persistState(true);
     }
 
@@ -3135,6 +3188,7 @@
       renderCanvas();
       renderCanvasToolbar();
       renderHostControls();
+      $("#btnHandRaise").textContent = state.self.handRaised ? "取消舉手" : "舉手";
       updateClearBoardPasswordState();
       renderStatusChips();
       roomCount.textContent = `共 ${activeParticipants().length} 人`;
@@ -3178,6 +3232,8 @@
       const canvasCount = entries.filter(entry => entry.type === "canvas").length;
       const interactionCount = entries.filter(entry => ["poll", "raise", "reaction", "note"].includes(entry.type)).length;
       const roomCount = entries.filter(entry => !["canvas", "poll", "raise", "reaction", "note"].includes(entry.type)).length;
+      const handCount = activeParticipants().filter(person => person.handRaised).length;
+      const reactionCount = Object.values(state.reactions || {}).reduce((total, value) => total + (Number(value) || 0), 0);
       activityList.innerHTML = `
         <div class="activity activity-summary">
           <strong>課堂活動摘要</strong>
@@ -3186,6 +3242,8 @@
             <div class="activity-summary-stat"><span>畫布操作</span><strong>${canvasCount}</strong></div>
             <div class="activity-summary-stat"><span>課堂互動</span><strong>${interactionCount}</strong></div>
             <div class="activity-summary-stat"><span>房間事件</span><strong>${roomCount}</strong></div>
+            <div class="activity-summary-stat"><span>目前舉手</span><strong>${handCount}</strong></div>
+            <div class="activity-summary-stat"><span>表情回應</span><strong>${reactionCount}</strong></div>
           </div>
         </div>`;
     }
