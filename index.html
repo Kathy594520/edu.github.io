@@ -980,7 +980,7 @@
               <span class="chip" id="clearBoardPasswordState">未設定</span>
             </div>
           </div>
-          <p class="host-reminder">操作提醒：老師請先設定清除密碼，再複製房間連結給學生。學生沒有密碼時，無法清空白板、畫布或刪除便利貼。複製連結本身不是後端安全驗證。</p>
+          <p class="host-reminder">操作提醒：老師先開啟房間，確認畫面顯示 Firebase 已連線，再設定清除密碼並複製房間連結給學生。清空白板、清空畫布與刪除便利貼由 Firebase 主持人權限控管；密碼只是主持人的額外確認，學生即使知道密碼也不能操作。房間連結請勿公開分享。</p>
           <div class="summary" aria-live="polite">
             <div class="summary-row">
               <div class="value" id="statPeople">1</div>
@@ -1564,10 +1564,8 @@
 
     function isHost(){
       normalizeHostState();
-      if(firebaseConnected && firebaseHostUid && window.firebaseBridge?.getUid){
-        return firebaseHostUid === window.firebaseBridge.getUid();
-      }
-      return state.hostId === clientId;
+      if(!window.firebaseBridge?.getUid || !firebaseConnected || !firebaseHostUid) return false;
+      return firebaseHostUid === window.firebaseBridge.getUid();
     }
 
     function getClearBoardPassword(){
