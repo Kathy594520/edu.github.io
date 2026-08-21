@@ -943,7 +943,7 @@
           </div>
 
           <div class="toolbar" aria-label="白板入口">
-            <button class="primary-btn" id="btnCreateBoard">建立白板</button>
+            <button class="primary-btn teacher-only" id="btnCreateBoard">建立白板</button>
             <button class="accent-btn" id="btnJoinBoard">加入白板</button>
             <button class="ghost-btn teacher-only" id="btnTemplate">套用範本</button>
           </div>
@@ -1674,7 +1674,7 @@
       });
       $("#titleInput").title = manager ? "老師可編輯白板標題" : "只有老師可以編輯白板標題";
       $("#announcementInput").title = manager ? "老師可編輯課堂公告" : "只有老師可以編輯課堂公告";
-      [$("#btnLoadDemo"), $("#btnTemplate"), $("#announcementTools"), $("#hostReminder"), $("#pollEditor"), $("#dataAdminPanel"), $("#dataAdminTools")].forEach(control => {
+      [$("#btnLoadDemo"), $("#btnCreateBoard"), $("#btnTemplate"), $("#announcementTools"), $("#hostReminder"), $("#pollEditor"), $("#dataAdminPanel"), $("#dataAdminTools")].forEach(control => {
         if(control) control.hidden = !manager;
       });
     }
