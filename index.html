@@ -1685,6 +1685,7 @@
           color: "#ffffff",
           fill: state.canvas.color,
           size: 64,
+          ownerId: clientId,
         });
       }
       state.canvas.activeId = state.canvas.items.find(item => item.type === "lottery" && item.kind === "widget")?.id || null;
@@ -1951,6 +1952,7 @@
           size: draft.tool === "marker" ? draft.size * 2 : draft.size,
           opacity: draft.tool === "marker" ? 0.35 : draft.tool === "eraser" ? 1 : 1,
           lineStyle: "solid",
+          ownerId: clientId,
         };
       }
       if(draft.tool === "line"){
@@ -1961,6 +1963,7 @@
           color: draft.color,
           size: draft.size,
           lineStyle: draft.lineStyle,
+          ownerId: clientId,
         };
       }
       if(draft.tool === "measure"){
@@ -1975,6 +1978,7 @@
           size: Math.max(2, draft.size - 1),
           lineStyle: "dash",
           label: `${distance} px`,
+          ownerId: clientId,
         };
       }
       if(draft.tool === "circle"){
@@ -1987,6 +1991,7 @@
           h: Math.max(24, Math.abs(y2 - y1)),
           color: draft.color,
           size: draft.size,
+          ownerId: clientId,
         };
       }
       return null;
@@ -2015,6 +2020,7 @@
         color: state.canvas.color,
         stamp: state.canvas.stamp,
         size: Math.max(18, Number(state.canvas.size) * 3 || 24),
+        ownerId: clientId,
       });
       state.canvas.activeId = null;
       state.activity.unshift({
@@ -2054,6 +2060,7 @@
           color: "#ffffff",
           fill: state.canvas.color,
           size: 54,
+          ownerId: clientId,
         });
       }
       state.canvas.activeId = state.canvas.items.find(item => item.type === "dice" && item.kind === "widget")?.id || null;
