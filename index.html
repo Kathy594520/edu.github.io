@@ -694,7 +694,7 @@
       font-size:12px;
       font-weight:900;
     }
-    .item-actions{display:none;gap:6px}
+    .item-actions{display:flex;gap:6px}
     .item-actions button{
       width:28px;height:28px;
       border-radius:999px;
@@ -703,6 +703,16 @@
       color:var(--muted);
       box-shadow:none;
       padding:0;
+    }
+    .item-actions .item-delete{
+      color:#c0355f;
+      font-size:19px;
+      font-weight:950;
+      line-height:1;
+    }
+    .item-actions .item-delete:hover{
+      background:#fff0f4;
+      border-color:#ffb3c5;
     }
     .item-input{
       width:100%;
@@ -3135,8 +3145,13 @@
       }
     }
 
+    function isOwnBoardItem(item){
+      const firebaseUid = window.firebaseBridge?.getUid?.() || "";
+      return !!item && (item.ownerId === clientId || (firebaseUid && item.firebaseOwnerUid === firebaseUid));
+    }
+
     function canEditBoardItem(itemId){
-      return state.board.find(item => item.id === itemId && item.ownerId === clientId);
+      return isOwnBoardItem(state.board.find(item => item.id === itemId));
     }
 
     function removeBoardItem(itemId){
@@ -3166,6 +3181,15 @@
     function onBoardClick(event){
       const node = event.target.closest(".board-item");
       if(!node) return;
+      const action = event.target.closest("[data-board-action]");
+      if(action?.dataset.boardAction === "delete"){
+        event.preventDefault();
+        event.stopPropagation();
+        const itemId = node.dataset.id;
+        if(!canEditBoardItem(itemId)) return;
+        removeBoardItem(itemId);
+        return;
+      }
       if(!event.target.closest(".item-bar")) return;
       if(!event.altKey && !event.shiftKey) return;
       const itemId = node.dataset.id;
@@ -3266,6 +3290,15 @@
       const body = $(".item-body", node);
       if(document.activeElement !== title) title.value = item.title || "";
       if(document.activeElement !== body) body.value = item.body || "";
+      renderBoardItemActions(item, node);
+    }
+
+    function renderBoardItemActions(item, node){
+      const actions = $(".item-actions", node);
+      if(!actions) return;
+      actions.innerHTML = isOwnBoardItem(item)
+        ? '<button type="button" class="item-delete" data-board-action="delete" aria-label="刪除自己的便條" title="刪除自己的便條">×</button>'
+        : "";
     }
 
     function normalizeBoardItem(item){
@@ -3475,7 +3508,7 @@
       node.className = "board-item";
       node.dataset.id = item.id;
       node.dataset.type = item.type;
-      node.title = "Shift+點選可刪除，Alt+點選可複製。";
+      node.title = "右上 X 可刪除自己建立的便條；Shift+點選可刪除，Alt+點選可複製。";
       node.innerHTML = `
         <div class="item-bar">
           <span class="tag">${escapeHtml(labelForType(item.type))}</span>
