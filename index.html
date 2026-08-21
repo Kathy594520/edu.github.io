@@ -1337,6 +1337,7 @@
     const storagePrefix = "live-coedit:";
     const clientKey = "live-coedit-client-id";
     const clearBoardPasswordPrefix = "live-coedit-clear-pass:";
+    const deletedBoardItemsPrefix = "live-coedit-deleted:";
     const roomInput = $("#roomInput");
     const roomLabel = $("#roomLabel");
     const roomCount = $("#roomCount");
@@ -2368,6 +2369,30 @@
       }
     }
 
+    function deletedBoardItemsKey(){
+      return `${deletedBoardItemsPrefix}${sessionCode}`;
+    }
+
+    function getDeletedBoardItems(){
+      try{
+        const value = JSON.parse(localStorage.getItem(deletedBoardItemsKey()) || "[]");
+        return Array.isArray(value) ? value : [];
+      }catch{
+        return [];
+      }
+    }
+
+    function rememberDeletedBoardItem(itemId){
+      const ids = getDeletedBoardItems();
+      if(ids.includes(itemId)) return;
+      ids.push(itemId);
+      localStorage.setItem(deletedBoardItemsKey(), JSON.stringify(ids));
+    }
+
+    function clearDeletedBoardItems(){
+      localStorage.removeItem(deletedBoardItemsKey());
+    }
+
     function serializeFirebaseState(source){
       const payload = clone(source);
       payload.boardByOwner = {};
@@ -2561,6 +2586,10 @@
     function applyIncomingState(next, force = false){
       if(!next || typeof next !== "object") return;
       if((next.version || 0) < (state.version || 0)) return;
+      const deletedIds = new Set(getDeletedBoardItems());
+      if(deletedIds.size && Array.isArray(next.board)){
+        next.board = next.board.filter(item => !deletedIds.has(item.id));
+      }
       const localSelf = clone(state.self || {});
       state = next;
       state.self = { ...state.self, ...localSelf, id: clientId };
@@ -3074,6 +3103,7 @@
         try{
           const next = JSON.parse(String(reader.result || ""));
           if(!next || typeof next !== "object") throw new Error("invalid");
+          clearDeletedBoardItems();
           state = next;
           if(!state.roomCode) state.roomCode = sessionCode;
           normalizeCanvasState();
@@ -3096,6 +3126,7 @@
         return;
       }
       if(!confirm("確定要重設整個房間嗎？")) return;
+      clearDeletedBoardItems();
       state = createDefaultState(sessionCode);
       normalizeCanvasState();
       state.self.id = clientId;
@@ -3160,6 +3191,7 @@
     }
 
     function removeBoardItem(itemId){
+      rememberDeletedBoardItem(itemId);
       state.board = state.board.filter(item => item.id !== itemId);
       const currentNode = nodeMap.get(itemId);
       if(currentNode) currentNode.remove();
