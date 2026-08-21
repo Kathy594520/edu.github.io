@@ -2562,6 +2562,13 @@
       });
     }
 
+    function memberLastSeen(member){
+      const value = member?.lastSeen;
+      if(value && typeof value.toMillis === "function") return value.toMillis();
+      const numeric = Number(value);
+      return Number.isFinite(numeric) && numeric > 0 ? numeric : 0;
+    }
+
     function applyFirebaseMembers(members){
       firebasePollVotes = {};
       const currentUid = window.firebaseBridge?.getUid?.() || "";
@@ -2579,7 +2586,7 @@
           avatar: member.avatar || avatarForRole(memberRole),
           handRaised: !!member.handRaised,
           pollVote: member.pollVote || "",
-          lastSeen: Number(member.lastSeen) || Date.now(),
+          lastSeen: memberLastSeen(member),
         };
       });
       renderSidebars();
