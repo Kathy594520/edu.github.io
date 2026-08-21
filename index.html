@@ -954,6 +954,7 @@
               <select id="roleSelect">
                 <option value="teacher">老師</option>
                 <option value="student">學生</option>
+                <option value="guest">訪客</option>
               </select>
             </div>
             <div class="field">
@@ -1486,6 +1487,30 @@
       return cleaned.slice(0, 12);
     }
 
+    function normalizeRole(role){
+      return ["teacher", "student", "guest"].includes(role) ? role : "student";
+    }
+
+    function roleLabel(role){
+      return ({ teacher: "老師", student: "學生", guest: "訪客" })[normalizeRole(role)];
+    }
+
+    function defaultNameForRole(role){
+      return roleLabel(role);
+    }
+
+    function avatarForRole(role){
+      return ({ teacher: "👩‍🏫", student: "👩‍🎓", guest: "👤" })[normalizeRole(role)];
+    }
+
+    function placeholderForRole(role){
+      return ({ teacher: "例如：陳老師", student: "例如：小明", guest: "例如：訪客 01" })[normalizeRole(role)];
+    }
+
+    function updatePageTitle(){
+      document.title = `線上即時共編白板 - ${roleLabel(state.self?.role)}專用`;
+    }
+
     function uid(prefix = "id"){
       return `${prefix}-${Math.random().toString(36).slice(2, 8)}-${Date.now().toString(36).slice(-5)}`;
     }
@@ -1629,6 +1654,21 @@
       return firebaseHostUid === window.firebaseBridge.getUid();
     }
 
+    function normalizeViewerRole(){
+      const previousRole = state.self?.role;
+      if(!state.self) return;
+      if(firebaseConnected && !isHost() && previousRole === "teacher"){
+        state.self.role = "student";
+        if(!state.self.name || state.self.name === defaultNameForRole("teacher")){
+          state.self.name = defaultNameForRole("student");
+        }
+        state.self.avatar = avatarForRole("student");
+      }else{
+        state.self.role = normalizeRole(previousRole);
+        state.self.avatar = state.self.avatar || avatarForRole(state.self.role);
+      }
+    }
+
     function canManageClass(){
       return isHost() && state.self?.role === "teacher";
     }
@@ -1674,6 +1714,11 @@
       });
       $("#titleInput").title = manager ? "老師可編輯白板標題" : "只有老師可以編輯白板標題";
       $("#announcementInput").title = manager ? "老師可編輯課堂公告" : "只有老師可以編輯課堂公告";
+      const teacherOption = $("#roleSelect option[value='teacher']");
+      if(teacherOption){
+        teacherOption.hidden = !manager;
+        teacherOption.disabled = !manager;
+      }
       [$("#controlPanelHeader"), $("#btnLoadDemo"), $("#btnCreateBoard"), $("#btnTemplate"), $("#announcementTools"), $("#hostReminder"), $("#pollEditor"), $("#dataAdminPanel"), $("#dataAdminTools")].forEach(control => {
         if(control) control.hidden = !manager;
       });
@@ -2371,6 +2416,14 @@
           firebaseConnected = true;
           firebaseHostUid = hostUid || "";
           applyIncomingState(deserializeFirebaseState(payload), true);
+          normalizeViewerRole();
+          renderAll();
+          if(!isHost() && window.firebaseBridge?.updateMember){
+            window.firebaseBridge.updateMember({
+              roomCode: sessionCode,
+              profile: currentParticipant(),
+            }).catch(() => {});
+          }
           if(firebaseMembers) applyFirebaseMembers(firebaseMembers);
           renderHostControls();
         },
@@ -2406,15 +2459,18 @@
         if(member.pollVote) firebasePollVotes[memberUid] = member.pollVote;
         if(memberUid === currentUid) state.self.pollVote = member.pollVote || "";
       });
-      state.participants = members.map(member => ({
-            id: member.clientId || member.uid || member.id,
-            name: member.name || "學生",
-            role: member.role || "student",
-            avatar: member.avatar || "🙂",
-            handRaised: !!member.handRaised,
-            pollVote: member.pollVote || "",
-            lastSeen: Number(member.lastSeen) || Date.now(),
-          }));
+      state.participants = members.map(member => {
+        const memberRole = normalizeRole(member.role);
+        return {
+          id: member.clientId || member.uid || member.id,
+          name: member.name || defaultNameForRole(memberRole),
+          role: memberRole,
+          avatar: member.avatar || avatarForRole(memberRole),
+          handRaised: !!member.handRaised,
+          pollVote: member.pollVote || "",
+          lastSeen: Number(member.lastSeen) || Date.now(),
+        };
+      });
       renderSidebars();
     }
 
@@ -2501,10 +2557,9 @@
     function hydrateSelf(){
       state.self ||= {};
       normalizeHostState();
-      const isTeacher = state.self.role !== "student";
-      state.self.role = isTeacher ? "teacher" : "student";
-      if(!state.self.name) state.self.name = isTeacher ? "老師" : "學生";
-      state.self.avatar = state.self.avatar || (isTeacher ? "👩‍🏫" : "👩‍🎓");
+      state.self.role = normalizeRole(state.self.role);
+      if(!state.self.name) state.self.name = defaultNameForRole(state.self.role);
+      state.self.avatar = state.self.avatar || avatarForRole(state.self.role);
       state.participants = Array.isArray(state.participants) ? state.participants : [];
       upsertParticipant({
         id: clientId,
@@ -2619,20 +2674,32 @@
     }
 
     function handleProfileChange(){
-      state.self.name = $("#nameInput").value.trim() || (state.self.role === "teacher" ? "老師" : "學生");
-      state.self.avatar = state.self.role === "teacher" ? "👩‍🏫" : "👩‍🎓";
+      state.self.role = normalizeRole(state.self.role);
+      state.self.name = $("#nameInput").value.trim() || defaultNameForRole(state.self.role);
+      state.self.avatar = avatarForRole(state.self.role);
       upsertParticipant(currentParticipant(), true);
       persistState(true);
     }
 
     function onRoleChange(){
-      state.self.role = $("#roleSelect").value;
-      state.self.avatar = state.self.role === "teacher" ? "👩‍🏫" : "👩‍🎓";
-      if(!$("#nameInput").value.trim()){
-        $("#nameInput").value = state.self.role === "teacher" ? "老師" : "學生";
+      const nextRole = normalizeRole($("#roleSelect").value);
+      if(nextRole === "teacher" && !isHost()){
+        state.self.role = "student";
+        $("#roleSelect").value = "student";
+        alert("只有教室主持人可以使用老師角色。");
+        renderAll();
+        return;
       }
+      const currentName = $("#nameInput").value.trim();
+      const defaultNames = ["老師", "學生", "訪客"];
+      state.self.role = nextRole;
+      state.self.avatar = avatarForRole(nextRole);
+      if(!currentName || defaultNames.includes(currentName)){
+        $("#nameInput").value = defaultNameForRole(nextRole);
+      }
+      $("#nameInput").placeholder = placeholderForRole(nextRole);
       handleProfileChange();
-      addActivity("system", `角色已切換為 ${state.self.role === "teacher" ? "老師" : "學生"}`, "🎭");
+      addActivity("system", `角色已切換為 ${roleLabel(state.self.role)}`, "🎭");
     }
 
     function handleTitleChange(){
@@ -3018,8 +3085,8 @@
       normalizeCanvasState();
       state.self.id = clientId;
       state.self.name = $("#nameInput").value.trim() || state.self.name;
-      state.self.role = $("#roleSelect").value;
-      state.self.avatar = state.self.role === "teacher" ? "👩‍🏫" : "👩‍🎓";
+      state.self.role = normalizeRole($("#roleSelect").value);
+      state.self.avatar = avatarForRole(state.self.role);
       hydrateSelf();
       addActivity("system", "已重設房間", "🔁");
       persistState(true);
@@ -3257,11 +3324,13 @@
 
     function renderAll(){
       normalizeCanvasState();
+      updatePageTitle();
       roomInput.value = sessionCode;
       roomLabel.textContent = sessionCode;
       $("#titleInput").value = state.meta.title || "";
       $("#nameInput").value = state.self.name || "";
       $("#roleSelect").value = state.self.role || "teacher";
+      $("#nameInput").placeholder = placeholderForRole(state.self.role);
       $("#announcementInput").value = state.meta.announcement || "";
       if(!pollEditing && document.activeElement !== pollQuestionInput && document.activeElement !== pollOptionsInput){
         pollQuestionInput.value = state.poll.question || "";
@@ -3302,12 +3371,13 @@
       }
       participantList.innerHTML = people.map(person => {
         const isTeacher = person.role === "teacher";
+        const personRole = roleLabel(person.role);
       const status = person.id === clientId ? "自己" : (Date.now() - (person.lastSeen || 0) < 7000 ? "在線" : "離線");
         return `
           <div class="person">
             <div>
               <strong>${escapeHtml(person.avatar || "🙂")} ${escapeHtml(person.name || "學生")}</strong>
-              <small>${isTeacher ? "老師可管理課堂與白板。" : "學生可參與白板與互動。"}</small>
+              <small>${isTeacher ? "老師可管理課堂與白板。" : `${personRole}可參與白板與互動。`}</small>
             </div>
             <div class="meta">
               <span class="status ${status === "離線" ? "offline" : ""} ${person.handRaised ? "warn" : ""}">${status}</span>
@@ -3427,7 +3497,7 @@
       const focused = state.meta.announcement ? "有公告" : "無公告";
       statusChips.innerHTML = `
         <span class="chip">標題<strong>${escapeHtml(state.meta.title || "線上即時共編白板")}</strong></span>
-        <span class="chip">身分<strong>${escapeHtml(state.self.role === "teacher" ? "老師" : "學生")}</strong></span>
+        <span class="chip">身分<strong>${escapeHtml(roleLabel(state.self.role))}</strong></span>
         <span class="chip">舉手<strong>${handRaised}</strong></span>
         <span class="chip">公告<strong>${focused}</strong></span>
       `;
