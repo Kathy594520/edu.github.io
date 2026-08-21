@@ -913,7 +913,7 @@
         <span class="chip" id="syncChip">同步中<strong>即時連線</strong></span>
         <span class="chip">房間 <strong id="roomLabel">----</strong></span>
         <button class="soft-btn" id="btnCopyLink">複製連結</button>
-        <button class="soft-btn" id="btnLoadDemo">載入範例</button>
+        <button class="soft-btn teacher-only" id="btnLoadDemo">載入範例</button>
       </div>
     </header>
 
@@ -945,7 +945,7 @@
           <div class="toolbar" aria-label="白板入口">
             <button class="primary-btn" id="btnCreateBoard">建立白板</button>
             <button class="accent-btn" id="btnJoinBoard">加入白板</button>
-            <button class="ghost-btn" id="btnTemplate">套用範本</button>
+            <button class="ghost-btn teacher-only" id="btnTemplate">套用範本</button>
           </div>
 
           <div class="inline-grid">
@@ -971,7 +971,7 @@
             <label for="announcementInput">課堂公告</label>
             <textarea id="announcementInput" placeholder="可以輸入課堂公告、提醒或當日重點。"></textarea>
           </div>
-          <div class="toolbar">
+          <div class="toolbar teacher-only" id="announcementTools">
             <button class="primary-btn" id="btnBroadcast">發布公告</button>
             <button class="ghost-btn" id="btnRaiseFocus">聚焦課堂</button>
             <button class="ghost-btn" id="btnClearAnnouncement">清除公告</button>
@@ -1673,7 +1673,7 @@
       });
       $("#titleInput").title = manager ? "老師可編輯白板標題" : "只有老師可以編輯白板標題";
       $("#announcementInput").title = manager ? "老師可編輯課堂公告" : "只有老師可以編輯課堂公告";
-      [$("#pollEditor"), $("#dataAdminTools")].forEach(control => {
+      [$("#btnLoadDemo"), $("#btnTemplate"), $("#announcementTools"), $("#pollEditor"), $("#dataAdminTools")].forEach(control => {
         if(control) control.hidden = !manager;
       });
     }
