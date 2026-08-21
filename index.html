@@ -925,7 +925,7 @@
 
     <section class="workspace">
       <aside class="panel">
-        <header>
+        <header class="teacher-only" id="controlPanelHeader">
           <h3>控制台</h3>
           <p>在這裡調整房間、公告、投票、匯入匯出與清除資料設定。</p>
         </header>
@@ -1674,7 +1674,7 @@
       });
       $("#titleInput").title = manager ? "老師可編輯白板標題" : "只有老師可以編輯白板標題";
       $("#announcementInput").title = manager ? "老師可編輯課堂公告" : "只有老師可以編輯課堂公告";
-      [$("#btnLoadDemo"), $("#btnCreateBoard"), $("#btnTemplate"), $("#announcementTools"), $("#hostReminder"), $("#pollEditor"), $("#dataAdminPanel"), $("#dataAdminTools")].forEach(control => {
+      [$("#controlPanelHeader"), $("#btnLoadDemo"), $("#btnCreateBoard"), $("#btnTemplate"), $("#announcementTools"), $("#hostReminder"), $("#pollEditor"), $("#dataAdminPanel"), $("#dataAdminTools")].forEach(control => {
         if(control) control.hidden = !manager;
       });
     }
