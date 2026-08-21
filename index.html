@@ -765,7 +765,7 @@
     }
     .activity-summary-grid{
       display:grid;
-      grid-template-columns:repeat(3, minmax(0, 1fr));
+      grid-template-columns:repeat(auto-fit, minmax(92px, 1fr));
       gap:8px;
       margin-top:8px;
     }
@@ -3341,6 +3341,7 @@
       renderActivity();
       renderPoll();
       renderStatusChips();
+      $("#btnHandRaise").textContent = state.self.handRaised ? "取消舉手" : "舉手";
       roomCount.textContent = `共 ${activeParticipants().length} 人`;
       roomUpdated.textContent = nowLabel(state.updatedAt);
       roomSynced.textContent = "已同步";
