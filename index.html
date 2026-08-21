@@ -3301,9 +3301,17 @@
     function renderBoardItemActions(item, node){
       const actions = $(".item-actions", node);
       if(!actions) return;
-      actions.innerHTML = isOwnBoardItem(item)
-        ? '<button type="button" class="item-delete" data-board-action="delete" aria-label="刪除自己的便條" title="刪除自己的便條">×</button>'
-        : "";
+      if(!isOwnBoardItem(item)){
+        actions.innerHTML = "";
+        return;
+      }
+      actions.innerHTML = '<button type="button" class="item-delete" data-board-action="delete" aria-label="刪除自己的便條" title="刪除自己的便條">×</button>';
+      $(".item-delete", actions)?.addEventListener("click", event => {
+        event.preventDefault();
+        event.stopPropagation();
+        const currentItem = state.board.find(entry => entry.id === item.id);
+        if(isOwnBoardItem(currentItem)) removeBoardItem(item.id);
+      });
     }
 
     function normalizeBoardItem(item){
