@@ -1333,6 +1333,8 @@
     const statusChips = $("#statusChips");
     const announcementBanner = $("#announcementBanner");
     const pollList = $("#pollList");
+    const pollQuestionInput = $("#pollQuestion");
+    const pollOptionsInput = $("#pollOptions");
     const importFile = $("#importFile");
     const boardWrap = $(".board-wrap");
     const canvasSvg = $("#canvasSvg");
@@ -1361,6 +1363,7 @@
     let firebaseHostUid = "";
     let firebaseMembers = null;
     let firebasePollVotes = null;
+    let pollEditing = false;
     let drag = null;
     let canvasDraft = null;
     let diceDrag = null;
@@ -1422,22 +1425,20 @@
       $("#nameInput").addEventListener("input", debounce(handleProfileChange, 120));
       $("#titleInput").addEventListener("input", debounce(handleTitleChange, 120));
       $("#announcementInput").addEventListener("input", debounce(handleAnnouncementDraft, 120));
-      $("#pollQuestion").addEventListener("input", debounce(() => {
-        if(!canManageClass()){
-          renderAll();
-          return;
-        }
-        state.poll.question = $("#pollQuestion").value.trim();
-        persistState(true);
-      }, 160));
-      $("#pollOptions").addEventListener("input", debounce(() => {
-        if(!canManageClass()){
-          renderAll();
-          return;
-        }
-        state.poll.options = parseOptions($("#pollOptions").value);
-        persistState(true);
-      }, 160));
+      const beginPollEditing = () => {
+        if(canManageClass()) pollEditing = true;
+      };
+      const endPollEditing = () => {
+        window.setTimeout(() => {
+          if(document.activeElement !== pollQuestionInput && document.activeElement !== pollOptionsInput){
+            pollEditing = false;
+          }
+        }, 0);
+      };
+      pollQuestionInput.addEventListener("focus", beginPollEditing);
+      pollQuestionInput.addEventListener("blur", endPollEditing);
+      pollOptionsInput.addEventListener("focus", beginPollEditing);
+      pollOptionsInput.addEventListener("blur", endPollEditing);
       canvasSizeInput.addEventListener("input", () => {
         state.canvas.size = Number(canvasSizeInput.value) || 5;
         renderCanvasToolbar();
@@ -2914,6 +2915,7 @@
         alert("只有老師可以儲存投票設定。");
         return;
       }
+      pollEditing = false;
       state.poll.question = $("#pollQuestion").value.trim() || "請輸入投票題目";
       state.poll.options = parseOptions($("#pollOptions").value);
       if(!state.poll.options.length){
@@ -2937,6 +2939,7 @@
         alert("只有老師可以重設投票。");
         return;
       }
+      pollEditing = false;
       state.poll.options = state.poll.options.map(option => ({ ...option, votes: 0 }));
       state.self.pollVote = "";
       firebasePollVotes = firebasePollVotes === null ? null : {};
@@ -3260,8 +3263,10 @@
       $("#nameInput").value = state.self.name || "";
       $("#roleSelect").value = state.self.role || "teacher";
       $("#announcementInput").value = state.meta.announcement || "";
-      $("#pollQuestion").value = state.poll.question || "";
-      $("#pollOptions").value = (state.poll.options || []).map(option => option.label).join("\n");
+      if(!pollEditing && document.activeElement !== pollQuestionInput && document.activeElement !== pollOptionsInput){
+        pollQuestionInput.value = state.poll.question || "";
+        pollOptionsInput.value = (state.poll.options || []).map(option => option.label).join("\n");
+      }
       announcementBanner.innerHTML = `
         <strong>課堂公告</strong>
         <p>${escapeHtml(state.meta.announcement || "歡迎使用白板")}</p>
