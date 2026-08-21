@@ -2227,8 +2227,12 @@
     function serializeFirebaseState(source){
       const payload = clone(source);
       payload.boardByOwner = {};
+      const firebaseUid = window.firebaseBridge?.getUid?.() || "";
       (source.board || []).forEach(item => {
-        const ownerId = item.ownerId || source.hostId || clientId;
+        const ownerId = item.firebaseOwnerUid
+          || (item.ownerId === clientId && firebaseUid ? firebaseUid : item.ownerId)
+          || source.hostId
+          || clientId;
         payload.boardByOwner[ownerId] ||= {};
         payload.boardByOwner[ownerId][item.id] = clone(item);
       });
@@ -2236,7 +2240,10 @@
       payload.canvas ||= {};
       payload.canvasByOwner = {};
       (source.canvas?.items || []).forEach(item => {
-        const ownerId = item.ownerId || source.hostId || clientId;
+        const ownerId = item.firebaseOwnerUid
+          || (item.ownerId === clientId && firebaseUid ? firebaseUid : item.ownerId)
+          || source.hostId
+          || clientId;
         payload.canvasByOwner[ownerId] ||= {};
         payload.canvasByOwner[ownerId][item.id] = clone(item);
       });
@@ -2246,10 +2253,24 @@
 
     function deserializeFirebaseState(payload){
       const next = clone(payload || {});
-      next.board = Object.values(next.boardByOwner || {}).flatMap(items => Object.values(items || {}));
+      if(next.boardByOwner){
+        next.board = Object.entries(next.boardByOwner).flatMap(([ownerUid, items]) => Object.values(items || {}).map(item => ({
+          ...item,
+          firebaseOwnerUid: item.firebaseOwnerUid || ownerUid,
+        })));
+      }else if(!Array.isArray(next.board)){
+        next.board = [];
+      }
       delete next.boardByOwner;
       next.canvas ||= {};
-      next.canvas.items = Object.values(next.canvasByOwner || {}).flatMap(items => Object.values(items || {}));
+      if(next.canvasByOwner){
+        next.canvas.items = Object.entries(next.canvasByOwner).flatMap(([ownerUid, items]) => Object.values(items || {}).map(item => ({
+          ...item,
+          firebaseOwnerUid: item.firebaseOwnerUid || ownerUid,
+        })));
+      }else if(!Array.isArray(next.canvas.items)){
+        next.canvas.items = [];
+      }
       delete next.canvasByOwner;
       return next;
     }
@@ -2263,7 +2284,7 @@
         onState: (payload, hostUid) => {
           firebaseConnected = true;
           firebaseHostUid = hostUid || "";
-          applyIncomingState(deserializeFirebaseState(payload));
+          applyIncomingState(deserializeFirebaseState(payload), true);
           renderHostControls();
         },
         onStatus: message => {
@@ -2274,7 +2295,6 @@
             renderHostControls();
             return;
           }
-          firebaseConnected = true;
           syncChip.innerHTML = "Firebase<strong>跨網域即時同步</strong>";
           roomSynced.textContent = message;
           renderHostControls();
@@ -2356,9 +2376,9 @@
       }catch{}
     }
 
-    function applyIncomingState(next){
+    function applyIncomingState(next, force = false){
       if(!next || typeof next !== "object") return;
-      if((next.version || 0) < (state.version || 0)) return;
+      if(!force && (next.version || 0) < (state.version || 0)) return;
       const localSelf = clone(state.self || {});
       state = next;
       state.self = { ...state.self, ...localSelf, id: clientId };
