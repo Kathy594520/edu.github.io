@@ -1,0 +1,2025 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>班級經營幹部選舉與打掃工作分配系統</title>
+  <style>
+    :root{
+      --bg:#f5f0e6;
+      --panel:#fffdf8;
+      --line:#ddd4c1;
+      --text:#1f2937;
+      --muted:#6b7280;
+      --brand:#2f6f5e;
+      --brand2:#d97706;
+      --shadow:0 16px 40px rgba(56,45,25,.12);
+      --radius:20px;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      color:var(--text);
+      font-family:"Segoe UI","Noto Sans TC","Microsoft JhengHei",sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(47,111,94,.15), transparent 32%),
+        radial-gradient(circle at top right, rgba(217,119,6,.12), transparent 28%),
+        linear-gradient(180deg,#f8f3ea,#efe7d9);
+    }
+    .app{max-width:1400px;margin:0 auto;padding:24px}
+    .hero{
+      border-radius:28px;
+      padding:24px 28px;
+      color:#fff;
+      background:linear-gradient(135deg, rgba(47,111,94,.98), rgba(25,80,69,.98));
+      box-shadow:var(--shadow);
+      overflow:hidden;
+      position:relative;
+    }
+    .hero::after{
+      content:"";
+      position:absolute;
+      right:-60px; top:-40px;
+      width:220px; height:220px;
+      border-radius:50%;
+      background:rgba(255,255,255,.12);
+    }
+    .hero h1{margin:0 0 8px;font-size:clamp(28px,4vw,40px)}
+    .hero p{margin:0;line-height:1.7;max-width:980px;color:rgba(255,255,255,.9)}
+    .toolbar{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px;position:relative;z-index:1}
+    button, .btn{
+      border:0; border-radius:999px;
+      padding:12px 16px;
+      font:inherit; font-weight:700;
+      cursor:pointer;
+      transition:transform .15s ease, opacity .15s ease;
+    }
+    button:hover,.btn:hover{transform:translateY(-1px)}
+    .btn-primary{background:#f8fafc;color:#134e4a}
+    .btn-secondary{background:rgba(255,255,255,.16);color:#fff;border:1px solid rgba(255,255,255,.2)}
+    .btn-ghost{background:#f2ede5;color:#374151;border:1px solid var(--line)}
+    .grid{display:grid;grid-template-columns:340px minmax(0,1fr);gap:18px;margin-top:18px}
+    .card{
+      background:rgba(255,253,248,.92);
+      backdrop-filter:blur(8px);
+      border:1px solid rgba(221,212,193,.9);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      overflow:hidden;
+    }
+    .card-header{padding:18px 20px;border-bottom:1px solid var(--line);background:linear-gradient(180deg,#f7f3eb,#fff)}
+    .card-body{padding:18px 20px}
+    .section-title{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+    .badge{display:inline-flex;align-items:center;padding:6px 10px;border-radius:999px;background:#eef6f1;color:#285846;font-size:12px;font-weight:700}
+    .meta{color:var(--muted);font-size:13px;line-height:1.6}
+    .field{display:grid;gap:8px;margin-bottom:14px}
+    label{font-weight:700;color:#374151}
+    input[type="text"], textarea, select{
+      width:100%;
+      border:1px solid #d8ccb8;
+      background:#fff;
+      border-radius:14px;
+      padding:12px 14px;
+      font:inherit;
+      color:var(--text);
+      outline:none;
+    }
+    input[type="text"]:focus, textarea:focus, select:focus{
+      border-color:var(--brand);
+      box-shadow:0 0 0 4px rgba(47,111,94,.12);
+    }
+    textarea{min-height:210px;resize:vertical;line-height:1.65}
+    .tabs{display:flex;gap:10px;flex-wrap:wrap}
+    .tab{background:#f4efe6;color:#4b5563;border:1px solid var(--line)}
+    .tab.active{background:#214f44;color:#fff;border-color:#214f44}
+    .panel{display:none}
+    .panel.active{display:block}
+    .stack{display:grid;gap:12px}
+    .split{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+    .mini-card{border:1px solid var(--line);border-radius:18px;background:#fff;overflow:hidden}
+    .mini-card header{padding:14px 16px;background:#f7f3ea;border-bottom:1px solid var(--line);font-weight:800}
+    .mini-card .body{padding:14px 16px}
+    .roster{
+      display:flex;flex-wrap:wrap;gap:8px;
+      min-height:56px;
+      padding:12px;
+      border:1px dashed #cdbfa8;
+      border-radius:16px;
+      background:#fffdf7;
+    }
+    .chip{
+      display:inline-flex;align-items:center;
+      border:1px solid #cdbfa8;
+      background:#fff;
+      border-radius:999px;
+      padding:8px 12px;
+      font-size:14px;
+      cursor:pointer;
+      user-select:none;
+    }
+    .chip.selected{background:#214f44;color:#fff;border-color:#214f44}
+    .chip.assigned{background:#d97706;color:#fff;border-color:#c86d05}
+    .muted{color:var(--muted);font-size:13px;line-height:1.65}
+    .summary-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+    .stat{border:1px solid var(--line);background:#fff;border-radius:16px;padding:14px 16px}
+    .stat .num{font-size:28px;font-weight:800;color:#214f44;line-height:1.1;margin-bottom:6px}
+    .stat .label{font-size:13px;color:var(--muted);font-weight:600}
+    .officer-row, .task-row{
+      display:grid;
+      grid-template-columns:160px minmax(0,1fr);
+      gap:10px;
+      align-items:start;
+      padding:12px;
+      border:1px solid #e2d8c7;
+      border-radius:16px;
+      background:#fff;
+      margin-bottom:10px;
+    }
+    .pills{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+    .pill{
+      border:1px solid #d7cbbb;
+      border-radius:999px;
+      padding:8px 12px;
+      background:#faf7f0;
+      font-size:13px;
+      cursor:pointer;
+    }
+    .pill.on{background:#214f44;color:#fff;border-color:#214f44}
+    .preview-box{background:#fff;border:1px solid var(--line);border-radius:18px;padding:14px 16px}
+    .preview-list{display:grid;gap:8px;margin-top:10px}
+    .preview-item{
+      display:flex;
+      justify-content:space-between;
+      gap:8px;
+      border-bottom:1px dashed #e7ddd0;
+      padding-bottom:8px;
+      font-size:14px;
+    }
+    .preview-item:last-child{border-bottom:0;padding-bottom:0}
+    .task-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+    .small-btn{padding:8px 12px;border-radius:10px;background:#eef6f1;color:#245444;border:1px solid #d3e4db;font-size:13px}
+    .footer-note{margin-top:14px;color:var(--muted);font-size:13px;line-height:1.7}
+    .site-footer{margin:18px 0 28px;text-align:center;color:var(--muted);font-size:12px;letter-spacing:.02em}
+    @media (max-width:1080px){
+      .grid,.split,.summary-grid{grid-template-columns:1fr}
+      .officer-row,.task-row{grid-template-columns:1fr}
+    }
+    body[data-role="student"] .grid{grid-template-columns:1fr}
+    body[data-role="student"] .grid > aside{display:none}
+    body[data-role="student"] .tabs{display:none}
+    body[data-role="student"] #panel-cleaning,
+    body[data-role="student"] #panel-preview{display:none !important}
+    body[data-role="student"] #panel-election .split{grid-template-columns:1fr}
+    body[data-role="student"] #panel-election .split > .mini-card:first-child{display:none !important}
+    body[data-role="student"] #btnDemo,
+    body[data-role="student"] #btnSave,
+    body[data-role="student"] #btnLoad,
+    body[data-role="student"] #btnClearVotes,
+    body[data-role="student"] #btnPrint,
+    body[data-role="student"] #btnImportFile,
+    body[data-role="student"] #btnParse,
+    body[data-role="student"] #btnClear,
+    body[data-role="student"] #btnExportRosterCsv,
+    body[data-role="student"] #btnExportResultsCsv,
+    body[data-role="student"] #btnExportResultsXlsx,
+    body[data-role="student"] #btnApplyOfficers,
+    body[data-role="student"] #btnMarkAllCandidates,
+    body[data-role="student"] #btnApplyTasks,
+    body[data-role="student"] #btnAutoAssign,
+    body[data-role="student"] #btnClearAssignments,
+    body[data-role="student"] #workspaceCode,
+    body[data-role="student"] #btnApplyWorkspace,
+    body[data-role="student"] #btnNewWorkspace,
+    body[data-role="student"] #btnCopyStudentLink,
+    body[data-role="student"] label[for="workspaceCode"]{display:none !important}
+    body[data-role="teacher"] .tabs{display:none}
+    body[data-role="teacher"] .panel{display:block !important}
+    body[data-role="teacher"] #panel-election .split{grid-template-columns:1fr}
+    body[data-role="teacher"] #panel-election .split > .mini-card:last-child{display:none !important}
+    @media print{
+      body{background:#fff !important}
+      .no-print,.toolbar,.tabs,.task-actions{display:none !important}
+      .app{max-width:none;padding:0}
+      .card,.mini-card,.preview-box,.stat,.officer-row,.task-row{box-shadow:none}
+      .panel{display:block !important}
+      body > *:not(#printRoot){display:none !important}
+      #printRoot{display:block !important}
+      #printRoot .print-page{display:block !important}
+      #printRoot .print-page{position:static !important;inset:auto !important}
+      #printRoot .print-page + .print-page{page-break-before:always}
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <section class="hero">
+      <h1>班級經營幹部選舉與打掃工作分配系統</h1>
+      <p>這是可離線開啟的 HTML 版本，支援匯入名單、點選名單、幹部選舉、打掃分配、列印與結果匯出。</p>
+      <div class="toolbar no-print">
+        <button class="btn-primary" id="btnDemo">載入測試名單</button>
+        <button class="btn-secondary" id="btnSave">儲存目前資料</button>
+        <button class="btn-secondary" id="btnLoad">讀取上次資料</button>
+        <button class="btn-secondary" id="btnClearVotes">一鍵清空全部投票</button>
+        <button class="btn-ghost" id="btnPrint">表格列印 / 存成 PDF</button>
+      </div>
+    </section>
+
+    <div class="grid">
+      <aside class="card">
+        <div class="card-header">
+          <div class="section-title">
+            <h2>匯入名單</h2>
+            <span class="badge">先把學生放進來</span>
+          </div>
+          <div class="meta">支援每行一位學生，或貼上 CSV 內容，例如：<br>1號王小明<br>2號陳大華</div>
+        </div>
+        <div class="card-body stack">
+          <div class="field">
+            <label for="className">班級 / 學年度 / 學期</label>
+            <input id="className" type="text" value="三年甲班 113學年度下學期" />
+          </div>
+          <div class="field">
+            <label for="workspaceCode">班級代碼</label>
+            <input id="workspaceCode" type="text" placeholder="例如：301-A" />
+          </div>
+          <div class="toolbar no-print">
+            <button class="btn-ghost" id="btnApplyWorkspace">套用代碼</button>
+            <button class="btn-ghost" id="btnNewWorkspace">建立新班級</button>
+            <button class="btn-ghost" id="btnCopyStudentLink">複製學生連結</button>
+          </div>
+          <div class="field">
+            <label for="rosterInput">學生名單</label>
+            <textarea id="rosterInput" placeholder="1號王小明&#10;2號陳大華&#10;3號林美玲"></textarea>
+          </div>
+          <div class="toolbar no-print">
+            <button class="btn-primary" id="btnParse">匯入名單</button>
+            <button class="btn-ghost" id="btnImportFile">CSV / Excel 匯入</button>
+            <input id="rosterFile" type="file" accept=".csv,.tsv,.txt,.xlsx,.xls" hidden />
+            <button class="btn-ghost" id="btnClear">清空</button>
+          </div>
+          <div class="muted">小提醒：這份資料會依「班級代碼」分開保存。不同代碼代表不同班級工作區，只有同一組代碼才會共享老師和學生畫面。如果剛好看到上一位測試者的名單，通常只要換代碼或按「建立新班級」就能分開。</div>
+          <div class="toolbar no-print">
+            <button class="btn-ghost" id="btnExportRosterCsv">名單 CSV 匯出</button>
+            <button class="btn-ghost" id="btnExportResultsCsv">結果 CSV 匯出</button>
+            <button class="btn-ghost" id="btnExportResultsXlsx">結果 Excel 匯出</button>
+          </div>
+          <div class="mini-card">
+            <header>目前名單</header>
+            <div class="body">
+              <div class="roster" id="rosterChips"></div>
+              <div class="footer-note">在幹部頁面點名單可切換候選人；在打掃頁面先選任務，再點名單即可分派。</div>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <main class="card">
+        <div class="card-header">
+          <div class="section-title">
+            <h2>互動式作業區</h2>
+            <span class="badge">可列印，可存檔</span>
+          </div>
+          <div class="tabs no-print">
+            <button class="tab active" data-tab="election">幹部選舉</button>
+            <button class="tab" data-tab="cleaning">打掃分配</button>
+            <button class="tab" data-tab="preview">表格頁</button>
+          </div>
+        </div>
+        <div class="card-body">
+          <section class="panel active" id="panel-election">
+            <div class="split">
+              <div class="mini-card">
+                <header>幹部設定（本欄可手動輸入）</header>
+                <div class="body stack">
+                  <div class="field">
+                    <label for="officerTemplate">幹部清單</label>
+                    <textarea id="officerTemplate"></textarea>
+                  </div>
+                  <div class="muted">可直接手動輸入，每行一位幹部名稱，例如：班長、副班長、風紀股長。</div>
+                  <div class="field">
+                    <label for="candidateMode">候選人來源</label>
+                    <select id="candidateMode">
+                      <option value="all">全部名單都可投票</option>
+                      <option value="selected">只使用已勾選的候選人</option>
+                    </select>
+                  </div>
+                  <div class="toolbar no-print">
+                    <button class="btn-primary" id="btnApplyOfficers">更新幹部</button>
+                    <button class="btn-ghost" id="btnMarkAllCandidates">全部設為候選人</button>
+                  </div>
+                  <div class="muted">先匯入名單，再點學生切換候選人狀態。右側每個幹部都可直接點選投票。</div>
+                </div>
+              </div>
+              <div class="mini-card">
+                <header>投票統計</header>
+                <div class="body">
+                  <div class="summary-grid" id="voteStats"></div>
+                  <div id="voteBoard" style="margin-top:14px;"></div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="panel" id="panel-cleaning">
+            <div class="split">
+              <div class="mini-card">
+                <header>打掃區域設定（本欄可手動輸入）</header>
+                <div class="body stack">
+                  <div class="field">
+                    <label for="taskTemplate">打掃工作清單</label>
+                    <textarea id="taskTemplate"></textarea>
+                  </div>
+                  <div class="muted">可直接手動輸入，每行一項打掃工作，格式可寫成「教室地板 | 使用掃把和拖把」。</div>
+                  <div class="toolbar no-print">
+                    <button class="btn-primary" id="btnApplyTasks">更新打掃工作</button>
+                    <button class="btn-ghost" id="btnAutoAssign">隨機分派</button>
+                    <button class="btn-ghost" id="btnClearAssignments">清除分派</button>
+                  </div>
+                  <div class="muted">先點選一個任務，再點學生姓名即可完成分派。也可先自動分派，再微調。</div>
+                </div>
+              </div>
+              <div class="mini-card">
+                <header>打掃分配板</header>
+                <div class="body">
+                  <div class="preview-box">
+                    <div><strong>任務列表</strong></div>
+                    <div class="muted" style="margin-top:6px;">點任務名稱選取，再點名單上的學生即可分派或取消。</div>
+                    <div class="preview-list" id="taskBoard"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="panel" id="panel-preview">
+            <div class="mini-card">
+              <header>表格頁</header>
+              <div class="body stack">
+                <div class="muted">列印時會保留目前的幹部選舉與打掃分配內容，可直接另存 PDF。</div>
+                <div class="preview-box">
+                  <div><strong id="previewTitle">班級預覽</strong></div>
+                  <div class="muted" id="previewMeta" style="margin-top:6px;"></div>
+                  <div class="preview-list" id="previewContent"></div>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <footer class="site-footer">版權聲明：凱西老師設計</footer>
+  <div id="printRoot" aria-hidden="true"></div>
+
+  <script>
+    const STORAGE_NAMESPACE = "classroom_forms_prototype_v2";
+    function normalizeWorkspaceCode(text) {
+      return String(text || "").trim().toUpperCase().replace(/[^A-Z0-9_-]/g, "").slice(0, 24);
+    }
+    function generateWorkspaceCode() {
+      return "C" + Math.random().toString(36).slice(2, 8).toUpperCase();
+    }
+    function readSavedWorkspaceCode() {
+      try {
+        const raw = localStorage.getItem(`${STORAGE_NAMESPACE}:ui`);
+        if (!raw) return "";
+        const data = JSON.parse(raw);
+        return typeof data.workspaceCode === "string" ? normalizeWorkspaceCode(data.workspaceCode) : "";
+      } catch (err) {
+        console.warn(err);
+        return "";
+      }
+    }
+    const defaultOfficers = [
+      "班長", "副班長", "風紀股長", "學藝股長",
+      "服務股長", "體育股長", "環保股長", "資訊股長"
+    ];
+    const defaultTasks = [
+      { area: "教室地板", note: "使用掃把和拖把" },
+      { area: "黑板擦拭", note: "每日清理板擦" },
+      { area: "講台整理", note: "保持整潔" },
+      { area: "垃圾分類", note: "確實分類，每日傾倒" },
+      { area: "走廊值日", note: "保持走廊清潔" },
+      { area: "資源回收", note: "每週五集中回收" }
+    ];
+    const demoRoster = [
+      "1號王小明","2號陳大華","3號林美玲","4號張志豪","5號李曉華",
+      "6號吳文傑","7號許雅婷","8號周子涵","9號黃柏安","10號蔡宜庭"
+    ];
+
+    const state = {
+      workspaceCode: "",
+      className: "三年甲班 113學年度下學期",
+      roster: [],
+      officers: defaultOfficers.map((name) => ({ name, votes: "" })),
+      tasks: defaultTasks.map((task) => ({ ...task, assignees: [] })),
+      selectedCandidates: new Set(),
+      activeTaskIndex: null,
+      candidateMode: "all",
+      ballots: [],
+      revision: 0,
+      updatedAt: null,
+      pushTimer: null,
+      syncTimer: null,
+      syncInFlight: false,
+      syncQueued: false
+    };
+    const UI_STORAGE_KEY = `${STORAGE_NAMESPACE}:ui`;
+    const voteUi = {
+      activeStudentKey: "",
+      draftSelectionsByStudent: {},
+      draftUpdatedAt: null
+    };
+    let rosterSyncTimer = null;
+    const SYNC_API_URL = "https://classroom-interactive-prototype.netlify.app/.netlify/functions/classroom-state";
+    const APP_ROLE = new URLSearchParams(location.search).get("role") === "student" ? "student" : "teacher";
+
+    const $ = (id) => document.getElementById(id);
+
+    function getStorageKey() {
+      return `${STORAGE_NAMESPACE}:${state.workspaceCode || "default"}`;
+    }
+
+    function getStudentShareUrl(code = state.workspaceCode) {
+      const url = new URL(location.protocol === "file:" ? "https://classroom-interactive-prototype.netlify.app/" : location.href);
+      url.searchParams.set("role", "student");
+      url.searchParams.set("code", normalizeWorkspaceCode(code) || "DEFAULT");
+      return url.toString();
+    }
+
+    function getUrlWorkspaceCode() {
+      const params = new URLSearchParams(location.search);
+      return normalizeWorkspaceCode(params.get("code") || params.get("workspace") || params.get("classCode"));
+    }
+
+    function clean(text) {
+      return String(text || "").trim().replace(/[，,、]/g, " ").replace(/\s+/g, " ");
+    }
+
+    function parseRoster(text) {
+      return String(text || "")
+        .split(/\r?\n|;/)
+        .map(clean)
+        .filter(Boolean)
+        .map((line, index) => {
+          const compact = line.replace(/\s+/g, "");
+          const m = compact.match(/^(\d+)號(.+)$/);
+          if (m) return { id: m[1], name: m[2] };
+          return { id: String(index + 1), name: compact.replace(/^\d+/, "") || compact };
+        });
+    }
+
+    function rosterLabel(person) {
+      return person.id ? `${person.id}號${person.name}` : person.name;
+    }
+
+    function rosterName(person) {
+      return person.name || "";
+    }
+
+    function snapshotState() {
+      return {
+        workspaceCode: state.workspaceCode,
+        className: state.className,
+        roster: state.roster,
+        officers: state.officers,
+        tasks: state.tasks,
+        selectedCandidates: Array.from(state.selectedCandidates),
+        activeTaskIndex: state.activeTaskIndex,
+        candidateMode: state.candidateMode,
+        ballots: state.ballots,
+        revision: state.revision,
+        updatedAt: state.updatedAt
+      };
+    }
+
+    function applySnapshot(snapshot) {
+      if (!snapshot || typeof snapshot !== "object") return false;
+      state.workspaceCode = typeof snapshot.workspaceCode === "string" ? normalizeWorkspaceCode(snapshot.workspaceCode) || state.workspaceCode : state.workspaceCode;
+      state.className = typeof snapshot.className === "string" ? snapshot.className : state.className;
+      state.roster = Array.isArray(snapshot.roster) ? snapshot.roster : state.roster;
+      state.officers = Array.isArray(snapshot.officers) ? snapshot.officers : state.officers;
+      state.tasks = Array.isArray(snapshot.tasks) ? snapshot.tasks : state.tasks;
+      state.selectedCandidates = new Set(Array.isArray(snapshot.selectedCandidates) ? snapshot.selectedCandidates : []);
+      state.activeTaskIndex = Number.isInteger(snapshot.activeTaskIndex) ? snapshot.activeTaskIndex : null;
+      state.candidateMode = snapshot.candidateMode === "selected" ? "selected" : "all";
+      state.ballots = Array.isArray(snapshot.ballots)
+        ? snapshot.ballots.map((ballot) => normalizeBallot(ballot)).filter(Boolean)
+        : state.ballots;
+      state.revision = Number.isFinite(snapshot.revision) ? snapshot.revision : state.revision;
+      state.updatedAt = typeof snapshot.updatedAt === "string" ? snapshot.updatedAt : state.updatedAt;
+      return true;
+    }
+
+    function rosterKey(person) {
+      if (!person) return "";
+      return `${String(person.id || "").trim()}::${String(person.name || "").trim()}`;
+    }
+
+    function rosterDisplay(person) {
+      if (!person) return "";
+      const id = String(person.id || "").trim();
+      const name = String(person.name || "").trim();
+      return id ? `${id}號${name}` : name;
+    }
+
+    function normalizeSelections(selections) {
+      const result = {};
+      if (!selections || typeof selections !== "object") return result;
+      state.officers.forEach((officer) => {
+        const value = String(selections[officer.name] || "").trim();
+        if (value) result[officer.name] = value;
+      });
+      return result;
+    }
+
+    function normalizeBallot(ballot) {
+      if (!ballot || typeof ballot !== "object") return null;
+      const studentKey = String(ballot.studentKey || ballot.studentId || ballot.studentName || "").trim();
+      const studentName = String(ballot.studentName || ballot.name || "").trim();
+      const studentLabel = String(ballot.studentLabel || ballot.studentDisplay || studentName || studentKey).trim();
+      const selections = normalizeSelections(ballot.selections || ballot.answers || {});
+      if (!studentKey || !studentLabel) return null;
+      return {
+        studentKey,
+        studentId: String(ballot.studentId || "").trim(),
+        studentName,
+        studentLabel,
+        selections,
+        submittedAt: typeof ballot.submittedAt === "string" ? ballot.submittedAt : new Date().toISOString()
+      };
+    }
+
+    function cloneSelections(source) {
+      return normalizeSelections(source || {});
+    }
+
+    function getBallotForStudentKey(studentKey) {
+      return state.ballots.find((ballot) => ballot.studentKey === studentKey) || null;
+    }
+
+    function getActiveStudent() {
+      return state.roster.find((person) => rosterKey(person) === voteUi.activeStudentKey) || null;
+    }
+
+    function getCurrentDraftSelections() {
+      return cloneSelections(voteUi.draftSelectionsByStudent[voteUi.activeStudentKey] || {});
+    }
+
+    function persistUiState() {
+      localStorage.setItem(UI_STORAGE_KEY, JSON.stringify({
+        workspaceCode: state.workspaceCode,
+        activeStudentKey: voteUi.activeStudentKey,
+        draftSelectionsByStudent: voteUi.draftSelectionsByStudent,
+        draftUpdatedAt: voteUi.draftUpdatedAt
+      }));
+    }
+
+    function loadUiState() {
+      const raw = localStorage.getItem(UI_STORAGE_KEY);
+      if (!raw) return false;
+      try {
+        const data = JSON.parse(raw);
+        if (typeof data.workspaceCode === "string" && !state.workspaceCode) {
+          state.workspaceCode = normalizeWorkspaceCode(data.workspaceCode) || state.workspaceCode;
+        }
+        voteUi.activeStudentKey = typeof data.activeStudentKey === "string" ? data.activeStudentKey : "";
+        voteUi.draftSelectionsByStudent = data && typeof data.draftSelectionsByStudent === "object" && !Array.isArray(data.draftSelectionsByStudent)
+          ? data.draftSelectionsByStudent
+          : {};
+        voteUi.draftUpdatedAt = typeof data.draftUpdatedAt === "string" ? data.draftUpdatedAt : null;
+        return true;
+      } catch (err) {
+        console.warn(err);
+        return false;
+      }
+    }
+
+    function setActiveStudentKey(studentKey) {
+      const nextKey = String(studentKey || "").trim();
+      voteUi.activeStudentKey = nextKey;
+      const ballot = getBallotForStudentKey(nextKey);
+      const storedDraft = cloneSelections(voteUi.draftSelectionsByStudent[nextKey] || {});
+      voteUi.draftSelectionsByStudent[nextKey] = ballot ? cloneSelections(ballot.selections) : storedDraft;
+      voteUi.draftUpdatedAt = new Date().toISOString();
+      persistUiState();
+    }
+
+    function resolveStudentKeyFromUrl() {
+      const params = new URLSearchParams(location.search);
+      const raw = String(params.get("studentKey") || params.get("student") || params.get("name") || "").trim();
+      if (!raw) return "";
+      const exactKey = state.roster.find((person) => rosterKey(person) === raw);
+      if (exactKey) return rosterKey(exactKey);
+      const byId = state.roster.find((person) => String(person.id || "").trim() === raw);
+      if (byId) return rosterKey(byId);
+      const byName = state.roster.find((person) => String(person.name || "").trim() === raw || rosterDisplay(person) === raw);
+      return byName ? rosterKey(byName) : "";
+    }
+
+    function setDraftSelection(officerName, candidateName) {
+      if (!voteUi.activeStudentKey) return;
+      const nextDraft = cloneSelections(voteUi.draftSelectionsByStudent[voteUi.activeStudentKey] || {});
+      if (candidateName) nextDraft[officerName] = candidateName;
+      else delete nextDraft[officerName];
+      voteUi.draftSelectionsByStudent[voteUi.activeStudentKey] = nextDraft;
+      voteUi.draftUpdatedAt = new Date().toISOString();
+      persistUiState();
+    }
+
+    function clearDraftForActiveStudent() {
+      if (!voteUi.activeStudentKey) return;
+      delete voteUi.draftSelectionsByStudent[voteUi.activeStudentKey];
+      voteUi.draftUpdatedAt = new Date().toISOString();
+      persistUiState();
+    }
+
+    function removeBallotForStudentKey(studentKey) {
+      state.ballots = state.ballots.filter((ballot) => ballot.studentKey !== studentKey);
+    }
+
+    function getVoteTallies() {
+      const tallies = new Map();
+      const allCandidates = new Set(getCandidateList());
+      state.ballots.forEach((ballot) => {
+        Object.values(ballot.selections || {}).forEach((candidate) => {
+          if (candidate) allCandidates.add(candidate);
+        });
+      });
+      state.officers.forEach((officer) => {
+        const counts = new Map();
+        allCandidates.forEach((candidate) => counts.set(candidate, 0));
+        state.ballots.forEach((ballot) => {
+          const choice = String(ballot.selections?.[officer.name] || "").trim();
+          if (!choice) return;
+          counts.set(choice, (counts.get(choice) || 0) + 1);
+        });
+        tallies.set(officer.name, counts);
+      });
+      return tallies;
+    }
+
+    function getSubmittedBallotCount() {
+      return state.ballots.length;
+    }
+
+    function migrateLegacyVotes() {
+      if (state.ballots.length) return false;
+      const legacyBallots = [];
+      state.officers.forEach((officer) => {
+        const choice = String(officer.votes || "").trim();
+        if (!choice) return;
+        legacyBallots.push({
+          studentKey: "legacy:" + officer.name,
+          studentId: "",
+          studentName: officer.name,
+          studentLabel: "舊制-" + officer.name,
+          selections: { [officer.name]: choice },
+          submittedAt: state.updatedAt || new Date().toISOString(),
+          legacy: true
+        });
+        officer.votes = "";
+      });
+      if (!legacyBallots.length) return false;
+      state.ballots = legacyBallots;
+      return true;
+    }
+
+    function clearAllVotes() {
+      state.ballots = [];
+      state.officers = state.officers.map((officer) => ({ ...officer, votes: "" }));
+      voteUi.activeStudentKey = "";
+      voteUi.draftSelectionsByStudent = {};
+      voteUi.draftUpdatedAt = null;
+      persistUiState();
+      saveState();
+      render();
+    }
+
+    function persistLocalState() {
+      localStorage.setItem(getStorageKey(), JSON.stringify(snapshotState()));
+    }
+
+    function scheduleRemoteSave() {
+      if (state.pushTimer) clearTimeout(state.pushTimer);
+      state.pushTimer = setTimeout(() => {
+        state.pushTimer = null;
+        void pushStateToRemote();
+      }, 400);
+    }
+
+    async function pushStateToRemote() {
+      if (!window.fetch) return;
+      if (state.syncInFlight) {
+        state.syncQueued = true;
+        return;
+      }
+      state.syncInFlight = true;
+      try {
+        const res = await fetch(SYNC_API_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          cache: "no-store",
+          body: JSON.stringify(snapshotState())
+        });
+        if (!res.ok) return;
+        const data = await res.json().catch(() => null);
+        const remote = data && data.state ? data.state : data;
+        if (remote && Number.isFinite(remote.revision)) {
+          state.revision = remote.revision;
+          state.updatedAt = remote.updatedAt || state.updatedAt;
+          persistLocalState();
+        }
+      } catch (error) {
+        console.warn(error);
+      } finally {
+        state.syncInFlight = false;
+        if (state.syncQueued) {
+          state.syncQueued = false;
+          void pushStateToRemote();
+        }
+      }
+    }
+
+    async function pullStateFromRemote() {
+      if (!window.fetch) return false;
+      try {
+        const res = await fetch(`${SYNC_API_URL}?workspaceCode=${encodeURIComponent(state.workspaceCode || "default")}&t=${Date.now()}`, { cache: "no-store" });
+        if (!res.ok) return false;
+        const data = await res.json().catch(() => null);
+        const remote = data && data.state ? data.state : data;
+        if (!remote || !Number.isFinite(remote.revision)) return false;
+        if (remote.revision > state.revision) {
+          applySnapshot(remote);
+          persistLocalState();
+          render();
+          return true;
+        }
+      } catch (error) {
+        console.warn(error);
+      }
+      return false;
+    }
+
+    function startAutoSync() {
+      if (state.syncTimer) clearInterval(state.syncTimer);
+      state.syncTimer = setInterval(() => {
+        void pullStateFromRemote();
+      }, 1000);
+      document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "visible") void pullStateFromRemote();
+      });
+    }
+
+    function safeSlug(text) {
+      return String(text || "classroom")
+        .replace(/[\\/:*?"<>|]/g, "_")
+        .replace(/\s+/g, "_")
+        .replace(/_+/g, "_")
+        .replace(/^_+|_+$/g, "");
+    }
+
+    function escapeCsv(value) {
+      const text = String(value ?? "");
+      return /[",\r\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+    }
+
+    function rowsToCsv(rows) {
+      return rows.map((row) => row.map(escapeCsv).join(",")).join("\r\n");
+    }
+
+    function downloadBlob(blob, filename) {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 0);
+    }
+
+    function textToRows(text) {
+      return String(text || "")
+        .split(/\r?\n|;/)
+        .map((line) => line.replace(/^\uFEFF/, "").trim())
+        .filter(Boolean);
+    }
+
+    function extractRosterFromText(text) {
+      return textToRows(text).map((line, index) => {
+        const compact = line.replace(/\s+/g, "");
+        const m = compact.match(/^(\d+)號(.+)$/);
+        if (m) return { id: m[1], name: m[2] };
+        return { id: String(index + 1), name: compact.replace(/^\d+/, "") || compact };
+      });
+    }
+
+    function encodeXml(text) {
+      return String(text ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&apos;");
+    }
+
+    function xmlCell(value) {
+      if (typeof value === "number" && Number.isFinite(value)) {
+        return `<c><v>${value}</v></c>`;
+      }
+      return `<c t="inlineStr"><is><t xml:space="preserve">${encodeXml(value)}</t></is></c>`;
+    }
+
+    function rowsToSheetXml(rows) {
+      const body = rows.map((row, index) => {
+        const cells = row.map((value, cellIndex) => {
+          const col = String.fromCharCode(65 + cellIndex);
+          return `<c r="${col}${index + 1}"${typeof value === "number" && Number.isFinite(value) ? "" : ' t="inlineStr"'}>${typeof value === "number" && Number.isFinite(value) ? `<v>${value}</v>` : `<is><t xml:space="preserve">${encodeXml(value)}</t></is>`}</c>`;
+        }).join("");
+        return `<row r="${index + 1}">${cells}</row>`;
+      }).join("");
+      return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>${body}</sheetData></worksheet>`;
+    }
+
+    function crc32(bytes) {
+      if (!crc32.table) {
+        const table = new Uint32Array(256);
+        for (let i = 0; i < 256; i++) {
+          let c = i;
+          for (let k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+          table[i] = c >>> 0;
+        }
+        crc32.table = table;
+      }
+      let c = 0xffffffff;
+      for (const b of bytes) c = crc32.table[(c ^ b) & 0xff] ^ (c >>> 8);
+      return (~c) >>> 0;
+    }
+
+    function writeUint16LE(arr, value) {
+      arr.push(value & 0xff, (value >>> 8) & 0xff);
+    }
+
+    function writeUint32LE(arr, value) {
+      arr.push(value & 0xff, (value >>> 8) & 0xff, (value >>> 16) & 0xff, (value >>> 24) & 0xff);
+    }
+
+    function concatBytes(chunks) {
+      let size = 0;
+      for (const chunk of chunks) size += chunk.length;
+      const out = new Uint8Array(size);
+      let offset = 0;
+      for (const chunk of chunks) {
+        out.set(chunk, offset);
+        offset += chunk.length;
+      }
+      return out;
+    }
+
+    function makeZip(entries) {
+      const encoder = new TextEncoder();
+      const fileParts = [];
+      const centralParts = [];
+      let offset = 0;
+
+      for (const entry of entries) {
+        const nameBytes = encoder.encode(entry.name);
+        const dataBytes = entry.data instanceof Uint8Array ? entry.data : encoder.encode(String(entry.data));
+        const crc = crc32(dataBytes);
+        const size = dataBytes.length;
+
+        const local = [];
+        writeUint32LE(local, 0x04034b50);
+        writeUint16LE(local, 20);
+        writeUint16LE(local, 0);
+        writeUint16LE(local, 0);
+        writeUint16LE(local, 0);
+        writeUint16LE(local, 0);
+        writeUint32LE(local, crc);
+        writeUint32LE(local, size);
+        writeUint32LE(local, size);
+        writeUint16LE(local, nameBytes.length);
+        writeUint16LE(local, 0);
+        const localHeader = new Uint8Array([...local, ...nameBytes]);
+        fileParts.push(localHeader, dataBytes);
+
+        const central = [];
+        writeUint32LE(central, 0x02014b50);
+        writeUint16LE(central, 20);
+        writeUint16LE(central, 20);
+        writeUint16LE(central, 0);
+        writeUint16LE(central, 0);
+        writeUint16LE(central, 0);
+        writeUint16LE(central, 0);
+        writeUint32LE(central, crc);
+        writeUint32LE(central, size);
+        writeUint32LE(central, size);
+        writeUint16LE(central, nameBytes.length);
+        writeUint16LE(central, 0);
+        writeUint16LE(central, 0);
+        writeUint16LE(central, 0);
+        writeUint16LE(central, 0);
+        writeUint32LE(central, 0);
+        writeUint32LE(central, offset);
+        centralParts.push(new Uint8Array([...central, ...nameBytes]));
+        offset += localHeader.length + dataBytes.length;
+      }
+
+      const centralDir = concatBytes(centralParts);
+      const localFiles = concatBytes(fileParts);
+      const eocd = [];
+      writeUint32LE(eocd, 0x06054b50);
+      writeUint16LE(eocd, 0);
+      writeUint16LE(eocd, 0);
+      writeUint16LE(eocd, entries.length);
+      writeUint16LE(eocd, entries.length);
+      writeUint32LE(eocd, centralDir.length);
+      writeUint32LE(eocd, localFiles.length);
+      writeUint16LE(eocd, 0);
+      return concatBytes([localFiles, centralDir, new Uint8Array(eocd)]);
+    }
+
+    async function unzipEntries(buffer) {
+      const bytes = new Uint8Array(buffer);
+      const view = new DataView(buffer);
+      let eocd = -1;
+      for (let i = bytes.length - 22; i >= 0; i--) {
+        if (view.getUint32(i, true) === 0x06054b50) {
+          eocd = i;
+          break;
+        }
+      }
+      if (eocd < 0) throw new Error("Invalid ZIP file");
+      const entryCount = view.getUint16(eocd + 10, true);
+      const cdOffset = view.getUint32(eocd + 16, true);
+      let offset = cdOffset;
+      const entries = {};
+      const decoder = new TextDecoder();
+
+      for (let i = 0; i < entryCount; i++) {
+        if (view.getUint32(offset, true) !== 0x02014b50) break;
+        const method = view.getUint16(offset + 10, true);
+        const compressedSize = view.getUint32(offset + 20, true);
+        const uncompressedSize = view.getUint32(offset + 24, true);
+        const nameLen = view.getUint16(offset + 28, true);
+        const extraLen = view.getUint16(offset + 30, true);
+        const commentLen = view.getUint16(offset + 32, true);
+        const localHeaderOffset = view.getUint32(offset + 42, true);
+        const name = decoder.decode(bytes.slice(offset + 46, offset + 46 + nameLen));
+        entries[name] = { method, compressedSize, uncompressedSize, localHeaderOffset };
+        offset += 46 + nameLen + extraLen + commentLen;
+      }
+      return entries;
+    }
+
+    async function unzipEntry(buffer, entry) {
+      const view = new DataView(buffer);
+      if (view.getUint32(entry.localHeaderOffset, true) !== 0x04034b50) {
+        throw new Error("Invalid ZIP entry");
+      }
+      const nameLen = view.getUint16(entry.localHeaderOffset + 26, true);
+      const extraLen = view.getUint16(entry.localHeaderOffset + 28, true);
+      const dataStart = entry.localHeaderOffset + 30 + nameLen + extraLen;
+      const compressed = buffer.slice(dataStart, dataStart + entry.compressedSize);
+      if (entry.method === 0) return compressed;
+      if (entry.method === 8 && typeof DecompressionStream !== "undefined") {
+        const stream = new Blob([compressed]).stream().pipeThrough(new DecompressionStream("deflate-raw"));
+        return await new Response(stream).arrayBuffer();
+      }
+      throw new Error("Unsupported ZIP compression method");
+    }
+
+    function parseXml(text) {
+      return new DOMParser().parseFromString(text, "application/xml");
+    }
+
+    function getText(node) {
+      return node ? (node.textContent || "") : "";
+    }
+
+    function getCellValue(cell, sharedStrings) {
+      const type = cell.getAttribute("t") || "";
+      const v = getText(cell.querySelector("v"));
+      if (type === "inlineStr") {
+        return getText(cell.querySelector("is t"));
+      }
+      if (type === "s") {
+        const idx = Number(v);
+        return Number.isFinite(idx) && sharedStrings[idx] != null ? sharedStrings[idx] : "";
+      }
+      if (type === "b") return v === "1" ? "TRUE" : "FALSE";
+      return v;
+    }
+
+    function readFileAsArrayBuffer(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => reject(reader.error || new Error("??????"));
+        reader.readAsArrayBuffer(file);
+      });
+    }
+
+    function readFileAsText(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result || ""));
+        reader.onerror = () => reject(reader.error || new Error("??????"));
+        reader.readAsText(file, "utf-8");
+      });
+    }
+
+    function extractRowsFromSheetXml(sheetXml, sharedStrings) {
+      const sheetDoc = parseXml(new TextDecoder().decode(sheetXml));
+      const rows = [];
+      Array.from(sheetDoc.getElementsByTagName("row")).forEach((row, idx) => {
+        const cells = Array.from(row.getElementsByTagName("c")).map((cell) => getCellValue(cell, sharedStrings));
+        const first = String(cells[0] || "").trim();
+        const second = String(cells[1] || "").trim();
+        let line = first;
+        if (/^\d+$/.test(first) && second) {
+          line = `${first}號${second}`;
+        } else if (!first && second) {
+          line = second;
+        }
+        if (idx === 0 && /^(姓名|座號|名單|學生)/.test(line)) return;
+        if (line) rows.push(line);
+      });
+      return rows;
+    }
+
+    function getWorksheetEntryNames(entries) {
+      return Object.keys(entries)
+        .filter((key) => /^xl\/worksheets\/sheet\d+\.xml$/i.test(key))
+        .sort((a, b) => Number(a.match(/sheet(\d+)\.xml$/i)?.[1] || 0) - Number(b.match(/sheet(\d+)\.xml$/i)?.[1] || 0));
+    }
+
+    async function parseXlsxRoster(buffer) {
+      const entries = await unzipEntries(buffer);
+      const sharedStrings = [];
+      if (entries["xl/sharedStrings.xml"]) {
+        const sharedXml = await unzipEntry(buffer, entries["xl/sharedStrings.xml"]);
+        const sharedDoc = parseXml(new TextDecoder().decode(sharedXml));
+        Array.from(sharedDoc.getElementsByTagName("si")).forEach((si) => {
+          sharedStrings.push(Array.from(si.getElementsByTagName("t")).map((n) => getText(n)).join(""));
+        });
+      }
+
+      const worksheetNames = getWorksheetEntryNames(entries);
+      for (const sheetTarget of worksheetNames) {
+        const sheetXml = await unzipEntry(buffer, entries[sheetTarget]);
+        const rows = extractRowsFromSheetXml(sheetXml, sharedStrings);
+        if (rows.length) return rows;
+      }
+
+      const workbookXml = await unzipEntry(buffer, entries["xl/workbook.xml"]);
+      const workbookDoc = parseXml(new TextDecoder().decode(workbookXml));
+      const relsXml = entries["xl/_rels/workbook.xml.rels"] ? await unzipEntry(buffer, entries["xl/_rels/workbook.xml.rels"]) : null;
+      const relsDoc = relsXml ? parseXml(new TextDecoder().decode(relsXml)) : null;
+      const sheetNode = workbookDoc.getElementsByTagName("sheet")[0];
+      if (sheetNode) {
+        const relId = sheetNode.getAttribute("r:id");
+        let sheetTarget = "xl/worksheets/sheet1.xml";
+        if (relId && relsDoc) {
+          const rel = Array.from(relsDoc.getElementsByTagName("Relationship")).find((node) => node.getAttribute("Id") === relId);
+          if (rel) {
+            const target = rel.getAttribute("Target") || "worksheets/sheet1.xml";
+            sheetTarget = target.startsWith("xl/") ? target : `xl/${target.replace(/^\/?/, "")}`;
+          }
+        }
+        if (entries[sheetTarget]) {
+          const sheetXml = await unzipEntry(buffer, entries[sheetTarget]);
+          const rows = extractRowsFromSheetXml(sheetXml, sharedStrings);
+          if (rows.length) return rows;
+        }
+      }
+
+      throw new Error("????????????????????");
+    }
+
+    async function readRosterFile(file) {
+      const name = (file.name || "").toLowerCase();
+      if (name.endsWith(".xls")) {
+        throw new Error("??????? .xls?????? .xlsx ? CSV");
+      }
+      if (name.endsWith(".xlsx")) {
+        const buffer = await readFileAsArrayBuffer(file);
+        return await parseXlsxRoster(buffer);
+      }
+      const text = await readFileAsText(file);
+      return textToRows(text);
+    }
+
+    function buildRosterCsv() {
+      const rows = [["座號", "姓名", "顯示名稱", "候選人"]];
+      state.roster.forEach((person) => {
+        const name = rosterName(person);
+        rows.push([person.id || "", person.name || "", rosterLabel(person), state.selectedCandidates.has(name) ? "是" : "否"]);
+      });
+      return "\uFEFF" + rowsToCsv(rows);
+    }
+
+    function formatDateTime(iso) {
+      if (!iso) return "";
+      const date = new Date(iso);
+      if (Number.isNaN(date.getTime())) return String(iso);
+      return date.toLocaleString("zh-TW", { hour12: false });
+    }
+
+    function buildVoteDetailRows() {
+      const rows = [["座號", "姓名", "顯示名稱", "投票狀態", "送出時間"].concat(state.officers.map((officer) => officer.name))];
+      const seen = new Set();
+      state.roster.forEach((person) => {
+        const key = rosterKey(person);
+        const ballot = getBallotForStudentKey(key);
+        seen.add(key);
+        rows.push([
+          person.id || "",
+          person.name || "",
+          rosterDisplay(person),
+          ballot ? "已送出" : "草稿",
+          formatDateTime(ballot && ballot.submittedAt ? ballot.submittedAt : ""),
+          ...state.officers.map((officer) => (ballot && ballot.selections ? ballot.selections[officer.name] || "" : ""))
+        ]);
+      });
+      state.ballots
+        .filter((ballot) => ballot.studentKey && !seen.has(ballot.studentKey))
+        .forEach((ballot) => {
+          rows.push([
+            ballot.studentId || "",
+            ballot.studentName || "",
+            ballot.studentLabel || ballot.studentName || ballot.studentKey,
+            "已送出",
+            formatDateTime(ballot.submittedAt || ""),
+            ...state.officers.map((officer) => (ballot.selections ? ballot.selections[officer.name] || "" : ""))
+          ]);
+        });
+      return rows;
+    }
+
+    function buildVoteTallyRows() {
+      const tallies = getVoteTallies();
+      const rows = [["幹部", "候選人", "票數"]];
+      state.officers.forEach((officer) => {
+        const counts = tallies.get(officer.name) || new Map();
+        const sorted = Array.from(counts.entries()).sort((a, b) => {
+          if (b[1] !== a[1]) return b[1] - a[1];
+          return String(a[0]).localeCompare(String(b[0]), "zh-Hant");
+        });
+        if (!sorted.length) {
+          rows.push([officer.name, "尚未有票數", 0]);
+          return;
+        }
+        sorted.forEach(([candidate, count]) => {
+          rows.push([officer.name, candidate, count]);
+        });
+      });
+      return rows;
+    }
+
+    function buildCleaningRows() {
+      return [["打掃區域", "備註", "負責同學"]].concat(
+        state.tasks.map((task) => [task.area, task.note || "", task.assignees.join("、") || "未分派"])
+      );
+    }
+
+    function buildResultsCsvRows() {
+      return [["幹部投票統計"]].concat(buildVoteTallyRows(), [
+        [],
+        ["打掃工作分配"]
+      ]).concat(buildCleaningRows());
+    }
+
+    function buildResultsSheets() {
+      return [
+        { name: "幹部投票統計", rows: buildVoteTallyRows() },
+        { name: "打掃工作分配", rows: buildCleaningRows() }
+      ];
+    }
+
+    async function exportResultsXlsx() {
+      const sheets = buildResultsSheets();
+      const encoder = new TextEncoder();
+      const workbookXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>${sheets.map((sheet, index) => `<sheet name="${encodeXml(sheet.name)}" sheetId="${index + 1}" r:id="rId${index + 1}"/>`).join("")}</sheets></workbook>`;
+      const workbookRels = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${sheets.map((_, index) => `<Relationship Id="rId${index + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet${index + 1}.xml"/>`).join("")}</Relationships>`;
+      const contentTypes = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>${sheets.map((_, index) => `<Override PartName="/xl/worksheets/sheet${index + 1}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`).join("")}</Types>`;
+      const rootRels = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>`;
+      const entries = [
+        { name: "[Content_Types].xml", data: encoder.encode(contentTypes) },
+        { name: "_rels/.rels", data: encoder.encode(rootRels) },
+        { name: "xl/workbook.xml", data: encoder.encode(workbookXml) },
+        { name: "xl/_rels/workbook.xml.rels", data: encoder.encode(workbookRels) }
+      ];
+      sheets.forEach((sheet, index) => {
+        entries.push({
+          name: `xl/worksheets/sheet${index + 1}.xml`,
+          data: encoder.encode(rowsToSheetXml(sheet.rows))
+        });
+      });
+      const zip = makeZip(entries);
+      downloadBlob(new Blob([zip], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }), `班級經營結果_${safeSlug(state.className)}.xlsx`);
+    }
+
+    function saveState() {
+      state.revision += 1;
+      state.updatedAt = new Date().toISOString();
+      persistLocalState();
+      scheduleRemoteSave();
+    }
+
+    function loadState() {
+      const raw = localStorage.getItem(getStorageKey());
+      if (!raw) return false;
+      try {
+        const data = JSON.parse(raw);
+        applySnapshot(data);
+        return true;
+      } catch (err) {
+        console.warn(err);
+        return false;
+      }
+    }
+
+    function resetWorkspaceData() {
+      state.roster = [];
+      state.officers = defaultOfficers.map((name) => ({ name, votes: "" }));
+      state.tasks = defaultTasks.map((task) => ({ ...task, assignees: [] }));
+      state.selectedCandidates = new Set();
+      state.activeTaskIndex = null;
+      state.candidateMode = "all";
+      state.ballots = [];
+      state.revision = 0;
+      state.updatedAt = null;
+      voteUi.activeStudentKey = "";
+      voteUi.draftSelectionsByStudent = {};
+      voteUi.draftUpdatedAt = null;
+      persistUiState();
+    }
+
+    async function switchWorkspaceCode(rawCode, createFresh = false) {
+      const nextCode = normalizeWorkspaceCode(rawCode) || generateWorkspaceCode();
+      if (nextCode === state.workspaceCode && !createFresh) {
+        $("workspaceCode").value = nextCode;
+        persistUiState();
+        return;
+      }
+      if (state.pushTimer) {
+        clearTimeout(state.pushTimer);
+        state.pushTimer = null;
+      }
+      state.revision += 1;
+      state.updatedAt = new Date().toISOString();
+      persistLocalState();
+      await pushStateToRemote();
+      state.workspaceCode = nextCode;
+      $("workspaceCode").value = nextCode;
+      resetWorkspaceData();
+      if (!createFresh) {
+        const localLoaded = loadState();
+        const remoteLoaded = localLoaded ? false : await pullStateFromRemote();
+        if (!localLoaded && !remoteLoaded) {
+          saveState();
+        }
+      } else {
+        saveState();
+      }
+      render();
+    }
+
+    function renderRoster() {
+      const wrap = $("rosterChips");
+      wrap.innerHTML = "";
+      if (!state.roster.length) {
+        const empty = document.createElement("div");
+        empty.className = "muted";
+        empty.textContent = "尚未匯入名單。";
+        wrap.appendChild(empty);
+        return;
+      }
+      state.roster.forEach((person) => {
+        const name = rosterName(person);
+        const chip = document.createElement("div");
+        chip.className = "chip";
+        if (state.selectedCandidates.has(name)) chip.classList.add("selected");
+        if (state.activeTaskIndex !== null) chip.classList.add("assigned");
+        chip.textContent = rosterLabel(person);
+        chip.title = state.activeTaskIndex === null ? "點一下切換候選人" : "點一下分派到目前任務";
+        chip.addEventListener("click", () => {
+          if (state.activeTaskIndex === null) {
+            if (state.selectedCandidates.has(name)) state.selectedCandidates.delete(name);
+            else state.selectedCandidates.add(name);
+            saveState();
+            renderVoteBoard();
+            renderVoteStats();
+            renderPreview();
+            renderRoster();
+          } else {
+            assignStudentToActiveTask(name);
+          }
+        });
+        wrap.appendChild(chip);
+      });
+    }
+
+    function renderVoteStats() {
+      const submitted = getSubmittedBallotCount();
+      const pending = Math.max(0, state.roster.length - submitted);
+      const cards = [
+        { label: "班級名單", num: state.roster.length },
+        { label: "已投票", num: submitted },
+        { label: "待投票", num: pending },
+        { label: "幹部數", num: state.officers.length }
+      ];
+      $("voteStats").innerHTML = cards.map((item) => '<div class="stat"><div class="num">' + item.num + '</div><div class="label">' + item.label + '</div></div>').join("");
+    }
+
+    function getCandidateList() {
+      const allNames = state.roster.map(rosterName);
+      const selectedNames = Array.from(state.selectedCandidates);
+      return state.candidateMode === "selected"
+        ? (selectedNames.length ? selectedNames : allNames)
+        : allNames;
+    }
+
+    function renderVoteBoard() {
+      const wrap = $("voteBoard");
+      wrap.innerHTML = "";
+      const candidates = getCandidateList();
+      const root = document.createElement("div");
+      root.className = "stack";
+
+      if (!state.roster.length) {
+        const empty = document.createElement("div");
+        empty.className = "muted";
+        empty.textContent = "請先匯入名單，再讓學生掃 QR Code 投票。";
+        root.appendChild(empty);
+        wrap.appendChild(root);
+        return;
+      }
+
+      const activeKey = voteUi.activeStudentKey;
+      const activePerson = activeKey ? state.roster.find((person) => rosterKey(person) === activeKey) || null : null;
+      const ballot = activeKey ? getBallotForStudentKey(activeKey) : null;
+      const draftSource = ballot ? ballot.selections : voteUi.draftSelectionsByStudent[activeKey] || {};
+      const draft = cloneSelections(draftSource);
+      const selectedCount = state.officers.filter((officer) => draft[officer.name]).length;
+      const isLocked = !!ballot;
+      const currentLabel = activePerson ? rosterDisplay(activePerson) : "尚未選學生";
+
+      const intro = document.createElement("div");
+      intro.className = "muted";
+      intro.textContent = "先選學生姓名，再逐項點選幹部。送出後會自動鎖定，避免同一位學生重複投票。";
+      root.appendChild(intro);
+
+      const picker = document.createElement("div");
+      picker.className = "field";
+      const pickerLabel = document.createElement("label");
+      pickerLabel.textContent = "學生姓名";
+      const pickerSelect = document.createElement("select");
+      const blank = document.createElement("option");
+      blank.value = "";
+      blank.textContent = "請先選學生";
+      pickerSelect.appendChild(blank);
+      state.roster.forEach((person) => {
+        const option = document.createElement("option");
+        option.value = rosterKey(person);
+        option.textContent = rosterDisplay(person);
+        pickerSelect.appendChild(option);
+      });
+      pickerSelect.value = activeKey || "";
+      pickerSelect.addEventListener("change", (event) => {
+        setActiveStudentKey(event.target.value);
+        renderVoteStats();
+        renderVoteBoard();
+        renderPreview();
+      });
+      picker.append(pickerLabel, pickerSelect);
+      root.appendChild(picker);
+
+      const status = document.createElement("div");
+      status.className = "preview-item";
+      status.innerHTML = '<span><strong>目前學生</strong></span><span>' + currentLabel + '</span>';
+      root.appendChild(status);
+
+      const lockNote = document.createElement("div");
+      lockNote.className = "muted";
+      lockNote.textContent = isLocked ? (selectedCount === state.officers.length ? '已送出並鎖定，老師可按解除鎖定後再修改。' : '已送出並鎖定。') : ('草稿中：' + selectedCount + ' / ' + state.officers.length + ' 項已選');
+      root.appendChild(lockNote);
+
+      state.officers.forEach((officer) => {
+        const row = document.createElement("div");
+        row.className = "officer-row";
+
+        const left = document.createElement("div");
+        left.innerHTML = '<strong>' + officer.name + '</strong><div class="muted">每一列只能選一位，送出後就不會再重複計票。</div>';
+
+        const right = document.createElement("div");
+        const select = document.createElement("select");
+        const empty = document.createElement("option");
+        empty.value = "";
+        empty.textContent = "請選候選人";
+        select.appendChild(empty);
+        candidates.forEach((name) => {
+          const opt = document.createElement("option");
+          opt.value = name;
+          opt.textContent = name;
+          select.appendChild(opt);
+        });
+        select.value = draft[officer.name] || "";
+        select.disabled = !activeKey || isLocked;
+        select.addEventListener("change", (event) => {
+          if (!activeKey || isLocked) return;
+          setDraftSelection(officer.name, event.target.value);
+          renderVoteStats();
+          renderVoteBoard();
+          renderPreview();
+        });
+        right.appendChild(select);
+
+        const pills = document.createElement("div");
+        pills.className = "pills";
+        candidates.slice(0, 8).forEach((name) => {
+          const pill = document.createElement("div");
+          pill.className = "pill" + (draft[officer.name] === name ? " on" : "");
+          pill.textContent = name;
+          if (!activeKey || isLocked) {
+            pill.style.opacity = "0.45";
+          } else {
+            pill.addEventListener("click", () => {
+              setDraftSelection(officer.name, name);
+              renderVoteStats();
+              renderVoteBoard();
+              renderPreview();
+            });
+          }
+          pills.appendChild(pill);
+        });
+        right.appendChild(pills);
+
+        if (draft[officer.name]) {
+          const note = document.createElement("div");
+          note.className = "muted";
+          note.style.marginTop = "8px";
+          note.textContent = "目前選擇：" + draft[officer.name];
+          right.appendChild(note);
+        }
+
+        row.append(left, right);
+        root.appendChild(row);
+      });
+
+      const actions = document.createElement("div");
+      actions.className = "toolbar no-print";
+
+      const submitBtn = document.createElement("button");
+      submitBtn.className = "btn-primary";
+      submitBtn.textContent = isLocked ? "已送出" : "送出投票";
+      submitBtn.disabled = !activeKey || isLocked;
+      submitBtn.addEventListener("click", () => {
+        if (!activePerson) {
+          alert("請先選擇一位學生。");
+          return;
+        }
+        const filled = state.officers.filter((officer) => draft[officer.name]).length;
+        if (filled !== state.officers.length) {
+          alert("請把每一個幹部都選完，再送出。\n目前還差 " + (state.officers.length - filled) + " 項。");
+          return;
+        }
+        removeBallotForStudentKey(activeKey);
+        state.ballots.push({
+          studentKey: activeKey,
+          studentId: String(activePerson.id || "").trim(),
+          studentName: String(activePerson.name || "").trim(),
+          studentLabel: rosterDisplay(activePerson),
+          selections: cloneSelections(draft),
+          submittedAt: new Date().toISOString()
+        });
+        saveState();
+        persistUiState();
+        render();
+      });
+      actions.appendChild(submitBtn);
+
+      const clearBtn = document.createElement("button");
+      clearBtn.className = "btn-ghost";
+      clearBtn.textContent = "清空草稿";
+      clearBtn.disabled = !activeKey || isLocked;
+      clearBtn.addEventListener("click", () => {
+        if (!activeKey || isLocked) return;
+        clearDraftForActiveStudent();
+        renderVoteStats();
+        renderVoteBoard();
+        renderPreview();
+      });
+      actions.appendChild(clearBtn);
+
+      if (isLocked) {
+        const unlockBtn = document.createElement("button");
+        unlockBtn.className = "btn-ghost";
+        unlockBtn.textContent = "解除鎖定";
+        unlockBtn.addEventListener("click", () => {
+          if (!activeKey) return;
+          if (!confirm("要解除這位學生的投票鎖定嗎？解除後可以重新送出。")) return;
+          removeBallotForStudentKey(activeKey);
+          saveState();
+          render();
+        });
+        actions.appendChild(unlockBtn);
+      }
+
+      root.appendChild(actions);
+
+      const tallyTitle = document.createElement("div");
+      tallyTitle.className = "muted";
+      tallyTitle.textContent = "即時統計";
+      root.appendChild(tallyTitle);
+
+      const tallies = getVoteTallies();
+      state.officers.forEach((officer) => {
+        const line = document.createElement("div");
+        line.className = "preview-item";
+        const counts = Array.from((tallies.get(officer.name) || new Map()).entries())
+          .filter((entry) => entry[1] > 0)
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 4)
+          .map((entry) => entry[0] + " " + entry[1] + "票");
+        line.innerHTML = '<span><strong>' + officer.name + '</strong></span><span>' + (counts.length ? counts.join('、') : '尚未有票數') + '</span>';
+        root.appendChild(line);
+      });
+
+      const historyTitle = document.createElement("div");
+      historyTitle.className = "muted";
+      historyTitle.textContent = "已送出名單";
+      root.appendChild(historyTitle);
+
+      if (!state.ballots.length) {
+        const none = document.createElement("div");
+        none.className = "muted";
+        none.textContent = "目前還沒有學生送出投票。";
+        root.appendChild(none);
+      } else {
+        state.ballots.slice().reverse().slice(0, 8).forEach((ballot) => {
+          const item = document.createElement("div");
+          item.className = "preview-item";
+          item.innerHTML = '<span><strong>' + (ballot.studentLabel || ballot.studentName || ballot.studentKey) + '</strong></span><span>' + formatDateTime(ballot.submittedAt || "") + '</span>';
+          root.appendChild(item);
+        });
+      }
+
+      wrap.appendChild(root);
+    }
+
+    function renderTaskBoard() {
+      const wrap = $("taskBoard");
+      wrap.innerHTML = "";
+      if (!state.tasks.length) {
+        wrap.innerHTML = '<div class="muted">尚未建立打掃項目。</div>';
+        return;
+      }
+
+      state.tasks.forEach((task, index) => {
+        const row = document.createElement("div");
+        row.className = "task-row";
+        if (state.activeTaskIndex === index) row.style.outline = "3px solid rgba(47,111,94,.2)";
+
+        const left = document.createElement("div");
+        left.innerHTML = `<strong>${task.area}</strong><div class="muted">${task.note || "無備註"}</div>`;
+        left.style.cursor = "pointer";
+        left.addEventListener("click", () => {
+          state.activeTaskIndex = index;
+          saveState();
+          renderRoster();
+          renderTaskBoard();
+        });
+
+        const right = document.createElement("div");
+        right.innerHTML = '<div class="muted">目前分派</div><div class="preview-list" style="margin-top:8px;"></div>';
+        const list = right.querySelector(".preview-list");
+        if (task.assignees.length) {
+          task.assignees.forEach((name) => {
+            const item = document.createElement("div");
+            item.className = "preview-item";
+            item.innerHTML = `<span>${name}</span><span>已分派</span>`;
+            list.appendChild(item);
+          });
+        } else {
+          const item = document.createElement("div");
+          item.className = "muted";
+          item.textContent = "尚未分派";
+          list.appendChild(item);
+        }
+
+        const actions = document.createElement("div");
+        actions.className = "task-actions";
+
+        const selectBtn = document.createElement("button");
+        selectBtn.className = "small-btn";
+        selectBtn.textContent = state.activeTaskIndex === index ? "目前選取" : "選取此任務";
+        selectBtn.addEventListener("click", () => {
+          state.activeTaskIndex = index;
+          saveState();
+          renderRoster();
+          renderTaskBoard();
+        });
+        actions.appendChild(selectBtn);
+
+        const clearBtn = document.createElement("button");
+        clearBtn.className = "small-btn";
+        clearBtn.textContent = "清除此項";
+        clearBtn.addEventListener("click", () => {
+          task.assignees = [];
+          saveState();
+          renderTaskBoard();
+          renderPreview();
+        });
+        actions.appendChild(clearBtn);
+
+        const confirmBtn = document.createElement("button");
+        confirmBtn.className = "small-btn";
+        confirmBtn.textContent = state.activeTaskIndex === index ? "確認完成分派" : "完成後切回主頁";
+        confirmBtn.disabled = state.activeTaskIndex !== index;
+        confirmBtn.addEventListener("click", () => confirmTaskAssignment(index));
+        actions.appendChild(confirmBtn);
+
+        right.appendChild(actions);
+        row.append(left, right);
+        wrap.appendChild(row);
+      });
+    }
+
+    function renderPreview() {
+      $("previewTitle").textContent = $("className").value || state.className;
+      $("previewMeta").textContent = "名單 " + state.roster.length + " 人、幹部 " + state.officers.length + " 項、打掃 " + state.tasks.length + " 項";
+      const wrap = $("previewContent");
+      wrap.innerHTML = "";
+
+      const section = (title, content) => {
+        const box = document.createElement("div");
+        box.className = "preview-item";
+        box.innerHTML = '<span><strong>' + title + '</strong></span><span>' + content + '</span>';
+        return box;
+      };
+
+      wrap.appendChild(section("幹部投票", getSubmittedBallotCount() + "/" + state.roster.length + " 人已送出"));
+      const ballotDetail = document.createElement("div");
+      ballotDetail.className = "muted";
+      ballotDetail.textContent = state.ballots.length ? state.ballots.slice().reverse().slice(0, 6).map((ballot) => (ballot.studentLabel || ballot.studentName || ballot.studentKey) + " " + formatDateTime(ballot.submittedAt || "")).join("、") : "尚未有人送出投票";
+      wrap.appendChild(ballotDetail);
+
+      const tallies = getVoteTallies();
+      const tallyLines = state.officers.map((officer) => {
+        const counts = Array.from((tallies.get(officer.name) || new Map()).entries())
+          .filter((entry) => entry[1] > 0)
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 3)
+          .map((entry) => entry[0] + " " + entry[1] + "票");
+        return officer.name + "：" + (counts.length ? counts.join("、") : "0 票");
+      }).join("；");
+      const tallyNote = document.createElement("div");
+      tallyNote.className = "muted";
+      tallyNote.textContent = tallyLines || "尚未有票數統計";
+      wrap.appendChild(tallyNote);
+
+      wrap.appendChild(section("打掃任務", state.tasks.filter((t) => t.assignees.length).length + "/" + state.tasks.length + " 項已分派"));
+      const taskDetail = document.createElement("div");
+      taskDetail.className = "muted";
+      taskDetail.textContent = state.tasks.map((t) => t.area + "：" + (t.assignees.length ? t.assignees.join("、") : "未分派")).join("；");
+      wrap.appendChild(taskDetail);
+
+      const rosterDetail = document.createElement("div");
+      rosterDetail.className = "muted";
+      rosterDetail.textContent = "名單：" + (state.roster.length ? state.roster.map(rosterDisplay).join("、") : "尚未匯入名單");
+      wrap.appendChild(rosterDetail);
+    }
+    function render() {
+      $("workspaceCode").value = state.workspaceCode;
+      $("className").value = state.className;
+      if (document.activeElement !== $("rosterInput")) {
+        $("rosterInput").value = state.roster.map(rosterDisplay).join("\n");
+      }
+      $("officerTemplate").value = state.officers.map((x) => x.name).join("\n");
+      $("taskTemplate").value = state.tasks.map((x) => x.note ? `${x.area} | ${x.note}` : x.area).join("\n");
+      $("candidateMode").value = state.candidateMode;
+      renderRoster();
+      renderVoteStats();
+      renderVoteBoard();
+      renderTaskBoard();
+      renderPreview();
+    }
+
+    function activateTab(name) {
+      document.querySelectorAll(".tab").forEach((tab) => {
+        tab.classList.toggle("active", tab.dataset.tab === name);
+      });
+      document.querySelectorAll(".panel").forEach((panel) => panel.classList.remove("active"));
+      $("panel-" + name).classList.add("active");
+    }
+
+    function applyRoster() {
+      state.className = $("className").value.trim() || state.className;
+      state.roster = parseRoster($("rosterInput").value);
+      const rosterKeys = new Set(state.roster.map(rosterKey));
+      const names = state.roster.map(rosterName);
+
+      if (!state.selectedCandidates.size) {
+        names.forEach((name) => state.selectedCandidates.add(name));
+      } else {
+        state.selectedCandidates = new Set(names.filter((name) => state.selectedCandidates.has(name)));
+        if (!state.selectedCandidates.size) names.forEach((name) => state.selectedCandidates.add(name));
+      }
+
+      state.ballots = state.ballots
+        .map((ballot) => normalizeBallot(ballot))
+        .filter((ballot) => ballot && rosterKeys.has(ballot.studentKey) && Object.keys(ballot.selections).length);
+
+      if (voteUi.activeStudentKey && !rosterKeys.has(voteUi.activeStudentKey)) {
+        voteUi.activeStudentKey = "";
+      }
+      const nextDrafts = {};
+      Object.keys(voteUi.draftSelectionsByStudent).forEach((key) => {
+        if (rosterKeys.has(key)) nextDrafts[key] = voteUi.draftSelectionsByStudent[key];
+      });
+      voteUi.draftSelectionsByStudent = nextDrafts;
+      persistUiState();
+
+      state.tasks.forEach((task) => {
+        task.assignees = task.assignees.filter((name) => names.includes(name));
+      });
+
+      saveState();
+      render();
+    }
+
+    function scheduleRosterApply() {
+      if (rosterSyncTimer) clearTimeout(rosterSyncTimer);
+      rosterSyncTimer = setTimeout(() => {
+        rosterSyncTimer = null;
+        applyRoster();
+      }, 300);
+    }
+
+    function applyOfficers() {
+      const names = $("officerTemplate").value.split(/\r?\n/).map((x) => x.trim()).filter(Boolean);
+      if (names.length) state.officers = names.map((name) => ({ name, votes: "" }));
+      state.ballots = state.ballots
+        .map((ballot) => normalizeBallot(ballot))
+        .filter((ballot) => ballot && Object.keys(ballot.selections).length);
+      saveState();
+      render();
+    }
+
+    function applyTasks() {
+      const lines = $("taskTemplate").value.split(/\r?\n/).map((x) => x.trim()).filter(Boolean);
+      const tasks = lines.map((line) => {
+        const parts = line.split(/[|｜]/).map((x) => x.trim()).filter(Boolean);
+        if (parts.length >= 2) return { area: parts[0], note: parts[1], assignees: [] };
+        return { area: line, note: "", assignees: [] };
+      });
+      if (tasks.length) state.tasks = tasks;
+      state.activeTaskIndex = null;
+      saveState();
+      render();
+    }
+
+    function assignStudentToActiveTask(name) {
+      if (state.activeTaskIndex === null || !state.tasks[state.activeTaskIndex]) return;
+      const task = state.tasks[state.activeTaskIndex];
+      if (task.assignees.includes(name)) task.assignees = task.assignees.filter((x) => x !== name);
+      else task.assignees.push(name);
+      saveState();
+      renderTaskBoard();
+      renderPreview();
+    }
+
+    function confirmTaskAssignment(index) {
+      const taskIndex = Number.isInteger(index) ? index : state.activeTaskIndex;
+      if (taskIndex === null || !state.tasks[taskIndex]) return;
+      if (!confirm("確認這個打掃任務已完成分派嗎？按下後會回到老師主頁。")) return;
+      state.activeTaskIndex = null;
+      saveState();
+      render();
+      if (APP_ROLE === "teacher") activateTab("preview");
+    }
+
+    function autoAssign() {
+      if (!state.roster.length || !state.tasks.length) return;
+      const names = state.roster.map(rosterName);
+      const shuffled = [...names].sort(() => Math.random() - 0.5);
+      state.tasks.forEach((task, index) => {
+        const a = shuffled[index % shuffled.length];
+        const b = shuffled[(index + 1) % shuffled.length];
+        task.assignees = a === b ? [a] : [a, b].filter(Boolean);
+      });
+      state.activeTaskIndex = null;
+      saveState();
+      render();
+    }
+
+    function clearAssignments() {
+      state.tasks.forEach((task) => { task.assignees = []; });
+      state.activeTaskIndex = null;
+      saveState();
+      render();
+    }
+
+    function setAllCandidates() {
+      state.selectedCandidates = new Set(state.roster.map(rosterName));
+      saveState();
+      render();
+    }
+
+    function tableToHtml(title, rows) {
+      const head = rows[0] || [];
+      const body = rows.slice(1);
+      return [
+        `<section class="print-block">`,
+        `<h2>${encodeXml(title)}</h2>`,
+        `<table class="print-table">`,
+        `<thead><tr>${head.map((cell) => `<th>${encodeXml(cell)}</th>`).join("")}</tr></thead>`,
+        `<tbody>${body.map((row) => `<tr>${row.map((cell) => `<td>${encodeXml(cell)}</td>`).join("")}</tr>`).join("")}</tbody>`,
+        `</table>`,
+        `</section>`
+      ].join("");
+    }
+
+    function printPage() {
+      const root = $("printRoot");
+      if (!root) {
+        window.print();
+        return;
+      }
+      const voteRows = buildVoteTallyRows();
+      const cleaningRows = buildCleaningRows();
+      root.innerHTML = [
+        `<section class="print-page">`,
+        `<h1>${encodeXml(state.className || "班級")}</h1>`,
+        `<div class="meta">只輸出幹部投票統計與打掃工作分配</div>`,
+        tableToHtml("幹部投票統計", voteRows),
+        tableToHtml("打掃工作分配", cleaningRows),
+        `</section>`
+      ].join("");
+      const cleanup = () => {
+        root.innerHTML = "";
+        window.removeEventListener("afterprint", cleanup);
+      };
+      window.addEventListener("afterprint", cleanup);
+      requestAnimationFrame(() => window.print());
+    }
+
+    async function boot() {
+      document.body.dataset.role = APP_ROLE;
+      document.title = APP_ROLE === "student" ? "班級投票頁面" : "班級經營幹部選舉與打掃工作分配系統";
+      const heroToolbar = document.querySelector(".hero .toolbar");
+      if (heroToolbar && !heroToolbar.querySelector("[data-role-switch]")) {
+        const teacherBtn = document.createElement("button");
+        teacherBtn.className = "btn-ghost";
+        teacherBtn.textContent = "教師主頁面";
+        teacherBtn.dataset.roleSwitch = "teacher";
+        teacherBtn.addEventListener("click", () => {
+          const url = new URL(location.href);
+          url.searchParams.set("role", "teacher");
+          url.searchParams.set("code", state.workspaceCode);
+          location.href = url.toString();
+        });
+        const studentBtn = document.createElement("button");
+        studentBtn.className = "btn-ghost";
+        studentBtn.textContent = "學生投票頁面";
+        studentBtn.dataset.roleSwitch = "student";
+        studentBtn.addEventListener("click", () => {
+          const url = new URL(location.href);
+          url.searchParams.set("role", "student");
+          url.searchParams.set("code", state.workspaceCode);
+          location.href = url.toString();
+        });
+        heroToolbar.append(teacherBtn, studentBtn);
+      }
+      $("officerTemplate").value = defaultOfficers.join("\n");
+      $("taskTemplate").value = defaultTasks.map((x) => `${x.area} | ${x.note}`).join("\n");
+      $("rosterInput").value = demoRoster.join("\n");
+
+      $("btnDemo").addEventListener("click", () => {
+        $("className").value = "三年甲班 113學年度下學期";
+        $("rosterInput").value = demoRoster.join("\n");
+        applyRoster();
+      });
+      $("btnSave").addEventListener("click", () => {
+        state.className = $("className").value.trim() || state.className;
+        saveState();
+        alert("已儲存目前資料。");
+      });
+      $("btnLoad").addEventListener("click", () => {
+        if (loadState()) {
+          render();
+          alert("已讀取上次資料。");
+        } else {
+          alert("沒有找到可讀取的資料。");
+        }
+      });
+      $("btnClearVotes").addEventListener("click", () => {
+        const password = prompt("請輸入老師密碼以清空全部投票：");
+        if (password === null) return;
+        if (password !== "8888") {
+          alert("密碼錯誤，沒有執行清空。");
+          return;
+        }
+        if (!confirm("確定要清空全部投票嗎？這會刪除所有已送出的票數。")) return;
+        clearAllVotes();
+        alert("已清空全部投票。");
+      });
+      $("btnPrint").addEventListener("click", printPage);
+      $("btnParse").addEventListener("click", applyRoster);
+      $("btnImportFile").addEventListener("click", () => $("rosterFile").click());
+      $("rosterInput").addEventListener("input", scheduleRosterApply);
+      $("rosterFile").addEventListener("change", async (e) => {
+        const file = e.target.files && e.target.files[0];
+        if (!file) return;
+        try {
+          const rows = await readRosterFile(file);
+          $("rosterInput").value = rows.join("\n");
+          applyRoster();
+        } catch (err) {
+          console.error(err);
+          alert("讀取名單失敗，請確認檔案格式。");
+        } finally {
+          e.target.value = "";
+        }
+      });
+      $("btnClear").addEventListener("click", () => {
+        $("rosterInput").value = "";
+        state.roster = [];
+        state.selectedCandidates = new Set();
+        state.activeTaskIndex = null;
+        saveState();
+        render();
+      });
+      $("btnExportRosterCsv").addEventListener("click", () => {
+        downloadBlob(new Blob([buildRosterCsv()], { type: "text/csv;charset=utf-8" }), `名單_${safeSlug(state.className)}.csv`);
+      });
+      $("btnExportResultsCsv").addEventListener("click", () => {
+        downloadBlob(new Blob(["\uFEFF", rowsToCsv(buildResultsCsvRows())], { type: "text/csv;charset=utf-8" }), `結果_${safeSlug(state.className)}.csv`);
+      });
+      $("btnExportResultsXlsx").addEventListener("click", () => {
+        exportResultsXlsx();
+      });
+      $("btnApplyOfficers").addEventListener("click", applyOfficers);
+      $("btnMarkAllCandidates").addEventListener("click", setAllCandidates);
+      $("btnApplyTasks").addEventListener("click", applyTasks);
+      $("btnAutoAssign").addEventListener("click", autoAssign);
+      $("btnClearAssignments").addEventListener("click", clearAssignments);
+      $("btnApplyWorkspace").addEventListener("click", async () => {
+        await switchWorkspaceCode($("workspaceCode").value, false);
+      });
+      $("btnNewWorkspace").addEventListener("click", async () => {
+        if (!confirm("要建立新的班級工作區嗎？這會切到一組新的代碼。")) return;
+        await switchWorkspaceCode(generateWorkspaceCode(), true);
+      });
+      $("btnCopyStudentLink").addEventListener("click", async () => {
+        const link = getStudentShareUrl();
+        try {
+          await navigator.clipboard.writeText(link);
+          alert("已複製學生連結。");
+        } catch (err) {
+          console.warn(err);
+          prompt("請複製這個學生連結", link);
+        }
+      });
+      $("workspaceCode").addEventListener("change", () => {
+        $("workspaceCode").value = normalizeWorkspaceCode($("workspaceCode").value) || generateWorkspaceCode();
+      });
+      $("candidateMode").addEventListener("change", (e) => {
+        state.candidateMode = e.target.value;
+        saveState();
+        renderVoteBoard();
+        renderPreview();
+      });
+      document.querySelectorAll(".tab").forEach((tab) => {
+        tab.addEventListener("click", () => activateTab(tab.dataset.tab));
+      });
+      $("className").addEventListener("input", () => {
+        state.className = $("className").value;
+        renderPreview();
+      });
+
+      loadUiState();
+      state.workspaceCode = getUrlWorkspaceCode() || state.workspaceCode || readSavedWorkspaceCode() || generateWorkspaceCode();
+      $("workspaceCode").value = state.workspaceCode;
+      loadState();
+      const urlStudentKey = resolveStudentKeyFromUrl();
+      if (urlStudentKey) setActiveStudentKey(urlStudentKey);
+      if (APP_ROLE === "student") activateTab("election");
+      if (APP_ROLE === "teacher") activateTab("preview");
+      await pullStateFromRemote();
+      if (urlStudentKey && !voteUi.activeStudentKey) setActiveStudentKey(urlStudentKey);
+      if (migrateLegacyVotes()) {
+        saveState();
+      }
+      render();
+      startAutoSync();
+    }
+
+    boot().catch((error) => console.error(error));
+  </script>
+</body>
+</html>
+
