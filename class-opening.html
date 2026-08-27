@@ -1,0 +1,2188 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#1f7a67" />
+  <title>老師班級經營開學助手</title>
+  <style>
+    :root{
+      --bg:#f4efe7;
+      --bg2:#fffaf2;
+      --panel:rgba(255,255,255,.88);
+      --line:#e5d9c7;
+      --text:#1d2430;
+      --muted:#667085;
+      --brand:#1f7a67;
+      --brand2:#ef7a59;
+      --brand3:#f4b942;
+      --brand4:#6d8cff;
+      --brand5:#83c66b;
+      --shadow:0 24px 60px rgba(46,43,32,.12);
+      --shadow-soft:0 12px 28px rgba(46,43,32,.08);
+      --radius:22px;
+      --radius-lg:30px;
+      --display:"Noto Serif TC","Georgia",serif;
+      --body:"Noto Sans TC","Microsoft JhengHei",system-ui,sans-serif;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%;overflow:hidden}
+    body{
+      margin:0;
+      display:flex;
+      color:var(--text);
+      font-family:var(--body);
+      background:
+        radial-gradient(circle at 10% 10%, rgba(31,122,103,.14), transparent 22%),
+        radial-gradient(circle at 88% 12%, rgba(239,122,89,.14), transparent 20%),
+        radial-gradient(circle at 18% 86%, rgba(109,140,255,.12), transparent 20%),
+        linear-gradient(180deg, #fffdf8 0%, var(--bg) 100%);
+    }
+    button,input,textarea,select{font:inherit}
+    a{color:inherit}
+    .shell{
+      max-width:1440px;
+      width:100%;
+      height:100vh;
+      margin:0 auto;
+      padding:12px 14px 14px;
+      display:grid;
+      grid-template-rows:auto auto minmax(0,1fr);
+      gap:12px;
+      min-height:0;
+      overflow:hidden;
+    }
+    .hero{
+      display:grid;
+      gap:10px;
+      padding:14px 16px;
+      border:1px solid rgba(229,217,199,.9);
+      border-radius:30px;
+      background:linear-gradient(135deg, rgba(255,255,255,.92), rgba(248,243,233,.92));
+      box-shadow:var(--shadow);
+    }
+    .hero-top{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap}
+    .hero h1{margin:0;font-family:var(--display);font-size:clamp(24px,3vw,38px);line-height:1.08}
+    .hero .sub{color:var(--muted);margin-top:6px;line-height:1.45;font-size:13px}
+    .toolbar{display:flex;flex-wrap:nowrap;gap:8px;overflow-x:auto;padding-bottom:2px}
+    .btn,.btn-primary,.btn-secondary,.chip{
+      border:1px solid rgba(229,217,199,.92);
+      border-radius:999px;
+      padding:8px 12px;
+      background:#fff;
+      cursor:pointer;
+      transition:.18s ease;
+      text-decoration:none;
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      white-space:nowrap;
+    }
+    .btn:hover,.btn-primary:hover,.btn-secondary:hover,.chip:hover{transform:translateY(-1px);box-shadow:0 10px 18px rgba(46,43,32,.08)}
+    .btn-primary{background:linear-gradient(135deg,var(--brand),#2d8a74);color:#fff;border-color:transparent}
+    .btn-secondary{background:#fff}
+    .chip{background:rgba(31,122,103,.08);border-color:rgba(31,122,103,.15);font-weight:700}
+    .grid{
+      display:grid;
+      grid-template-columns:repeat(12,minmax(0,1fr));
+      gap:12px;
+      margin-top:0;
+      min-height:0;
+      overflow:hidden;
+    }
+    .panel{
+      grid-column:span 12;
+      background:var(--panel);
+      border:2px solid color-mix(in srgb, var(--tab-color,var(--line)) 24%, var(--line));
+      border-radius:var(--radius);
+      box-shadow:var(--shadow-soft);
+      overflow:hidden;
+      min-height:0;
+    }
+    .setup-panel{grid-column:span 12}
+    .tab-panel{display:none}
+    .tab-panel.active{
+      display:grid;
+      grid-template-rows:auto minmax(0,1fr);
+      min-height:0;
+      overflow:hidden;
+    }
+    .tab-nav{
+      display:flex;
+      flex-wrap:nowrap;
+      gap:8px;
+      margin-top:2px;
+      overflow-x:auto;
+      padding-bottom:2px;
+      scrollbar-width:thin;
+    }
+    .tab-nav .chip.active{background:var(--brand);color:#fff;border-color:var(--brand)}
+    #navChips .chip{
+      --tab-color:var(--brand);
+      --tab-soft:rgba(31,122,103,.1);
+      border:2px solid var(--tab-color);
+      background:var(--tab-soft);
+      color:#263238;
+      font-weight:900;
+    }
+    #navChips .chip.active{background:var(--tab-color);color:#fff;border-color:var(--tab-color);box-shadow:0 8px 16px color-mix(in srgb, var(--tab-color) 28%, transparent)}
+    #navChips .chip:nth-child(1),#import{--tab-color:#f59e0b;--tab-soft:rgba(245,158,11,.14)}
+    #navChips .chip:nth-child(2),#letter{--tab-color:#ef6f61;--tab-soft:rgba(239,111,97,.13)}
+    #navChips .chip:nth-child(3),#contact{--tab-color:#4f8df7;--tab-soft:rgba(79,141,247,.13)}
+    #navChips .chip:nth-child(4),#print{--tab-color:#1f9d78;--tab-soft:rgba(31,157,120,.13)}
+    #navChips .chip:nth-child(5),#desk{--tab-color:#eab308;--tab-soft:rgba(234,179,8,.16)}
+    #navChips .chip:nth-child(6),#icebreaker{--tab-color:#ec5ca8;--tab-soft:rgba(236,92,168,.13)}
+    #navChips .chip:nth-child(7),#tasks{--tab-color:#8b6cf6;--tab-soft:rgba(139,108,246,.13)}
+    #navChips .chip:nth-child(8),#tea{--tab-color:#16a6a0;--tab-soft:rgba(22,166,160,.13)}
+    #navChips .chip:nth-child(9),#game{--tab-color:#2f9eea;--tab-soft:rgba(47,158,234,.14)}
+    #navChips .chip:nth-child(10),#toolbox{--tab-color:#f2764f;--tab-soft:rgba(242,118,79,.14)}
+    .tab-panel{border-top:4px solid var(--tab-color,var(--brand))}
+    .tab-panel .panel-head{background:linear-gradient(100deg,var(--tab-soft,rgba(31,122,103,.1)),rgba(255,255,255,.92) 72%);border-bottom:2px solid color-mix(in srgb, var(--tab-color,var(--line)) 28%, var(--line))}
+    .tab-panel .mini-card,.tab-panel .preview-card,.tab-panel .card{border:2px solid color-mix(in srgb, var(--tab-color,var(--line)) 32%, var(--line));box-shadow:0 12px 24px color-mix(in srgb, var(--tab-color,var(--line)) 12%, transparent)}
+    .icebreaker-prompt{font-family:var(--display);font-size:clamp(24px,4vw,42px);line-height:1.45;text-align:center;min-height:180px;display:grid;place-items:center}
+    .panel h2{margin:0;font-size:18px}
+    .panel-head{
+      padding:12px 16px;
+      border-bottom:1px solid var(--line);
+      background:linear-gradient(180deg, rgba(255,255,255,.9), rgba(248,243,233,.72));
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      gap:16px;
+      flex-wrap:wrap;
+    }
+    .muted{color:var(--muted)}
+    .panel-body{
+      padding:14px;
+      min-height:0;
+      overflow:hidden;
+    }
+    .subgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+    .print-layout{grid-template-columns:minmax(240px,280px) minmax(0,1fr);align-items:start}
+    .mini-card,.preview-box,.card{
+      background:#fff;
+      border:1px solid rgba(229,217,199,.95);
+      border-radius:24px;
+      padding:14px;
+      box-shadow:0 10px 20px rgba(46,43,32,.05);
+    }
+    .stack{display:grid;gap:10px}
+    .field{display:grid;gap:8px}
+    label{font-weight:700;font-size:14px}
+    input,textarea,select{
+      width:100%;
+      padding:12px 14px;
+      border:1px solid #d8cfbf;
+      border-radius:16px;
+      background:#fff;
+      color:var(--text);
+      outline:none;
+    }
+    textarea{min-height:112px;resize:vertical}
+    input:focus,textarea:focus,select:focus{border-color:rgba(31,122,103,.65);box-shadow:0 0 0 4px rgba(31,122,103,.09)}
+    .preview-card{
+      border-radius:22px;
+      background:linear-gradient(135deg, rgba(255,250,242,.98), rgba(245,248,255,.98));
+      border:1px solid rgba(229,217,199,.9);
+      padding:16px;
+    }
+    .toolbox-card{position:relative}
+    .toolbox-card-title{justify-content:flex-start !important;padding-right:34px}
+    .toolbox-delete{
+      position:absolute;
+      top:10px;
+      right:10px;
+      width:24px;
+      height:24px;
+      border:0;
+      border-radius:50%;
+      background:rgba(17,24,39,.08);
+      color:#6b7280;
+      font-size:16px;
+      font-weight:900;
+      line-height:1;
+      display:grid;
+      place-items:center;
+      cursor:pointer;
+    }
+    .toolbox-delete:hover{background:rgba(239,68,68,.14);color:#dc2626}
+    .big{font-family:var(--display);font-size:28px;margin:0}
+    .small{font-size:13px;color:var(--muted);line-height:1.65;margin:0}
+    .roster-list{display:flex;flex-wrap:wrap;gap:8px}
+    .roster-list .chip.active{background:linear-gradient(135deg,var(--brand),#2d8a74);color:#fff}
+    .split{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .paper{
+      border:1px solid #e9dfd0;
+      border-radius:22px;
+      background:#fffefb;
+      padding:18px;
+      box-shadow:inset 0 0 0 1px rgba(255,255,255,.5);
+    }
+    .paper-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap}
+    .paper-body{white-space:pre-wrap;line-height:1.9;margin-top:14px}
+    .qr-wrap{display:grid;gap:12px;justify-items:center}
+    .qr-wrap img{width:220px;height:220px;border-radius:18px;background:#fff;border:8px solid #fff;box-shadow:0 12px 24px rgba(46,43,32,.08)}
+    .students{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px}
+    .student-card{
+      border:1px solid #e7dccb;
+      border-radius:18px;
+      padding:12px;
+      background:#fff;
+      display:grid;
+      gap:8px;
+    }
+    .student-card.active{outline:3px solid rgba(31,122,103,.14)}
+    .student-card strong{font-size:16px}
+    .student-meta{font-size:12px;color:var(--muted);display:flex;justify-content:space-between;gap:10px}
+    .badge{display:inline-flex;align-items:center;padding:6px 10px;border-radius:999px;background:rgba(31,122,103,.1);color:var(--brand);font-weight:800;font-size:12px}
+    .task-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
+    .toggle{
+      position:relative;
+      padding:12px;
+      padding-right:42px;
+      border-radius:18px;
+      border:1px solid #ddd1bf;
+      background:#fff;
+      cursor:pointer;
+      text-align:left;
+    }
+    .toggle.on{background:linear-gradient(135deg, rgba(31,122,103,.1), rgba(109,140,255,.08));border-color:rgba(31,122,103,.28)}
+    .toggle .task-delete{
+      position:absolute;
+      top:8px;
+      right:8px;
+      width:24px;
+      height:24px;
+      border:0;
+      border-radius:50%;
+      background:rgba(17,24,39,.08);
+      color:#6b7280;
+      font-size:16px;
+      font-weight:900;
+      line-height:1;
+      display:grid;
+      place-items:center;
+      cursor:pointer;
+    }
+    .toggle .task-delete:hover{background:rgba(239,68,68,.14);color:#dc2626}
+    .game-stage{
+      position:relative;
+      min-height:420px;
+      border-radius:24px;
+      overflow:hidden;
+      border:1px solid #e5d9c7;
+      background:
+        radial-gradient(circle at 20% 18%, rgba(109,140,255,.22), transparent 18%),
+        radial-gradient(circle at 80% 16%, rgba(239,122,89,.18), transparent 18%),
+        linear-gradient(180deg, #fff, #f8fbff 45%, #f7fcf6 100%);
+    }
+    .game-bubbles{position:absolute;inset:0;overflow:hidden;z-index:1}
+    .bubble{
+      position:absolute;
+      display:grid;
+      place-items:center;
+      border-radius:50%;
+      border:1px solid rgba(255,255,255,.72);
+      box-shadow:0 10px 18px rgba(46,43,32,.10), inset 0 0 0 8px rgba(255,255,255,.12);
+      backdrop-filter:blur(4px);
+      cursor:pointer;
+      user-select:none;
+      font-size:28px;
+      z-index:2;
+      animation:float 4.2s ease-in-out infinite;
+    }
+    .bubble::after{
+      content:"";
+      position:absolute;
+      inset:14px 16px auto auto;
+      width:18px;height:18px;border-radius:50%;
+      background:rgba(255,255,255,.48);
+      filter:blur(1px);
+    }
+    .bubble.pop{animation:pop .18s ease-out forwards}
+    .fish{
+      position:absolute;
+      left:0;top:0;
+      pointer-events:none;
+      z-index:1;
+      width:var(--w,48px);
+      height:var(--h,28px);
+      filter:drop-shadow(0 8px 10px rgba(46,43,32,.12));
+      animation:fishSwim var(--dur,2.8s) ease-in forwards;
+    }
+    .fish .fish-body{
+      position:absolute;
+      inset:0 10px 0 0;
+      border-radius:999px;
+      background:linear-gradient(135deg,var(--body-a,#ffd166),var(--body-b,#ff8fa3));
+      box-shadow:inset 0 0 0 2px rgba(255,255,255,.26);
+    }
+    .fish .fish-body::before{
+      content:"";
+      position:absolute;
+      right:6px;
+      top:8px;
+      width:4px;height:4px;
+      border-radius:50%;
+      background:#fff;
+      opacity:.95;
+    }
+    .fish::before{
+      content:"";
+      position:absolute;
+      left:-12px;
+      top:50%;
+      transform:translateY(-50%);
+      border-top:9px solid transparent;
+      border-bottom:9px solid transparent;
+      border-right:14px solid var(--tail,#f59e0b);
+    }
+    .fish::after{
+      content:"";
+      position:absolute;
+      right:6px;
+      top:50%;
+      transform:translateY(-50%);
+      width:4px;height:4px;
+      border-radius:50%;
+      background:#fff;
+      opacity:.8;
+    }
+    .fish[data-style="round"]{--w:42px;--h:26px}
+    .fish[data-style="tiny"]{--w:34px;--h:20px}
+    .fish[data-style="long"]{--w:58px;--h:22px}
+    .fish[data-style="chubby"]{--w:48px;--h:30px}
+    .scoreboard{
+      position:absolute;
+      left:16px;top:16px;
+      background:rgba(255,255,255,.9);
+      border:1px solid rgba(229,217,199,.9);
+      border-radius:18px;
+      padding:12px 14px;
+      box-shadow:0 10px 24px rgba(46,43,32,.08);
+      z-index:2;
+    }
+    .scoreboard .big{font-size:28px;font-weight:900;color:var(--brand);line-height:1}
+    .scoreboard .small{font-size:12px;color:var(--muted);margin-top:4px}
+
+    /* These activity tabs use the full panel height for easier classroom display. */
+    #icebreaker .panel-head,
+    #tea .panel-head,
+    #game .panel-head{padding:18px 22px}
+    #icebreaker .panel-head h2,
+    #tea .panel-head h2,
+    #game .panel-head h2{font-size:24px}
+    #icebreaker .panel-head .muted,
+    #tea .panel-head .muted,
+    #game .panel-head .muted{font-size:15px;margin-top:6px}
+    #icebreaker .panel-body,
+    #tea .panel-body,
+    #game .panel-body{padding:22px;height:100%}
+    #icebreaker .subgrid,
+    #tea .subgrid{height:100%;gap:22px}
+    #icebreaker .subgrid{grid-template-columns:minmax(0,1.45fr) minmax(280px,.85fr)}
+    #icebreaker .panel-body > .subgrid > .stack:first-child{grid-template-rows:auto minmax(0,1fr)}
+    #icebreaker .panel-body > .subgrid > .stack:last-child{min-height:0}
+    #icebreaker #promptModes{gap:10px;flex-wrap:wrap}
+    #icebreaker #promptModes .chip{font-size:16px;padding:11px 16px}
+    #icebreaker .icebreaker-prompt{
+      min-height:0;
+      height:100%;
+      padding:34px;
+      font-size:clamp(32px,4vw,56px);
+      line-height:1.35;
+    }
+    #icebreaker .mini-card{
+      height:100%;
+      display:grid;
+      grid-template-rows:auto auto minmax(0,1fr);
+      gap:16px;
+      padding:22px;
+    }
+    #icebreaker #drawnStudent{display:grid;place-items:center;font-size:30px;font-weight:900}
+
+    #tea .subgrid{grid-template-columns:minmax(0,1.2fr) minmax(320px,.8fr)}
+    #tea .card{height:100%;display:flex;padding:22px}
+    #tea #moodCards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;width:100%;height:100%}
+    #tea #moodCards .chip{justify-content:center;min-height:92px;padding:18px;font-size:26px;font-weight:900;border:2px solid rgba(22,166,160,.4);border-radius:22px;box-shadow:0 8px 16px rgba(22,166,160,.1)}
+    #tea .panel-body > .subgrid > .stack:nth-child(2){grid-template-rows:minmax(0,1fr) minmax(0,1fr);min-height:0}
+    #tea .panel-body > .subgrid > .stack:nth-child(2) .mini-card{min-height:0;display:grid;grid-template-rows:auto minmax(0,1fr);gap:16px;padding:22px}
+    #tea .preview-card{height:100%;display:grid;align-content:center;gap:14px;padding:24px}
+    #tea .big{font-size:40px}
+    #tea .small{font-size:16px;line-height:1.7}
+    #tea label{font-size:16px}
+    #tea input,#tea select{font-size:18px;padding:14px 16px}
+    #tea .btn,#tea .btn-primary,#tea .btn-secondary{font-size:16px;padding:11px 16px}
+
+    #game .panel-body{display:flex;min-height:0}
+    #game .game-stage{height:100%;min-height:640px;flex:1;border-radius:30px}
+    #game .scoreboard{left:22px;top:22px;padding:18px 22px;border-radius:22px}
+    #game .scoreboard .big{font-size:42px}
+    #game .scoreboard .small{font-size:15px;margin-top:6px}
+    #game .bubble{font-size:38px}
+    #game .btn,#game .btn-primary,#game .btn-secondary{font-size:16px;padding:11px 16px}
+    .floating-link{
+      position:fixed;
+      right:16px;
+      bottom:16px;
+      z-index:60;
+      background:linear-gradient(135deg,var(--brand2),#ffb472);
+      color:#fff;
+      padding:14px 16px;
+      border-radius:999px;
+      box-shadow:0 18px 36px rgba(239,122,89,.28);
+      text-decoration:none;
+      animation:wobble 4s ease-in-out infinite;
+    }
+    .floating-link strong{display:block;font-size:15px}
+    .floating-link small{display:block;font-size:11px;opacity:.9;font-weight:700}
+    .print-root{display:none}
+    .letter-print-page{
+      box-sizing:border-box;
+      width:210mm;
+      min-height:297mm;
+      padding:18mm 18mm 20mm;
+      background:#fff;
+      color:#0f172a;
+      font-family:var(--body);
+    }
+    .letter-print-title{margin:0 0 5mm;font-family:var(--display);font-size:25pt;line-height:1.25;color:#17324d}
+    .letter-print-meta{padding:3mm 0;border-top:1px solid #f1b5a6;border-bottom:1px solid #f1b5a6;color:#64748b;font-size:10.5pt}
+    .letter-print-body{margin-top:10mm;white-space:pre-wrap;font-size:12.5pt;line-height:2;color:#26384a}
+    .letter-print-qr{display:flex;align-items:center;gap:7mm;margin-top:12mm;padding-top:7mm;border-top:1px solid #e2e8f0;color:#475569;font-size:10pt}
+    .letter-print-qr img{width:34mm;height:34mm;object-fit:contain;border:1px solid #e2e8f0;padding:2mm;background:#fff}
+    .badge-grid{display:grid;gap:10px;grid-template-columns:repeat(var(--cols,3),1fr)}
+    .badge-card{
+      min-height:104px;
+      border:1px solid #000;
+      background:#fff;
+      display:grid;
+      place-items:center;
+      text-align:center;
+      padding:8px;
+    }
+    .badge-card .name{font-size:24px;font-weight:900;letter-spacing:1px}
+    .badge-card .school{font-size:11px}
+    .desk-grid{display:grid;gap:18px}
+    .desk-tent{
+      border:2px solid #0f766e;
+      border-radius:20px;
+      background:linear-gradient(180deg,#ffffff,#f0fdfa);
+      min-height:240px;
+      display:grid;
+      grid-template-rows:repeat(3,minmax(0,1fr)) 12px;
+      overflow:hidden;
+      position:relative;
+      box-shadow:inset 0 0 0 5px rgba(15,118,110,.08),0 12px 24px rgba(15,118,110,.12);
+    }
+    .desk-glue{
+      display:grid;
+      place-items:center;
+      color:#64748b;
+      background:#fff;
+      font-size:9px;
+      letter-spacing:.04em;
+      border-top:1px dashed #94a3b8;
+    }
+    .desk-band{
+      position:relative;
+      display:grid;
+      place-items:center;
+      text-align:center;
+      padding:16px 18px;
+      box-sizing:border-box;
+      min-height:0;
+    }
+    .desk-band + .desk-band{border-top:1px dashed #94a3b8;background:rgba(255,255,255,.68)}
+    .desk-face-content{display:grid;place-items:center;text-align:center}
+    .desk-face-content.inverted{transform:rotate(180deg)}
+    .desk-blank{min-height:1em}
+    .desk-name{
+      font-family:"Noto Sans TC","Microsoft JhengHei",sans-serif;
+      font-size:48px;
+      font-weight:900;
+      line-height:1;
+      letter-spacing:.04em;
+      color:#0f172a;
+    }
+    .desk-note{font-size:12px;margin-top:8px}
+    .badge-print-page{
+      width:210mm;
+      height:297mm;
+      min-height:0;
+      box-sizing:border-box;
+      padding:12mm;
+      background:#fff;
+      display:grid;
+      grid-template-rows:auto minmax(0,1fr);
+      gap:5mm;
+      overflow:hidden;
+      break-after:page;
+      page-break-after:always;
+    }
+    .badge-print-page:last-child{
+      break-after:auto;
+      page-break-after:auto;
+    }
+    .badge-print-head{
+      display:flex;
+      justify-content:space-between;
+      gap:8px;
+      align-items:flex-end;
+      margin:0;
+      padding-bottom:2.5mm;
+      border-bottom:0.35mm solid #cbd5e1;
+    }
+    .badge-print-head h2{
+      margin:0;
+      font-size:18pt;
+      line-height:1.1;
+    }
+    .badge-print-head .meta{
+      font-size:9.5pt;
+      color:#64748b;
+      text-align:right;
+    }
+    .badge-print-grid{
+      display:grid;
+      gap:3mm;
+      grid-template-columns:repeat(var(--cols,1), minmax(0,1fr));
+      grid-template-rows:repeat(var(--rows,1), minmax(0,1fr));
+      min-width:0;
+      min-height:0;
+    }
+    .badge-print-card{
+      position:relative;
+      border:0.35mm solid #111827;
+      border-radius:0;
+      background:#fff;
+      padding:5mm 4mm;
+      box-sizing:border-box;
+      display:grid;
+      align-content:center;
+      text-align:center;
+      min-height:0;
+      overflow:hidden;
+    }
+    .badge-print-card::before{
+      content:"裁切線";
+      position:absolute;
+      inset:2mm auto auto 2mm;
+      font-size:7pt;
+      color:#64748b;
+      background:#fff;
+      padding:0 1.5mm;
+      pointer-events:none;
+    }
+    .badge-print-card::after{
+      content:"出血線 / 安全區";
+      position:absolute;
+      inset:auto 2mm 2mm auto;
+      font-size:7pt;
+      color:#64748b;
+      background:#fff;
+      padding:0 1.5mm;
+      pointer-events:none;
+    }
+    .badge-print-card .school{
+      font-size:8.5pt;
+      letter-spacing:.08em;
+      color:#64748b;
+      margin-bottom:2mm;
+    }
+    .badge-print-card .name{
+      font-size:20pt;
+      font-weight:900;
+      line-height:1.1;
+      margin:0;
+    }
+    .badge-print-card .classline{
+      font-size:8.5pt;
+      color:#64748b;
+      margin-top:2mm;
+    }
+    .desk-print-page{
+      width:210mm;
+      height:297mm;
+      min-height:0;
+      box-sizing:border-box;
+      padding:12mm;
+      background:#fff;
+      overflow:hidden;
+      break-after:page;
+      page-break-after:always;
+    }
+    .desk-print-page:last-child{
+      break-after:auto;
+      page-break-after:auto;
+    }
+    .desk-print-grid{
+      display:grid;
+      grid-template-columns:1fr;
+      grid-template-rows:minmax(0,1fr);
+      min-width:0;
+      min-height:0;
+      height:100%;
+    }
+    .desk-print-card{
+      position:relative;
+      height:100%;
+      min-height:0;
+      border:0.8mm solid #0f766e;
+      border-radius:4mm;
+      overflow:hidden;
+      background:#fff;
+      display:grid;
+      grid-template-rows:repeat(3,minmax(0,1fr)) 12mm;
+      box-sizing:border-box;
+      box-shadow:inset 0 0 0 1.2mm rgba(15,118,110,.14);
+    }
+    .desk-print-card::before{
+      content:"";
+      position:absolute;
+      inset:3mm;
+      border:0.3mm solid rgba(15,118,110,.52);
+      border-radius:2.5mm;
+      pointer-events:none;
+      z-index:3;
+    }
+    .desk-print-glue{
+      background:#fff;
+    }
+    .desk-print-glue.tail{border-top:0.45mm dashed #94a3b8}
+    .desk-print-band{
+      position:relative;
+      display:grid;
+      place-items:center;
+      text-align:center;
+      padding:11mm 7mm 10mm;
+      box-sizing:border-box;
+      min-height:0;
+    }
+    .desk-print-band + .desk-print-band{
+      border-top:0.45mm dashed #94a3b8;
+      background:linear-gradient(180deg,#fff,#f8fffd);
+    }
+    .desk-print-face-content{display:grid;place-items:center;text-align:center}
+    .desk-print-face-content.inverted{transform:rotate(180deg)}
+    .desk-print-blank{min-height:1em}
+    .desk-print-name{
+      margin:0;
+      font-family:"Noto Sans TC","Microsoft JhengHei",sans-serif;
+      font-size:100pt;
+      font-weight:900;
+      line-height:1;
+      letter-spacing:.06em;
+      color:#0f172a;
+    }
+    @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+    @keyframes pop{to{transform:scale(.2);opacity:0}}
+    @keyframes fishSwim{
+      0%{transform:translate(var(--x),var(--y)) scale(.65) rotate(var(--angle));opacity:0}
+      10%{opacity:1}
+      45%{transform:translate(calc(var(--x) + var(--dx)*.45), calc(var(--y) + var(--dy)*.35 - 8px)) scale(calc(var(--scale) * 1.03)) rotate(calc(var(--angle) + var(--twist)*.5))}
+      100%{transform:translate(calc(var(--x) + var(--dx)), calc(var(--y) + var(--dy))) scale(var(--scale)) rotate(calc(var(--angle) + var(--twist)));opacity:0}
+    }
+    @keyframes wobble{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-4px) rotate(-2deg)}}
+    @media (max-width: 980px){
+      .subgrid,.split,.print-layout{grid-template-columns:1fr}
+      .shell{padding:10px}
+      .hero h1{font-size:clamp(22px,5vw,34px)}
+      .tab-nav{padding-bottom:4px}
+    }
+    @media print{
+      @page{size:A4 portrait;margin:0}
+      html,body{height:auto;overflow:visible}
+      body{display:block}
+      body{background:#fff}
+      .shell,.hero,.panel{box-shadow:none}
+      .no-print,.floating-link{display:none !important}
+      body.print-badge .shell,
+      body.print-desk .shell,
+      body.print-letter .shell{display:none !important}
+      body.print-badge #badgePrintRoot,
+      body.print-desk #deskPrintRoot,
+      body.print-letter #letterPrintRoot{display:block !important}
+      body.print-badge #deskPrintRoot,
+      body.print-desk #badgePrintRoot,
+      body.print-letter #badgePrintRoot,
+      body.print-letter #deskPrintRoot{display:none !important}
+      .print-root{display:none}
+      .print-root .badge-grid,.print-root .desk-grid,.print-root .desk-print-grid,.print-root .badge-print-grid{display:grid}
+      .print-root .badge-grid{gap:8px}
+      .print-root .badge-card{min-height:120px}
+    }
+  </style>
+</head>
+<body>
+  <a class="floating-link" href="https://kathy594520.github.io/new.github.io/AI/AI" target="_blank" rel="noreferrer">
+    <strong>仙姑凱西的教學小工具</strong>
+  </a>
+
+  <div class="shell">
+    <section class="hero">
+      <div class="hero-top">
+        <div>
+          <h1>老師班級經營開學助手</h1>
+          <div class="sub">先匯入學生名單，再快速產出家長信、名牌、桌牌、聯絡紀錄與交辦事項。右下角可直接開啟仙姑凱西教學工具。</div>
+        </div>
+        <div class="toolbar no-print">
+          <button class="btn-secondary" id="heroImportBtn">匯入學生資料</button>
+          <button class="btn-primary" id="demoBtn">載入示範資料</button>
+          <button class="btn-secondary" id="saveBtn">儲存目前內容</button>
+          <button class="btn-secondary" id="clearBtn">清空資料</button>
+        </div>
+      </div>
+      <div class="tab-nav no-print" id="navChips" aria-label="開學事務分頁">
+        <button class="chip active" type="button" data-tab="import">0. 名單設定</button>
+        <button class="chip" type="button" data-tab="letter">1. 家長信</button>
+        <button class="chip" type="button" data-tab="contact">2. 聯絡記錄</button>
+        <button class="chip" type="button" data-tab="print">3. 學生名牌</button>
+        <button class="chip" type="button" data-tab="desk">4. 班級桌牌</button>
+        <button class="chip" type="button" data-tab="icebreaker">5. 開學破冰</button>
+        <button class="chip" type="button" data-tab="tasks">6. 交辦事項</button>
+        <button class="chip" type="button" data-tab="tea">7. 心情彩虹卡</button>
+        <button class="chip" type="button" data-tab="game">8. 魚泡泡</button>
+        <button class="chip" type="button" data-tab="toolbox">9. 工具箱</button>
+      </div>
+    </section>
+
+    <main class="grid">
+      <section class="panel tab-panel active" id="import">
+        <div class="panel-head">
+          <div>
+            <h2>學生名單設定</h2>
+            <div class="muted">每行一位學生，格式可用「1. 王小明」或直接輸入姓名。</div>
+          </div>
+          <div class="toolbar no-print">
+            <button class="btn-secondary" id="importBtn">套用文字名單</button>
+            <button class="btn-secondary" id="importFileBtn">匯入學生資料</button>
+            <input id="rosterFile" type="file" accept=".csv,.tsv,.txt,.xlsx,.xls" hidden />
+            <button class="btn-secondary" id="sampleBtn">放入示範名單</button>
+          </div>
+        </div>
+      <div class="panel-body subgrid print-layout">
+          <div class="stack">
+            <div class="field">
+              <label for="rosterInput">學生名單</label>
+              <textarea id="rosterInput" placeholder="1. 王小明&#10;2. 李美華&#10;3. 陳冠宇"></textarea>
+            </div>
+            <div class="field">
+              <label for="schoolInput">學校名稱</label>
+              <input id="schoolInput" type="text" placeholder="例如：幸福國小" />
+            </div>
+            <div class="field">
+              <label for="classInput">班級名稱</label>
+              <input id="classInput" type="text" placeholder="例如：五年三班" />
+            </div>
+            <div class="field">
+              <label for="teacherInput">導師姓名</label>
+              <input id="teacherInput" type="text" placeholder="例如：凱西老師" />
+            </div>
+            <div class="field">
+              <label for="groupLinkInput">班級群組連結</label>
+              <textarea id="groupLinkInput" placeholder="貼上 LINE / 微信 / 其他群組連結"></textarea>
+            </div>
+          </div>
+          <div class="stack">
+            <div class="mini-card">
+              <header class="section-title" style="display:flex;justify-content:space-between;gap:10px;align-items:center">
+                <strong>已匯入學生</strong>
+                <span class="badge" id="studentCount">0 位</span>
+              </header>
+              <div class="roster-list" id="rosterList"></div>
+            </div>
+            <div class="preview-card">
+              <div class="big">班級概覽</div>
+              <p class="small" id="classSummary">尚未匯入學生名單。</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel tab-panel" id="letter">
+        <div class="panel-head">
+          <div>
+            <h2>1. 導師給家長的一封信</h2>
+            <div class="muted">可自動帶入班級名稱、導師姓名與群組連結。</div>
+          </div>
+          <div class="toolbar no-print">
+            <button class="btn-secondary" id="buildLetterBtn">重新產生內文</button>
+            <button class="btn-secondary" id="copyLetterBtn">複製信件內容</button>
+            <button class="btn-primary" id="downloadLetterPdfBtn" title="開啟列印視窗後選擇另存為 PDF">下載 PDF 檔案</button>
+            <button class="btn-secondary" id="printLetterBtn">列印</button>
+          </div>
+        </div>
+        <div class="panel-body split">
+          <div class="stack">
+            <div class="field">
+              <label for="letterSubject">信件標題</label>
+              <input id="letterSubject" type="text" value="開學給家長的一封信" />
+            </div>
+            <div class="field">
+              <label for="letterBody">信件內容</label>
+              <textarea id="letterBody" placeholder="可在這裡直接修改信件內容"></textarea>
+            </div>
+            <div class="field">
+              <label for="qrText">群組 QR 連結</label>
+              <textarea id="qrText" placeholder="輸入連結後會產生 QR code"></textarea>
+            </div>
+          </div>
+          <div class="stack">
+            <div class="paper">
+              <div class="paper-head">
+                <div>
+                  <span class="badge">家長信預覽</span>
+                  <h3 id="letterPreviewTitle" style="margin:10px 0 0;font-size:26px">開學給家長的一封信</h3>
+                  <div class="muted" id="letterPreviewMeta"></div>
+                </div>
+                <div class="muted" id="letterPreviewDate"></div>
+              </div>
+              <div class="paper-body" id="letterPreviewBody"></div>
+            </div>
+            <div class="mini-card">
+              <header class="section-title" style="display:flex;justify-content:space-between;gap:10px;align-items:center">
+                <strong>群組 QR code</strong>
+                <span class="badge">學生可直接掃碼</span>
+              </header>
+              <div class="qr-wrap">
+                <img id="qrImage" alt="群組 QR code" />
+                <div class="small" id="qrFallback"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel tab-panel" id="contact">
+        <div class="panel-head">
+          <div>
+            <h2>2. 學生家長聯絡記錄</h2>
+            <div class="muted">點選學生後可新增聯絡紀錄，內容會保存在瀏覽器本機。</div>
+          </div>
+        </div>
+        <div class="panel-body subgrid">
+          <div class="stack">
+            <div class="field">
+              <label for="studentSelect">選擇學生</label>
+              <select id="studentSelect"></select>
+            </div>
+            <div class="field">
+              <label for="contactDate">日期</label>
+              <input id="contactDate" type="date" />
+            </div>
+            <div class="field">
+              <label for="contactMethod">聯絡方式</label>
+              <select id="contactMethod">
+                <option>LINE</option>
+                <option>電話</option>
+                <option>面談</option>
+                <option>聯絡簿</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="contactSummary">聯絡摘要</label>
+              <textarea id="contactSummary" placeholder="例如：提醒開學用品、確認接送方式"></textarea>
+            </div>
+            <div class="toolbar no-print">
+              <button class="btn-primary" id="addContactBtn">新增紀錄</button>
+            </div>
+          </div>
+          <div class="stack">
+            <div class="mini-card">
+              <header class="section-title" style="display:flex;justify-content:space-between;gap:10px;align-items:center">
+                <strong>目前選取學生</strong>
+                <span class="badge" id="activeStudentBadge">--</span>
+              </header>
+              <div class="preview-card">
+                <p class="big" id="activeStudentName">尚未選取</p>
+                <p class="small" id="activeStudentInfo">請先從左側名單選一位學生。</p>
+              </div>
+            </div>
+            <div class="mini-card">
+              <header class="section-title" style="display:flex;justify-content:space-between;gap:10px;align-items:center">
+                <strong>聯絡紀錄列表</strong>
+                <span class="badge" id="contactCount">0 筆</span>
+              </header>
+              <div class="stack" id="contactList"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel tab-panel" id="print">
+        <div class="panel-head">
+          <div>
+            <h2>3. 學生名牌產生器</h2>
+            <div class="muted">預設 A4 直印，可調欄列數；列印版面四邊保留約 12 mm 安全區。</div>
+          </div>
+          <div class="toolbar no-print">
+            <button class="btn-secondary" id="renderBadgesBtn">重新生成</button>
+            <button class="btn-primary" id="printBadgesBtn">列印名牌</button>
+          </div>
+        </div>
+        <div class="panel-body subgrid">
+          <div class="stack no-print">
+            <div class="field">
+              <label for="badgeCols">欄數</label>
+              <input id="badgeCols" type="number" min="1" max="6" value="3" />
+            </div>
+            <div class="field">
+              <label for="badgeRows">列數</label>
+              <input id="badgeRows" type="number" min="1" max="8" value="4" />
+            </div>
+            <div class="preview-card">
+              <p class="small">名牌會依欄列自動排版成 A4 直印格式。</p>
+            </div>
+          </div>
+          <div class="badge-grid" id="badgeGrid"></div>
+        </div>
+      </section>
+
+      <section class="panel tab-panel" id="desk">
+        <div class="panel-head">
+          <div>
+            <h2>4. 班級桌牌產生器</h2>
+            <div class="muted">固定 A4 直印，每頁只生成一張三面三折桌牌，尾端保留 1.2 公分貼合襟。</div>
+          </div>
+          <div class="toolbar no-print">
+            <button class="btn-secondary" id="renderDesksBtn">重新生成</button>
+            <button class="btn-primary" id="printDesksBtn">列印桌牌</button>
+          </div>
+        </div>
+        <div class="panel-body subgrid">
+          <div class="stack no-print">
+            <div class="field">
+              <label for="deskPerPage">每頁桌牌數</label>
+              <input id="deskPerPage" type="number" min="1" max="1" value="1" readonly />
+            </div>
+            <div class="preview-card">
+              <p class="small">一張 A4 對應一位學生；三面內容沿三條折線折疊，尾端 1.2 公分貼合襟與頭端黏合。</p>
+            </div>
+          </div>
+          <div class="desk-grid" id="deskGrid"></div>
+        </div>
+      </section>
+
+      <section class="panel tab-panel" id="icebreaker">
+        <div class="panel-head">
+          <div>
+            <h2>5. 開學破冰小遊戲</h2>
+            <div class="muted">抽一題聊聊，再抽一位同學分享，讓第一週的互動自然開始。</div>
+          </div>
+          <div class="toolbar no-print">
+            <button class="btn-secondary" id="nextPromptBtn">換一題</button>
+            <button class="btn-primary" id="drawStudentBtn">抽一位同學</button>
+          </div>
+        </div>
+        <div class="panel-body subgrid">
+          <div class="stack">
+            <div class="toolbar no-print" id="promptModes" aria-label="破冰題目分類"></div>
+            <div class="preview-card icebreaker-prompt" id="icebreakerPrompt"></div>
+          </div>
+          <div class="stack">
+            <div class="mini-card">
+              <header class="section-title" style="display:flex;justify-content:space-between;gap:10px;align-items:center">
+                <strong>分享小提醒</strong>
+                <span class="badge">輕鬆玩</span>
+              </header>
+              <p class="small">可以先讓同學兩兩分享，再邀請願意的孩子向全班說說看。</p>
+              <div class="preview-card" id="drawnStudent">尚未抽取同學</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel tab-panel" id="tasks">
+        <div class="panel-head">
+          <div>
+            <h2>6. 學校交辦事項提醒繳交紀錄</h2>
+            <div class="muted">建立事項清單並勾選名單，快速確認交辦完成狀態。</div>
+          </div>
+          <div class="toolbar no-print">
+            <button class="btn-secondary" id="addTaskBtn">新增事項</button>
+            <button class="btn-secondary" id="resetTaskBtn">全部取消勾選</button>
+          </div>
+        </div>
+        <div class="panel-body subgrid">
+          <div class="stack">
+            <div class="field">
+              <label for="taskTitleInput">事項名稱</label>
+              <input id="taskTitleInput" type="text" placeholder="例如：家長同意書回收" />
+            </div>
+            <div class="toolbar no-print">
+              <button class="btn-primary" id="confirmAddTaskBtn">加入清單</button>
+            </div>
+            <div class="mini-card">
+              <header class="section-title" style="display:flex;justify-content:space-between;gap:10px;align-items:center">
+                <strong>任務清單</strong>
+                <span class="badge" id="taskCount">0 項</span>
+              </header>
+              <div class="task-grid" id="taskList"></div>
+            </div>
+          </div>
+          <div class="stack">
+            <div class="mini-card">
+              <header class="section-title" style="display:flex;justify-content:space-between;gap:10px;align-items:center">
+                <strong>點名勾選</strong>
+                <span class="badge" id="taskSelectedTitle">尚未選擇</span>
+              </header>
+              <div class="task-grid" id="taskStudentGrid"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel tab-panel" id="tea">
+        <div class="panel-head">
+          <div>
+            <h2>7. 老師的心情彩虹卡和下午茶提醒</h2>
+            <div class="muted">挑一張心情卡，設定下午茶時間，提醒自己先喘口氣。</div>
+          </div>
+        </div>
+        <div class="panel-body subgrid">
+          <div class="stack">
+            <div class="card">
+              <div class="toolbar" id="moodCards"></div>
+            </div>
+          </div>
+          <div class="stack">
+            <div class="mini-card">
+              <header class="section-title" style="display:flex;justify-content:space-between;gap:10px;align-items:center">
+                <strong>目前心情</strong>
+                <span class="badge" id="moodBadge">--</span>
+              </header>
+              <div class="preview-card">
+                <p class="big" id="moodTitle"></p>
+                <p class="small" id="moodText"></p>
+              </div>
+            </div>
+            <div class="mini-card">
+              <header class="section-title" style="display:flex;justify-content:space-between;gap:10px;align-items:center">
+                <strong>下午茶提醒</strong>
+                <span class="badge" id="teaCountdown">--</span>
+              </header>
+              <div class="stack">
+                <div class="field"><label for="teaTime">時間</label><input id="teaTime" type="time" value="15:00" /></div>
+                <div class="field"><label for="teaTreat">今天的甜點／茶飲</label><select id="teaTreat">
+                  <option>奶茶＋小餅乾</option>
+                  <option>水果茶＋磅蛋糕</option>
+                  <option>蜂蜜茶＋小泡芙</option>
+                  <option>鮮奶茶＋布丁</option>
+                  <option>檸檬茶＋水果</option>
+                  <option>咖啡＋可頌</option>
+                  <option>無糖茶＋堅果</option>
+                </select></div>
+                <div class="field"><label for="teaNote">提醒文字</label><input id="teaNote" type="text" value="今天辛苦了，喝口茶再繼續。" /></div>
+                <div class="toolbar no-print">
+                  <button class="btn-primary" id="teaNowBtn">更新提醒</button>
+                  <button class="btn-secondary" id="teaNotifyBtn">跳出提醒</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel tab-panel" id="game">
+        <div class="panel-head">
+          <div>
+            <h2>8. 老師的紓壓小遊戲</h2>
+            <div class="muted">戳破多彩金魚泡泡，會有分數、音效，還會游出可愛小金魚。</div>
+          </div>
+          <div class="toolbar no-print">
+            <button class="btn-secondary" id="spawnBubblesBtn">補滿魚泡泡</button>
+            <button class="btn-secondary" id="clearBubblesBtn">清空重來</button>
+            <button class="btn-secondary" id="muteBtn">開啟音效</button>
+          </div>
+        </div>
+        <div class="panel-body">
+          <div class="game-stage">
+            <div class="scoreboard">
+              <div class="big" id="gameScore">0</div>
+              <div class="small">戳破泡泡得分</div>
+            </div>
+            <div class="game-bubbles" id="gameBubbles"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel tab-panel" id="toolbox">
+        <div class="panel-head">
+          <div>
+            <h2>9. 仙姑凱西教學工具箱</h2>
+            <div class="muted">右下角浮動標籤會一直顯示，也能在這裡新增個人的教學工具連結。</div>
+          </div>
+          <div class="toolbar no-print">
+            <a class="btn-primary" href="https://kathy594520.github.io/new.github.io/AI/AI" target="_blank" rel="noreferrer">立刻開啟工具箱</a>
+            <button class="btn-secondary" id="copyToolboxUrlBtn">複製工具箱連結</button>
+          </div>
+        </div>
+        <div class="panel-body subgrid">
+          <div class="stack">
+            <div class="field"><label for="toolboxName">工具名稱</label><input id="toolboxName" type="text" placeholder="例如：班級點名表" /></div>
+            <div class="field"><label for="toolboxUrl">工具網址</label><input id="toolboxUrl" type="text" placeholder="https://..." /></div>
+            <div class="field"><label for="toolboxNote">備註</label><input id="toolboxNote" type="text" placeholder="例如：開學第一週會用到" /></div>
+            <div class="toolbar no-print">
+              <button class="btn-primary" id="addToolboxBtn">新增連結</button>
+              <button class="btn-secondary" id="copyPresetToolboxBtn">複製預設工具箱連結</button>
+            </div>
+          </div>
+          <div class="stack">
+            <div class="mini-card">
+              <header class="section-title" style="display:flex;justify-content:space-between;gap:10px;align-items:center">
+                <strong>個人教學工具清單</strong>
+                <span class="badge" id="toolboxCount">0 筆</span>
+              </header>
+              <div class="stack" id="toolboxList"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="print-root" id="badgePrintRoot"></div>
+  <div class="print-root" id="deskPrintRoot"></div>
+  <div class="print-root" id="letterPrintRoot"></div>
+
+  <script>
+  (() => {
+    const STORAGE_KEY = 'teacher-opening-assistant-clean-v1';
+    const TOOLBOX_URL = 'https://kathy594520.github.io/new.github.io/AI/AI';
+    const SAMPLE_ROSTER_TEXT = [
+      '1. 王小明',
+      '2. 李美華',
+      '3. 陳冠宇',
+      '4. 林怡君',
+      '5. 張書豪',
+      '6. 黃雅婷',
+      '7. 吳承恩',
+      '8. 蔡佩妤',
+      '9. 許哲維',
+      '10. 鄭心怡',
+      '11. 劉冠廷',
+      '12. 何雨潔'
+    ].join('\n');
+    const DEFAULT_TASKS = ['3C產品使用約定同意書'];
+    const MOODS = [
+      { id:'sunny', emoji:'🌞', title:'陽光模式', color:'#f4b942', desc:'適合剛開學時快速拉近距離，氣氛明亮又有朝氣。', tea:'今天也辛苦了，記得先喝一口茶再繼續。' },
+      { id:'calm', emoji:'🌿', title:'安定模式', color:'#5fbf9f', desc:'適合需要慢慢說、慢慢聽的班級互動節奏。', tea:'把節奏放慢，先整理再前進。' },
+      { id:'sweet', emoji:'🍓', title:'甜甜模式', color:'#ef7a59', desc:'適合用鼓勵和小驚喜，讓孩子放下緊張。', tea:'今天表現不錯，下午茶也要記得。' },
+      { id:'rainbow', emoji:'🌈', title:'彩虹模式', color:'#6d8cff', desc:'適合做創意發想、分組命名與班級自我介紹。', tea:'讓靈感多一點，壓力少一點。' },
+      { id:'forest', emoji:'🍃', title:'森林模式', color:'#83c66b', desc:'適合建立規則、任務清單與穩定班級節奏。', tea:'一步一步來，今天也會完成。' },
+      { id:'spark', emoji:'✨', title:'閃亮模式', color:'#c96df2', desc:'適合做暖場、抽籤、快速互動與驚喜小活動。', tea:'給自己一點光，精神就回來了。' },
+      { id:'cloud', emoji:'☁️', title:'雲朵模式', color:'#8bb7ff', desc:'適合需要柔和氛圍、安靜閱讀與整理小任務。', tea:'先放鬆，再把事情慢慢做完。' },
+      { id:'cozy', emoji:'🧸', title:'暖暖模式', color:'#d97706', desc:'適合收心、整理開學資訊與班級提醒。', tea:'把今天的小事收好，慢慢變成大事。' }
+    ];
+    const PROMPTS = {
+      warm:['如果今天的班級是一種天氣，你會選什麼？','你最近一次被同學幫助，是什麼時候？','開學第一週，你最想先完成哪一件事？'],
+      fun:['如果你能幫班級取一個超能力名字，會叫什麼？','你想成為哪一種可愛小動物老師？','請用三個字形容今天的心情。'],
+      class:['你覺得班級裡最重要的一條約定是什麼？','如果要幫新同學介紹我們班，你會先說什麼？','你希望教室裡多一個什麼小角落？'],
+      dream:['如果今天可以許一個班級願望，你會許什麼？','你最期待這學期一起完成什麼事情？','如果你是一盞燈，你想照亮誰？']
+    };
+    const $ = (id) => document.getElementById(id);
+    const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (m) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+    const fitNameStyle = (value, base, minimum, capacity = 3.6, unit = 'px') => {
+      const length = Math.max(1, Array.from(String(value ?? '').replace(/\s+/g, '')).length);
+      const size = Math.max(minimum, Math.round(base * Math.min(1, capacity / length) * 10) / 10);
+      return `font-size:${size}${unit};white-space:nowrap;`;
+    };
+    const todayIso = () => new Date().toISOString().slice(0,10);
+    const loadState = () => { try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null'); } catch { return null; } };
+    const saveState = () => localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    const uid = (p='id') => `${p}-${Math.random().toString(36).slice(2,9)}-${Date.now().toString(36)}`;
+    const state = loadState() || {
+      meta:{ school:'幸福國小', className:'五年三班', teacher:'凱西老師', groupLink:'' },
+      rosterText:'',
+      students:[],
+      contacts:[],
+      tasks: DEFAULT_TASKS.map((title) => ({ id: uid('task'), title, done:{} })),
+      profileByStudent:{},
+      letter:{ subject:'開學給家長的一封信', body:'', qrText:'' },
+      print:{ badgeCols:3, badgeRows:4, deskPerPage:1 },
+      tea:{ time:'15:00', treat:'奶茶＋小餅乾', note:'今天辛苦了，喝口茶再繼續。' },
+      game:{ score:0, muted:false },
+      ui:{ activeStudentId:'', selectedTaskId:'', moodId:'sunny', promptIndex:0, promptCategory:'warm', activeTab:'import', theme:'warm' },
+      toolboxLinks:[{ id:'preset-toolbox', title:'仙姑凱西的教學小工具', url:TOOLBOX_URL, note:'預設工具箱連結', pinned:true }]
+    };
+    let audioCtx = null;
+
+    function ensureState() {
+      state.meta ||= {};
+      state.students ||= [];
+      state.contacts ||= [];
+      if (!Array.isArray(state.tasks)) state.tasks = [];
+      state.profileByStudent ||= {};
+      state.letter ||= {};
+      state.print ||= {};
+      state.tea ||= {};
+      state.game ||= {};
+      state.ui ||= {};
+      state.toolboxLinks ||= [];
+      state.print.badgeCols ||= 3;
+      state.print.badgeRows ||= 4;
+      state.print.deskPerPage = 1;
+      state.tea.time ||= '15:00';
+      state.tea.treat ||= '奶茶＋小餅乾';
+      state.tea.note ||= '今天辛苦了，喝口茶再繼續。';
+      state.ui.moodId ||= 'sunny';
+      state.ui.theme ||= 'warm';
+      state.ui.promptIndex ||= 0;
+      state.ui.promptCategory ||= 'warm';
+      state.ui.activeTab ||= 'import';
+      if (!Array.isArray(state.tasks) || (state.tasks.length === 0 && !loadState())) {
+        state.tasks = DEFAULT_TASKS.map((title) => ({ id: uid('task'), title, done:{} }));
+      }
+      if (!state.ui.activeStudentId && state.students[0]) state.ui.activeStudentId = state.students[0].id;
+      if (!state.ui.selectedTaskId && state.tasks[0]) state.ui.selectedTaskId = state.tasks[0].id;
+    }
+
+    function parseRoster(text) {
+      return String(text || '')
+        .split(/\r?\n/)
+        .map((line) => line.trim())
+        .filter(Boolean)
+        .map((line) => {
+          const cleaned = line.replace(/^[\d一二三四五六七八九十百千零]+[.\-、)\]]?\s*/, '');
+          const name = cleaned || line;
+          return { id: uid('stu'), number: String(1), name, contacts: [], profile:{} };
+        })
+        .map((item, index) => ({ ...item, number: String(index + 1) }));
+    }
+
+    function readFileAsText(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result || ''));
+        reader.onerror = () => reject(reader.error || new Error('讀取檔案失敗'));
+        reader.readAsText(file, 'utf-8');
+      });
+    }
+
+    function readFileAsArrayBuffer(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => reject(reader.error || new Error('讀取檔案失敗'));
+        reader.readAsArrayBuffer(file);
+      });
+    }
+
+    async function unzipXlsxEntries(buffer) {
+      const bytes = new Uint8Array(buffer);
+      const view = new DataView(buffer);
+      let end = -1;
+      for (let index = bytes.length - 22; index >= 0; index -= 1) {
+        if (view.getUint32(index, true) === 0x06054b50) { end = index; break; }
+      }
+      if (end < 0) throw new Error('不是有效的 Excel 檔案');
+      const count = view.getUint16(end + 10, true);
+      let offset = view.getUint32(end + 16, true);
+      const entries = {};
+      const decoder = new TextDecoder();
+      for (let index = 0; index < count; index += 1) {
+        if (view.getUint32(offset, true) !== 0x02014b50) break;
+        const method = view.getUint16(offset + 10, true);
+        const compressedSize = view.getUint32(offset + 20, true);
+        const nameLength = view.getUint16(offset + 28, true);
+        const extraLength = view.getUint16(offset + 30, true);
+        const commentLength = view.getUint16(offset + 32, true);
+        const localOffset = view.getUint32(offset + 42, true);
+        const name = decoder.decode(bytes.slice(offset + 46, offset + 46 + nameLength));
+        entries[name] = { method, compressedSize, localOffset };
+        offset += 46 + nameLength + extraLength + commentLength;
+      }
+      return entries;
+    }
+
+    async function unzipXlsxEntry(buffer, entry) {
+      const view = new DataView(buffer);
+      const nameLength = view.getUint16(entry.localOffset + 26, true);
+      const extraLength = view.getUint16(entry.localOffset + 28, true);
+      const start = entry.localOffset + 30 + nameLength + extraLength;
+      const compressed = buffer.slice(start, start + entry.compressedSize);
+      if (entry.method === 0) return compressed;
+      if (entry.method === 8 && typeof DecompressionStream !== 'undefined') {
+        const stream = new Blob([compressed]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
+        return await new Response(stream).arrayBuffer();
+      }
+      throw new Error('目前瀏覽器無法解讀此 Excel 壓縮格式');
+    }
+
+    async function parseXlsxRoster(file) {
+      const buffer = await readFileAsArrayBuffer(file);
+      const entries = await unzipXlsxEntries(buffer);
+      const decoder = new TextDecoder();
+      const sharedStrings = [];
+      if (entries['xl/sharedStrings.xml']) {
+        const sharedXml = await unzipXlsxEntry(buffer, entries['xl/sharedStrings.xml']);
+        const sharedDoc = new DOMParser().parseFromString(decoder.decode(sharedXml), 'application/xml');
+        Array.from(sharedDoc.getElementsByTagName('si')).forEach((item) => {
+          sharedStrings.push(Array.from(item.getElementsByTagName('t')).map((node) => node.textContent || '').join(''));
+        });
+      }
+      const sheets = Object.keys(entries)
+        .filter((name) => /^xl\/worksheets\/sheet\d+\.xml$/i.test(name))
+        .sort();
+      if (!sheets.length) throw new Error('Excel 檔案沒有可讀取的工作表');
+      const sheetXml = await unzipXlsxEntry(buffer, entries[sheets[0]]);
+      const sheetDoc = new DOMParser().parseFromString(decoder.decode(sheetXml), 'application/xml');
+      const rows = [];
+      Array.from(sheetDoc.getElementsByTagName('row')).forEach((row, index) => {
+        const cells = Array.from(row.getElementsByTagName('c')).map((cell) => {
+          const type = cell.getAttribute('t') || '';
+          const value = cell.getElementsByTagName('v')[0]?.textContent || '';
+          if (type === 'inlineStr') return cell.getElementsByTagName('t')[0]?.textContent || '';
+          if (type === 's') return sharedStrings[Number(value)] || '';
+          return value;
+        });
+        const firstCell = String(cells[0] || '').trim();
+        if (index === 0 && /^(姓名|座號|名單|學生)/.test(firstCell)) return;
+        const line = cells.filter(Boolean).join(' ');
+        if (line) rows.push(line);
+      });
+      return rows.join('\n');
+    }
+
+    async function readRosterFile(file) {
+      const name = String(file.name || '').toLowerCase();
+      if (name.endsWith('.xlsx')) return parseXlsxRoster(file);
+      if (name.endsWith('.xls')) throw new Error('請將 .xls 另存為 .xlsx 或 .csv 後再匯入');
+      const text = await readFileAsText(file);
+      return text.split(/\r?\n/).map((line) => {
+        const cells = line.replace(/^\uFEFF/, '').split(/[,，\t;]/).map((cell) => cell.trim()).filter(Boolean);
+        if (!cells.length || /^(姓名|座號|名單|學生)$/i.test(cells[0])) return '';
+        if (cells.length > 1 && /^\d+$/.test(cells[0])) return `${cells[0]}. ${cells[1]}`;
+        return cells.length > 1 ? cells[1] : cells[0];
+      }).filter(Boolean).join('\n');
+    }
+
+    function currentStudent() {
+      return state.students.find((item) => item.id === state.ui.activeStudentId) || state.students[0] || null;
+    }
+
+    function currentTask() {
+      return state.tasks.find((item) => item.id === state.ui.selectedTaskId) || state.tasks[0] || null;
+    }
+
+    function buildLetterBody() {
+      const school = state.meta.school || '學校';
+      const cls = state.meta.className || '班級';
+      const teacher = state.meta.teacher || '老師';
+      const count = state.students.length;
+      const link = state.meta.groupLink ? `班級群組連結：${state.meta.groupLink}` : '班級群組連結：尚未建立';
+      return [
+        '親愛的家長您好：',
+        '',
+        `我是 ${teacher}，今年將陪伴 ${school} ${cls} 的孩子一起學習。`,
+        `目前班上共有 ${count} 位學生，我會持續整理班級資料、聯絡紀錄與學習觀察。`,
+        '',
+        '班級群組資訊：',
+        link,
+        '',
+        '若您有任何需要先告知的事情，歡迎透過班級群組或聯絡紀錄與我聯繫。',
+        '謝謝您，也謝謝孩子們一起展開新的學期。',
+        '',
+        '祝平安順心',
+        teacher
+      ].join('\n');
+    }
+
+    function syncInputsFromState() {
+      $('schoolInput').value = state.meta.school || '';
+      $('classInput').value = state.meta.className || '';
+      $('teacherInput').value = state.meta.teacher || '';
+      $('groupLinkInput').value = state.meta.groupLink || '';
+      $('rosterInput').value = state.rosterText || '';
+      $('letterSubject').value = state.letter.subject || '開學給家長的一封信';
+      $('letterBody').value = state.letter.body || buildLetterBody();
+      $('qrText').value = state.letter.qrText || state.meta.groupLink || '';
+      $('badgeCols').value = state.print.badgeCols || 3;
+      $('badgeRows').value = state.print.badgeRows || 4;
+      $('deskPerPage').value = 1;
+      $('teaTime').value = state.tea.time || '15:00';
+      $('teaTreat').value = state.tea.treat || '奶茶＋小餅乾';
+      $('teaNote').value = state.tea.note || '今天辛苦了，喝口茶再繼續。';
+      $('studentSelect').value = state.ui.activeStudentId || '';
+      $('moodBadge').textContent = MOODS.find((m) => m.id === state.ui.moodId)?.title || '--';
+    }
+
+    function renderRoster() {
+      const root = $('rosterList');
+      root.innerHTML = '';
+      $('studentCount').textContent = `${state.students.length} 位`;
+      if (!state.students.length) {
+        root.innerHTML = '<span class="muted">尚未匯入學生名單</span>';
+        $('classSummary').textContent = '尚未匯入學生名單。';
+        return;
+      }
+      state.students.forEach((student) => {
+        const btn = document.createElement('button');
+        btn.className = `chip${student.id === state.ui.activeStudentId ? ' active' : ''}`;
+        btn.type = 'button';
+        btn.textContent = student.name;
+        btn.addEventListener('click', () => {
+          state.ui.activeStudentId = student.id;
+          renderAll();
+          saveState();
+        });
+        root.appendChild(btn);
+      });
+      const active = currentStudent();
+      $('classSummary').textContent = active ? `目前選取：${active.name}。` : '已匯入名單。';
+    }
+
+    function renderLetter() {
+      const subject = $('letterSubject').value.trim() || '開學給家長的一封信';
+      const body = $('letterBody').value.trim() || buildLetterBody();
+      const qrText = $('qrText').value.trim() || state.meta.groupLink || '';
+      state.letter.subject = subject;
+      state.letter.body = body;
+      state.letter.qrText = qrText;
+      $('letterPreviewTitle').textContent = subject;
+      $('letterPreviewMeta').textContent = `${state.meta.school || '學校'} · ${state.meta.className || '班級'} · ${state.meta.teacher || '老師'} · ${state.students.length} 位學生`;
+      $('letterPreviewDate').textContent = new Date().toLocaleDateString('zh-TW', { year:'numeric', month:'long', day:'numeric', weekday:'long' });
+      $('letterPreviewBody').textContent = body;
+      if (qrText) {
+        $('qrImage').src = `https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=${encodeURIComponent(qrText)}`;
+        $('qrFallback').textContent = qrText.length > 84 ? `${qrText.slice(0,84)}...` : qrText;
+      } else {
+        $('qrImage').removeAttribute('src');
+        $('qrFallback').textContent = '請先輸入班級群組連結。';
+      }
+    }
+
+    function renderLetterPrint() {
+      const root = $('letterPrintRoot');
+      const subject = $('letterSubject').value.trim() || '開學給家長的一封信';
+      const body = $('letterBody').value.trim() || buildLetterBody();
+      const meta = `${state.meta.school || '學校'} · ${state.meta.className || '班級'} · ${state.meta.teacher || '老師'} · ${state.students.length} 位學生`;
+      const date = $('letterPreviewDate').textContent || new Date().toLocaleDateString('zh-TW', { year:'numeric', month:'long', day:'numeric', weekday:'long' });
+      const qrText = $('qrText').value.trim() || state.meta.groupLink || '';
+      const qrSrc = $('qrImage').getAttribute('src') || '';
+      root.innerHTML = `
+        <article class="letter-print-page">
+          <h1 class="letter-print-title"></h1>
+          <div class="letter-print-meta"><span class="letter-print-meta-text"></span><span class="letter-print-date"></span></div>
+          <div class="letter-print-body"></div>
+          <div class="letter-print-qr">
+            <img class="letter-print-qr-image" alt="班級群組 QR code" />
+            <div><strong>班級群組 QR code</strong><br /><span class="letter-print-qr-text"></span></div>
+          </div>
+        </article>`;
+      root.querySelector('.letter-print-title').textContent = subject;
+      root.querySelector('.letter-print-meta-text').textContent = meta;
+      root.querySelector('.letter-print-date').textContent = date;
+      root.querySelector('.letter-print-body').textContent = body;
+      if (qrText && qrSrc) {
+        root.querySelector('.letter-print-qr-image').src = qrSrc;
+        root.querySelector('.letter-print-qr-text').textContent = qrText;
+      } else {
+        root.querySelector('.letter-print-qr').hidden = true;
+      }
+    }
+
+    function renderStudentsSelect() {
+      const options = state.students.map((student) => `<option value="${escapeHtml(student.id)}">${escapeHtml(student.name)}</option>`).join('');
+      $('studentSelect').innerHTML = options || '<option value="">尚未匯入學生</option>';
+      if (state.ui.activeStudentId) {
+        $('studentSelect').value = state.ui.activeStudentId;
+      }
+    }
+
+    function renderContacts() {
+      const student = currentStudent();
+      $('activeStudentBadge').textContent = student ? student.name : '--';
+      $('activeStudentName').textContent = student ? student.name : '尚未選取';
+      $('activeStudentInfo').textContent = student ? `聯絡紀錄會對應到 ${student.name}` : '請先選擇一位學生。';
+      $('contactCount').textContent = `${state.contacts.filter((item) => item.studentId === student?.id).length} 筆`;
+      $('contactList').innerHTML = '';
+      const list = state.contacts.filter((item) => item.studentId === student?.id);
+      if (!list.length) {
+        $('contactList').innerHTML = '<div class="muted">尚未新增聯絡紀錄。</div>';
+        return;
+      }
+      list.slice().reverse().forEach((item) => {
+        const box = document.createElement('div');
+        box.className = 'preview-card';
+        box.innerHTML = `<strong>${escapeHtml(item.date)} / ${escapeHtml(item.method)}</strong><div class="small" style="margin-top:8px;white-space:pre-wrap">${escapeHtml(item.summary)}</div>`;
+        $('contactList').appendChild(box);
+      });
+    }
+
+    function renderTasks() {
+      $('taskCount').textContent = `${state.tasks.length} 項`;
+      const task = currentTask();
+      $('taskSelectedTitle').textContent = task ? task.title : '尚未選擇';
+      const taskRoot = $('taskList');
+      taskRoot.innerHTML = '';
+      state.tasks.forEach((item) => {
+        const box = document.createElement('div');
+        box.className = `toggle${item.id === task?.id ? ' on' : ''}`;
+        box.setAttribute('role', 'button');
+        box.tabIndex = 0;
+        box.innerHTML = `<span>${escapeHtml(item.title)}</span><button class="task-delete" type="button" aria-label="刪除任務" title="刪除">×</button>`;
+        box.addEventListener('click', () => {
+          state.ui.selectedTaskId = item.id;
+          renderAll();
+          saveState();
+        });
+        box.addEventListener('keydown', (event) => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            state.ui.selectedTaskId = item.id;
+            renderAll();
+            saveState();
+          }
+        });
+        box.querySelector('.task-delete').addEventListener('click', (event) => {
+          event.stopPropagation();
+          const index = state.tasks.findIndex((entry) => entry.id === item.id);
+          if (index < 0) return;
+          const wasSelected = state.ui.selectedTaskId === item.id;
+          state.tasks.splice(index, 1);
+          if (wasSelected) {
+            state.ui.selectedTaskId = state.tasks[index]?.id || state.tasks[index - 1]?.id || state.tasks[0]?.id || '';
+          }
+          renderAll();
+          saveState();
+        });
+        taskRoot.appendChild(box);
+      });
+      const grid = $('taskStudentGrid');
+      grid.innerHTML = '';
+      if (!task || !state.students.length) {
+        grid.innerHTML = '<div class="muted">請先匯入學生名單後再勾選。</div>';
+        return;
+      }
+      state.students.forEach((student) => {
+        const btn = document.createElement('button');
+        btn.className = `toggle${task.done?.[student.id] ? ' on' : ''}`;
+        btn.type = 'button';
+        btn.textContent = student.name;
+        btn.addEventListener('click', () => {
+          task.done ||= {};
+          task.done[student.id] = !task.done[student.id];
+          renderAll();
+          saveState();
+        });
+        grid.appendChild(btn);
+      });
+    }
+
+    function teaCountdownText() {
+      const [hours, minutes] = String(state.tea.time || '15:00').split(':').map(Number);
+      const now = new Date();
+      const target = new Date(now);
+      target.setHours(Number.isFinite(hours) ? hours : 15, Number.isFinite(minutes) ? minutes : 0, 0, 0);
+      if (target < now) target.setDate(target.getDate() + 1);
+      const diff = Math.max(0, target - now);
+      const mins = Math.floor(diff / 60000);
+      if (mins === 0) return '快到喝茶時間了';
+      if (mins < 60) return `${mins} 分鐘`;
+      const h = Math.floor(mins / 60);
+      const m = mins % 60;
+      return m ? `${h} 小時 ${m} 分鐘` : `${h} 小時`;
+    }
+
+    function renderTeaAndMood() {
+      const current = MOODS.find((item) => item.id === state.ui.moodId) || MOODS[0];
+      const root = $('moodCards');
+      root.innerHTML = '';
+      MOODS.forEach((mood) => {
+        const btn = document.createElement('button');
+        btn.className = 'chip';
+        btn.type = 'button';
+        btn.style.background = state.ui.moodId === mood.id ? `linear-gradient(135deg, ${mood.color}22, #fff)` : '#fff';
+        btn.textContent = `${mood.emoji} ${mood.title}`;
+        btn.addEventListener('click', () => {
+          state.ui.moodId = mood.id;
+          renderAll();
+          saveState();
+        });
+        root.appendChild(btn);
+      });
+      $('moodTitle').textContent = current.title;
+      $('moodText').textContent = `${current.desc} ${current.tea}`;
+      $('teaCountdown').textContent = teaCountdownText();
+    }
+
+    function renderIcebreaker() {
+      const category = state.ui.promptCategory || 'warm';
+      const prompts = PROMPTS[category] || PROMPTS.warm;
+      const prompt = prompts[state.ui.promptIndex % prompts.length];
+      const modeRoot = $('promptModes');
+      modeRoot.innerHTML = '';
+      Object.keys(PROMPTS).forEach((key) => {
+        const labels = { warm:'暖身聊天', fun:'趣味想像', class:'班級交流', dream:'夢想期待' };
+        const button = document.createElement('button');
+        button.className = `chip${key === category ? ' active' : ''}`;
+        button.type = 'button';
+        button.textContent = labels[key];
+        button.addEventListener('click', () => {
+          state.ui.promptCategory = key;
+          state.ui.promptIndex = 0;
+          renderAll();
+          saveState();
+        });
+        modeRoot.appendChild(button);
+      });
+      $('icebreakerPrompt').textContent = prompt;
+      const drawn = state.ui.drawnStudentName || '尚未抽取同學';
+      $('drawnStudent').textContent = drawn;
+    }
+
+    function nextPrompt() {
+      const prompts = PROMPTS[state.ui.promptCategory || 'warm'] || PROMPTS.warm;
+      state.ui.promptIndex = (state.ui.promptIndex + 1) % prompts.length;
+      renderAll();
+      saveState();
+    }
+
+    function drawStudent() {
+      if (!state.students.length) {
+        state.ui.drawnStudentName = '請先匯入學生名單';
+      } else {
+        const student = state.students[Math.floor(Math.random() * state.students.length)];
+        state.ui.drawnStudentName = `今天邀請：${student.name}`;
+      }
+      renderAll();
+      saveState();
+    }
+
+    function renderBadges() {
+      const cols = Math.max(1, Math.min(6, parseInt($('badgeCols').value, 10) || 3));
+      const rows = Math.max(1, Math.min(8, parseInt($('badgeRows').value, 10) || 4));
+      state.print.badgeCols = cols;
+      state.print.badgeRows = rows;
+      const root = $('badgeGrid');
+      root.style.setProperty('--cols', cols);
+      root.style.gridTemplateColumns = `repeat(${cols}, minmax(0, 1fr))`;
+      root.style.gridTemplateRows = `repeat(${rows}, minmax(0, 1fr))`;
+      root.innerHTML = '';
+      state.students.forEach((student) => {
+        const card = document.createElement('div');
+        card.className = 'badge-card';
+        const nameStyle = fitNameStyle(student.name, 24, 14, 3.6, 'px');
+        card.innerHTML = `<div class="school">${escapeHtml(state.meta.school || '學校')}</div><div class="name" style="${nameStyle}">${escapeHtml(student.name)}</div><div class="school">${escapeHtml(state.meta.className || '班級')}</div>`;
+        root.appendChild(card);
+      });
+      const printRoot = $('badgePrintRoot');
+      printRoot.innerHTML = '';
+      const perPage = cols * rows;
+      const pages = Math.max(1, Math.ceil((state.students.length || 1) / perPage));
+      for (let pageIndex = 0; pageIndex < pages; pageIndex += 1) {
+        const page = document.createElement('section');
+        page.className = 'badge-print-page';
+        page.style.setProperty('--cols', cols);
+        page.style.setProperty('--rows', rows);
+        const slice = state.students.slice(pageIndex * perPage, (pageIndex + 1) * perPage);
+        page.innerHTML = `
+          <div class="badge-print-head">
+            <div>
+              <h2>${escapeHtml(state.meta.className || '班級')} 學生名牌</h2>
+              <div class="meta">${escapeHtml(state.meta.school || '學校')} · ${escapeHtml(state.meta.teacher || '老師')}<br>A4 直印 · 第 ${pageIndex + 1} 頁</div>
+            </div>
+            <div class="meta">${cols} 欄 × ${rows} 列</div>
+          </div>
+          <div class="badge-print-grid"></div>
+        `;
+        const grid = page.querySelector('.badge-print-grid');
+        slice.forEach((student) => {
+          const card = document.createElement('div');
+          card.className = 'badge-print-card';
+          const nameStyle = fitNameStyle(student.name, 20, 12, 3.6, 'pt');
+          card.innerHTML = `
+            <div class="school">${escapeHtml(state.meta.school || '學校')}</div>
+            <div class="name" style="${nameStyle}">${escapeHtml(student.name)}</div>
+            <div class="classline">${escapeHtml(state.meta.className || '班級')}</div>
+          `;
+          grid.appendChild(card);
+        });
+        for (let index = slice.length; index < perPage; index += 1) {
+          const empty = document.createElement('div');
+          empty.className = 'badge-print-card';
+          empty.innerHTML = '<div class="school">空白</div>';
+          grid.appendChild(empty);
+        }
+        printRoot.appendChild(page);
+      }
+    }
+
+    function renderDesks() {
+      const perPage = 1;
+      state.print.deskPerPage = 1;
+      const root = $('deskGrid');
+      root.innerHTML = '';
+      if (!state.students.length) {
+        root.innerHTML = '<div class="muted">請先匯入學生名單後再產生桌牌。</div>';
+        $('deskPrintRoot').innerHTML = '';
+        return;
+      }
+      state.students.forEach((student) => {
+        const tent = document.createElement('div');
+        tent.className = 'desk-tent';
+        const deskFrontName = `${student.number || ''} ${student.name || ''}`.trim();
+        const deskFrontStyle = fitNameStyle(deskFrontName, 48, 28, 3.6, 'px');
+        const deskNameStyle = fitNameStyle(student.name, 48, 28, 3.6, 'px');
+        tent.innerHTML = `
+          <div class="desk-band">
+            <div class="desk-face-content inverted">
+                <div class="desk-name" style="${deskFrontStyle}">${escapeHtml(deskFrontName)}</div>
+            </div>
+          </div>
+          <div class="desk-band">
+            <div class="desk-face-content">
+              <div class="desk-name" style="${deskNameStyle}">${escapeHtml(student.name || '')}</div>
+            </div>
+          </div>
+          <div class="desk-band">
+            <div class="desk-face-content desk-blank" aria-label="底部空白"></div>
+          </div>
+          <div class="desk-glue">尾端貼合襟 1.2 cm</div>
+        `;
+        root.appendChild(tent);
+      });
+      const printRoot = $('deskPrintRoot');
+      printRoot.innerHTML = '';
+      for (let index = 0; index < state.students.length; index += perPage) {
+        const page = document.createElement('section');
+        page.className = 'desk-print-page';
+        const slice = state.students.slice(index, index + perPage);
+        page.innerHTML = '<div class="desk-print-grid"></div>';
+        const grid = page.querySelector('.desk-print-grid');
+        slice.forEach((student) => {
+          const card = document.createElement('div');
+          card.className = 'desk-print-card';
+          const deskFrontName = `${student.number || ''} ${student.name || ''}`.trim();
+          const deskFrontStyle = fitNameStyle(deskFrontName, 100, 48, 3.6, 'pt');
+          const deskNameStyle = fitNameStyle(student.name, 100, 48, 3.6, 'pt');
+          card.innerHTML = `
+              <div class="desk-print-band">
+                <div class="desk-print-face-content inverted">
+                  <div class="desk-print-name" style="${deskFrontStyle}">${escapeHtml(deskFrontName)}</div>
+                </div>
+              </div>
+              <div class="desk-print-band">
+                <div class="desk-print-face-content">
+                  <div class="desk-print-name" style="${deskNameStyle}">${escapeHtml(student.name || '')}</div>
+                </div>
+              </div>
+              <div class="desk-print-band">
+                <div class="desk-print-face-content desk-print-blank" aria-label="底部空白"></div>
+              </div>
+              <div class="desk-print-glue tail" aria-label="尾端 1.2 公分貼合襟"></div>
+          `;
+          grid.appendChild(card);
+        });
+        printRoot.appendChild(page);
+      }
+    }
+
+    function playPopSound() {
+      if (state.game.muted) return;
+      try {
+        audioCtx ||= new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const now = audioCtx.currentTime;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(260 + Math.random() * 220, now);
+        osc.frequency.exponentialRampToValueAtTime(100, now + 0.15);
+        gain.gain.setValueAtTime(0.001, now);
+        gain.gain.exponentialRampToValueAtTime(0.08, now + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+        osc.connect(gain).connect(audioCtx.destination);
+        osc.start(now);
+        osc.stop(now + 0.2);
+      } catch {}
+    }
+
+    function spawnFishBurst(bubble) {
+      const root = $('gameBubbles');
+      if (!root || !bubble) return;
+      const rootRect = root.getBoundingClientRect();
+      const bubbleRect = bubble.getBoundingClientRect();
+      const startX = bubbleRect.left - rootRect.left + bubbleRect.width / 2;
+      const startY = bubbleRect.top - rootRect.top + bubbleRect.height / 2;
+      const styles = ['round', 'tiny', 'long', 'chubby'];
+      const palettes = [
+        ['#9be7ff', '#3a86ff', '#ffd166'],
+        ['#ffd166', '#ff8fab', '#ffb703'],
+        ['#b8f2e6', '#4cc9f0', '#80ed99'],
+        ['#ffe66d', '#ff7b72', '#f97316']
+      ];
+      const fishCount = 7 + Math.floor(Math.random() * 3);
+      for (let index = 0; index < fishCount; index += 1) {
+        const fish = document.createElement('div');
+        const palette = palettes[Math.floor(Math.random() * palettes.length)];
+        const movingLeft = Math.random() < 0.5;
+        const duration = 2.1 + Math.random() * 1.3;
+        fish.className = 'fish';
+        fish.dataset.style = styles[Math.floor(Math.random() * styles.length)];
+        fish.style.setProperty('--x', `${startX}px`);
+        fish.style.setProperty('--y', `${startY}px`);
+        fish.style.setProperty('--dx', `${(movingLeft ? -1 : 1) * (160 + Math.random() * 220)}px`);
+        fish.style.setProperty('--dy', `${(Math.random() * 140) - 70}px`);
+        fish.style.setProperty('--angle', `${movingLeft ? 180 : 0}deg`);
+        fish.style.setProperty('--twist', `${(Math.random() * 24) - 12}deg`);
+        fish.style.setProperty('--scale', `${0.85 + Math.random() * 0.4}`);
+        fish.style.setProperty('--dur', `${duration}s`);
+        fish.style.setProperty('--body-a', palette[0]);
+        fish.style.setProperty('--body-b', palette[1]);
+        fish.style.setProperty('--tail', palette[2]);
+        fish.innerHTML = '<span class="fish-body"></span>';
+        root.appendChild(fish);
+        setTimeout(() => fish.remove(), duration * 1000 + 120);
+      }
+    }
+
+    function spawnBubbles(count = 36) {
+      const root = $('gameBubbles');
+      const current = root.querySelectorAll('.bubble').length;
+      const maxBubbles = 48;
+      const spawnCount = Math.max(0, Math.min(count, maxBubbles - current));
+      const sizeOptions = [62, 70, 78, 86, 94];
+      const symbols = ['🫧', '🐟', '🐠', '✨', '💧'];
+      for (let index = 0; index < spawnCount; index += 1) {
+        const bubble = document.createElement('button');
+        const size = sizeOptions[Math.floor(Math.random() * sizeOptions.length)];
+        const left = Math.random() * 84 + 4;
+        const top = Math.random() * 72 + 12;
+        const hue = Math.floor(Math.random() * 360);
+        bubble.className = 'bubble';
+        bubble.style.width = `${size}px`;
+        bubble.style.height = `${size}px`;
+        bubble.style.left = `${left}%`;
+        bubble.style.top = `${top}%`;
+        bubble.style.background = `radial-gradient(circle at 30% 30%, rgba(255,255,255,.72), rgba(255,255,255,.14) 34%), linear-gradient(135deg, hsla(${hue},70%,62%,.94), hsla(${(hue + 50) % 360},75%,52%,.94))`;
+        bubble.style.animationDuration = `${3.8 + Math.random() * 1.8}s`;
+        bubble.textContent = symbols[Math.floor(Math.random() * symbols.length)];
+        bubble.addEventListener('click', (event) => {
+          event.stopPropagation();
+          state.game.score = (state.game.score || 0) + 1;
+          playPopSound();
+          spawnFishBurst(bubble);
+          bubble.classList.add('pop');
+          bubble.remove();
+          renderAll();
+          saveState();
+        });
+        root.appendChild(bubble);
+      }
+    }
+
+    function renderGame() {
+      $('gameScore').textContent = String(state.game.score || 0);
+      $('muteBtn').textContent = state.game.muted ? '開啟音效' : '關閉音效';
+      const root = $('gameBubbles');
+      if (!root.dataset.ready) {
+        root.dataset.ready = '1';
+        root.addEventListener('click', (event) => {
+          if (event.target === root) spawnBubbles(8);
+        });
+      }
+    }
+
+    function renderToolbox() {
+      const root = $('toolboxList');
+      root.innerHTML = '';
+      $('toolboxCount').textContent = `${state.toolboxLinks.length} 筆`;
+      state.toolboxLinks
+        .slice()
+        .sort((a,b) => Number(!!b.pinned) - Number(!!a.pinned))
+        .forEach((item) => {
+          const card = document.createElement('div');
+          card.className = 'preview-card toolbox-card';
+          card.innerHTML = `
+            <div class="section-title toolbox-card-title" style="display:flex;gap:10px;align-items:center">
+              <strong>${escapeHtml(item.title)}</strong>
+              <span class="badge">${item.pinned ? '預設' : '自訂'}</span>
+            </div>
+            <button class="toolbox-delete" type="button" data-delete-toolbox="${escapeHtml(item.id)}" aria-label="刪除工具" title="刪除">×</button>
+            <div class="small" style="white-space:pre-wrap">${escapeHtml(item.note || '')}</div>
+            <div class="small" style="margin-top:8px;word-break:break-all">${escapeHtml(item.url || '')}</div>
+            <div class="toolbar no-print" style="margin-top:12px">
+              <a class="btn-secondary" href="${escapeHtml(item.url || '#')}" target="_blank" rel="noreferrer">開啟</a>
+              <button class="btn-secondary" data-copy-toolbox="${escapeHtml(item.id)}">複製</button>
+            </div>
+          `;
+          root.appendChild(card);
+        });
+    }
+
+    function setActiveTab(tabId, updateHash = true) {
+      const allowed = ['import','letter','contact','print','desk','icebreaker','tasks','tea','game','toolbox'];
+      const activeId = allowed.includes(tabId) ? tabId : 'letter';
+      document.querySelectorAll('[data-tab]').forEach((button) => {
+        const active = button.getAttribute('data-tab') === activeId;
+        button.classList.toggle('active', active);
+        button.setAttribute('aria-selected', active ? 'true' : 'false');
+      });
+      document.querySelectorAll('.tab-panel').forEach((panel) => {
+        panel.classList.toggle('active', panel.id === activeId);
+      });
+      state.ui.activeTab = activeId;
+      if (updateHash && window.location.hash !== `#${activeId}`) history.replaceState(null, '', `#${activeId}`);
+    }
+
+    function printOnly(kind) {
+      document.body.classList.remove('print-badge', 'print-desk');
+      document.body.classList.add(`print-${kind}`);
+      if (kind === 'badge') renderBadges();
+      if (kind === 'desk') renderDesks();
+      window.print();
+    }
+
+    function printLetter(asPdf = false) {
+      renderLetter();
+      renderLetterPrint();
+      document.body.dataset.previousTitle = document.title;
+      document.body.classList.remove('print-badge', 'print-desk', 'print-letter');
+      document.body.classList.add('print-letter');
+      if (asPdf) document.title = `${$('letterSubject').value.trim() || '開學給家長的一封信'}.pdf`;
+      window.print();
+    }
+
+    function openRosterFile() {
+      $('rosterFile').click();
+    }
+
+    async function importRosterFile(file) {
+      if (!file) return;
+      try {
+        const text = await readRosterFile(file);
+        $('rosterInput').value = text;
+        importRosterNow();
+        alert(`已匯入 ${file.name}。`);
+      } catch (error) {
+        console.error(error);
+        alert(error?.message || '讀取名單失敗，請確認檔案格式。');
+      } finally {
+        $('rosterFile').value = '';
+      }
+    }
+
+    function renderAll() {
+      ensureState();
+      syncInputsFromState();
+      renderRoster();
+      renderStudentsSelect();
+      renderLetter();
+      renderContacts();
+      renderTasks();
+      renderTeaAndMood();
+      renderIcebreaker();
+      renderBadges();
+      renderDesks();
+      renderGame();
+      renderToolbox();
+      setActiveTab(state.ui.activeTab || 'letter', false);
+    }
+
+    function updateMeta() {
+      state.meta.school = $('schoolInput').value.trim();
+      state.meta.className = $('classInput').value.trim();
+      state.meta.teacher = $('teacherInput').value.trim();
+      state.meta.groupLink = $('groupLinkInput').value.trim();
+      state.letter.qrText ||= state.meta.groupLink;
+      state.letter.body = $('letterBody').value || buildLetterBody();
+    }
+
+    function addContact() {
+      const student = currentStudent();
+      if (!student) return alert('請先匯入學生名單。');
+      const date = $('contactDate').value || todayIso();
+      const method = $('contactMethod').value || 'LINE';
+      const summary = $('contactSummary').value.trim();
+      if (!summary) return alert('請輸入聯絡摘要。');
+      state.contacts.push({ id: uid('contact'), studentId: student.id, date, method, summary });
+      $('contactSummary').value = '';
+      renderAll();
+      saveState();
+    }
+
+    function addTask() {
+      const title = $('taskTitleInput').value.trim();
+      if (!title) return alert('請輸入事項名稱。');
+      state.tasks.push({ id: uid('task'), title, done:{} });
+      state.ui.selectedTaskId = state.tasks.at(-1).id;
+      $('taskTitleInput').value = '';
+      renderAll();
+      saveState();
+    }
+
+    function copyText(text) {
+      navigator.clipboard?.writeText(text).then(() => alert('已複製。')).catch(() => {
+        const area = document.createElement('textarea');
+        area.value = text;
+        document.body.appendChild(area);
+        area.select();
+        document.execCommand('copy');
+        area.remove();
+        alert('已複製。');
+      });
+    }
+
+    function importRosterNow() {
+      state.rosterText = $('rosterInput').value;
+      state.students = parseRoster(state.rosterText);
+      if (state.students[0]) state.ui.activeStudentId = state.students[0].id;
+      if (state.tasks[0]) state.ui.selectedTaskId = state.tasks[0].id;
+      renderAll();
+      saveState();
+    }
+
+    function loadSample() {
+      $('rosterInput').value = SAMPLE_ROSTER_TEXT;
+      $('schoolInput').value = '幸福國小';
+      $('classInput').value = '五年三班';
+      $('teacherInput').value = '凱西老師';
+      $('groupLinkInput').value = 'https://chat.example.com/kathy-class-4a';
+      $('letterSubject').value = '開學給家長的一封信';
+      $('letterBody').value = buildLetterBody();
+      $('qrText').value = 'https://chat.example.com/kathy-class-4a';
+      $('teaTime').value = '15:00';
+      $('teaTreat').value = '奶茶＋小餅乾';
+      $('teaNote').value = '今天辛苦了，喝口茶再繼續。';
+      importRosterNow();
+      state.tea.time = '15:00';
+      state.tea.treat = '奶茶＋小餅乾';
+      state.tea.note = '今天辛苦了，喝口茶再繼續。';
+      renderAll();
+      saveState();
+    }
+
+    function clearAll() {
+      if (!confirm('要清空目前資料嗎？')) return;
+      localStorage.removeItem(STORAGE_KEY);
+      location.reload();
+    }
+
+    function attachEvents() {
+      $('demoBtn').addEventListener('click', loadSample);
+      $('heroImportBtn').addEventListener('click', openRosterFile);
+      $('saveBtn').addEventListener('click', () => { updateMeta(); saveState(); alert('已儲存。'); });
+      $('clearBtn').addEventListener('click', clearAll);
+      $('importBtn').addEventListener('click', importRosterNow);
+      $('importFileBtn').addEventListener('click', openRosterFile);
+      $('rosterFile').addEventListener('change', (event) => importRosterFile(event.target.files?.[0]));
+      $('sampleBtn').addEventListener('click', loadSample);
+      document.querySelectorAll('[data-tab]').forEach((button) => {
+        button.addEventListener('click', () => {
+          setActiveTab(button.getAttribute('data-tab'));
+          saveState();
+        });
+      });
+      $('nextPromptBtn').addEventListener('click', nextPrompt);
+      $('drawStudentBtn').addEventListener('click', drawStudent);
+      $('buildLetterBtn').addEventListener('click', () => { $('letterBody').value = buildLetterBody(); renderAll(); saveState(); });
+      $('copyLetterBtn').addEventListener('click', () => copyText(`${$('letterSubject').value}\n\n${$('letterBody').value}`));
+      $('downloadLetterPdfBtn').addEventListener('click', () => printLetter(true));
+      $('printLetterBtn').addEventListener('click', () => printLetter(false));
+      $('schoolInput').addEventListener('input', () => { updateMeta(); renderAll(); saveState(); });
+      $('classInput').addEventListener('input', () => { updateMeta(); renderAll(); saveState(); });
+      $('teacherInput').addEventListener('input', () => { updateMeta(); renderAll(); saveState(); });
+      $('groupLinkInput').addEventListener('input', () => { updateMeta(); renderAll(); saveState(); });
+      $('rosterInput').addEventListener('input', () => { state.rosterText = $('rosterInput').value; saveState(); });
+      $('letterSubject').addEventListener('input', () => { state.letter.subject = $('letterSubject').value; renderAll(); saveState(); });
+      $('letterBody').addEventListener('input', () => { state.letter.body = $('letterBody').value; renderAll(); saveState(); });
+      $('qrText').addEventListener('input', () => { state.letter.qrText = $('qrText').value; renderAll(); saveState(); });
+      $('studentSelect').addEventListener('change', (event) => { state.ui.activeStudentId = event.target.value; renderAll(); saveState(); });
+      $('addContactBtn').addEventListener('click', addContact);
+      $('contactDate').value = todayIso();
+      $('addTaskBtn').addEventListener('click', addTask);
+      $('confirmAddTaskBtn').addEventListener('click', addTask);
+      $('resetTaskBtn').addEventListener('click', () => { state.tasks.forEach((task) => task.done = {}); renderAll(); saveState(); });
+      $('teaTime').addEventListener('input', () => { state.tea.time = $('teaTime').value || '15:00'; saveState(); });
+      $('teaTreat').addEventListener('change', () => { state.tea.treat = $('teaTreat').value || '奶茶＋小餅乾'; saveState(); });
+      $('teaNote').addEventListener('input', () => { state.tea.note = $('teaNote').value.trim(); saveState(); });
+      $('teaNowBtn').addEventListener('click', () => { state.tea.time = $('teaTime').value || '15:00'; state.tea.treat = $('teaTreat').value || '奶茶＋小餅乾'; state.tea.note = $('teaNote').value.trim(); renderAll(); saveState(); });
+      $('teaNotifyBtn').addEventListener('click', async () => {
+        const message = `${state.meta.teacher || '老師'}：${state.tea.treat || '下午茶提醒'}。${state.tea.note || ''}`;
+        if ('Notification' in window) {
+          const permission = await Notification.requestPermission();
+          if (permission === 'granted') return new Notification('下午茶提醒', { body: message });
+        }
+        alert(message);
+      });
+      $('badgeCols').addEventListener('input', () => { renderBadges(); saveState(); });
+      $('badgeRows').addEventListener('input', () => { renderBadges(); saveState(); });
+      $('renderBadgesBtn').addEventListener('click', renderBadges);
+      $('printBadgesBtn').addEventListener('click', () => printOnly('badge'));
+      $('deskPerPage').addEventListener('input', () => { renderDesks(); saveState(); });
+      $('renderDesksBtn').addEventListener('click', renderDesks);
+      $('printDesksBtn').addEventListener('click', () => printOnly('desk'));
+      $('spawnBubblesBtn').addEventListener('click', () => spawnBubbles(36));
+      $('clearBubblesBtn').addEventListener('click', () => { $('gameBubbles').innerHTML = ''; spawnBubbles(36); });
+      $('muteBtn').addEventListener('click', () => { state.game.muted = !state.game.muted; renderAll(); saveState(); });
+      $('copyToolboxUrlBtn').addEventListener('click', () => copyText(TOOLBOX_URL));
+      $('copyPresetToolboxBtn').addEventListener('click', () => copyText(TOOLBOX_URL));
+      $('addToolboxBtn').addEventListener('click', () => {
+        const title = $('toolboxName').value.trim();
+        const url = $('toolboxUrl').value.trim();
+        const note = $('toolboxNote').value.trim();
+        if (!title || !url) return alert('請填入工具名稱與網址。');
+        state.toolboxLinks.push({ id: uid('tool'), title, url, note, pinned:false });
+        $('toolboxName').value = '';
+        $('toolboxUrl').value = '';
+        $('toolboxNote').value = '';
+        renderAll();
+        saveState();
+      });
+      document.body.addEventListener('click', (event) => {
+        const deleteBtn = event.target.closest('[data-delete-toolbox]');
+        if (deleteBtn) {
+          const id = deleteBtn.getAttribute('data-delete-toolbox');
+          const nextLinks = state.toolboxLinks.filter((entry) => entry.id !== id);
+          if (nextLinks.length !== state.toolboxLinks.length) {
+            state.toolboxLinks = nextLinks;
+            renderAll();
+            saveState();
+          }
+          return;
+        }
+        const btn = event.target.closest('[data-copy-toolbox]');
+        if (!btn) return;
+        const item = state.toolboxLinks.find((entry) => entry.id === btn.getAttribute('data-copy-toolbox'));
+        if (item) copyText(item.url);
+      });
+      window.addEventListener('beforeprint', () => {
+        if (document.body.classList.contains('print-badge')) renderBadges();
+      });
+      window.addEventListener('afterprint', () => {
+        $('badgePrintRoot').innerHTML = '';
+        $('deskPrintRoot').innerHTML = '';
+        $('letterPrintRoot').innerHTML = '';
+        document.body.classList.remove('print-badge', 'print-desk', 'print-letter');
+        if (document.body.dataset.previousTitle) {
+          document.title = document.body.dataset.previousTitle;
+          delete document.body.dataset.previousTitle;
+        }
+      });
+    }
+
+    function init() {
+      ensureState();
+      const hashTab = window.location.hash.slice(1);
+      if (['import','letter','contact','print','desk','icebreaker','tasks','tea','game','toolbox'].includes(hashTab)) {
+        state.ui.activeTab = hashTab;
+      }
+      syncInputsFromState();
+      attachEvents();
+      if (state.rosterText) state.students = parseRoster(state.rosterText);
+      if (state.students[0] && !state.ui.activeStudentId) state.ui.activeStudentId = state.students[0].id;
+      state.letter.body ||= buildLetterBody();
+      renderAll();
+      saveState();
+      spawnBubbles(36);
+    }
+
+    init();
+  })();
+  </script>
+</body>
+</html>
+
