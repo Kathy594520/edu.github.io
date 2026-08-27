@@ -1,0 +1,4901 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#e0558a" />
+  <title>班級經營工具包</title>
+  <link rel="icon" type="image/svg+xml" href='data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><defs><linearGradient id="g" x1="0" x2="1" y1="0" y2="1"><stop offset="0%" stop-color="%23e0558a"/><stop offset="100%" stop-color="%23ff8d6a"/></linearGradient></defs><rect width="64" height="64" rx="18" fill="url(%23g)"/><text x="50%" y="54%" text-anchor="middle" font-size="30" font-family="Segoe UI,Arial,sans-serif" fill="white" font-weight="700">班</text></svg>' />
+  <style>
+    :root{
+      --bg:#fff1f6;
+      --panel:#fffdfd;
+      --panel-2:#fff0f5;
+      --line:#f0d6df;
+      --text:#402437;
+      --muted:#8c6578;
+      --brand:#e0558a;
+      --brand-2:#ff8d6a;
+      --accent:#ff6b9a;
+      --shadow:0 22px 54px rgba(150,74,104,.13);
+      --radius:22px;
+      --radius-lg:30px;
+    }
+    [data-theme="dark"]{
+      --bg:#1b1320;
+      --panel:#241925;
+      --panel-2:#321f32;
+      --line:#50354a;
+      --text:#f8e9ef;
+      --muted:#e0b5c4;
+      --brand:#ff8db7;
+      --brand-2:#ffc98d;
+      --accent:#ff7fa7;
+      --shadow:0 24px 60px rgba(0,0,0,.34);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family:"Segoe UI","Noto Sans TC","Microsoft JhengHei",sans-serif;
+      color:var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(224,85,138,.18), transparent 24%),
+        radial-gradient(circle at top right, rgba(255,141,106,.18), transparent 22%),
+        radial-gradient(circle at 20% 80%, rgba(255,211,230,.5), transparent 18%),
+        linear-gradient(180deg, color-mix(in srgb, var(--bg) 92%, white), var(--bg));
+    }
+    .app{
+      max-width:1440px;
+      margin:0 auto;
+      padding:18px;
+      padding-bottom:92px;
+    }
+    .hero{
+      background:linear-gradient(135deg, rgba(224,85,138,.98), rgba(255,141,106,.92));
+      color:#fff;
+      border-radius:var(--radius-lg);
+      padding:22px 22px 18px;
+      box-shadow:var(--shadow);
+      position:relative;
+      overflow:hidden;
+    }
+    .hero::after{
+      content:"";
+      position:absolute;
+      right:-80px;
+      top:-50px;
+      width:240px;
+      height:240px;
+      border-radius:50%;
+      background:rgba(255,255,255,.12);
+    }
+    .hero::before{
+      content:"";
+      position:absolute;
+      left:-90px;
+      bottom:-70px;
+      width:220px;
+      height:220px;
+      border-radius:50%;
+      background:rgba(255,255,255,.08);
+    }
+    .hero-top{
+      display:flex;
+      gap:16px;
+      align-items:flex-start;
+      justify-content:space-between;
+      flex-wrap:wrap;
+      position:relative;
+      z-index:1;
+    }
+    h1{
+      margin:0;
+      font-size:clamp(28px,4vw,42px);
+      line-height:1.05;
+      letter-spacing:.02em;
+    }
+    .hero p{
+      margin:10px 0 0;
+      max-width:72ch;
+      line-height:1.7;
+      color:rgba(255,255,255,.88);
+    }
+    .hero-badges{
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+      margin-top:14px;
+      position:relative;
+      z-index:1;
+    }
+    .hero-badges .badge{
+      background:rgba(255,255,255,.14);
+      color:#fff;
+      border-color:rgba(255,255,255,.18);
+      box-shadow:0 8px 18px rgba(0,0,0,.08);
+    }
+    .toolbar{
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      margin-top:16px;
+      position:relative;
+      z-index:1;
+    }
+    button, .button{
+      appearance:none;
+      border:0;
+      border-radius:999px;
+      padding:12px 16px;
+      font:inherit;
+      font-weight:800;
+      cursor:pointer;
+      transition:transform .14s ease, box-shadow .14s ease, opacity .14s ease, background .14s ease;
+    }
+    button:hover, .button:hover{transform:translateY(-1px)}
+    button:active, .button:active{transform:translateY(0)}
+    .btn-primary{background:#fff;color:#134e4a;box-shadow:0 10px 24px rgba(0,0,0,.14)}
+    .btn-secondary{background:rgba(255,255,255,.14);color:#fff;border:1px solid rgba(255,255,255,.2)}
+    .btn-ghost{background:var(--panel-2);color:var(--text);border:1px solid var(--line)}
+    .btn-danger{background:color-mix(in srgb, var(--accent) 12%, var(--panel));color:var(--accent);border:1px solid color-mix(in srgb, var(--accent) 24%, var(--line))}
+    .layout{
+      display:grid;
+      grid-template-columns:minmax(320px,340px) minmax(0,1fr);
+      gap:18px;
+      margin-top:18px;
+      align-items:start;
+    }
+    .side{
+      position:sticky;
+      top:18px;
+      align-self:start;
+      display:grid;
+      gap:14px;
+    }
+    .card{
+      background:color-mix(in srgb, var(--panel) 92%, white);
+      backdrop-filter:blur(10px);
+      border:1px solid color-mix(in srgb, var(--line) 88%, white);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      overflow:hidden;
+    }
+    .card-header{
+      padding:16px 18px;
+      border-bottom:1px solid var(--line);
+      background:linear-gradient(180deg, color-mix(in srgb, var(--panel-2) 88%, white), var(--panel));
+    }
+    .card-body{padding:18px}
+    .section-title{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+      margin-bottom:12px;
+    }
+    .section-title h2{margin:0;font-size:18px}
+    .badge{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      border-radius:999px;
+      padding:6px 10px;
+      background:color-mix(in srgb, var(--brand) 12%, var(--panel));
+      color:var(--brand);
+      border:1px solid color-mix(in srgb, var(--brand) 18%, var(--line));
+      font-size:12px;
+      font-weight:800;
+      white-space:nowrap;
+    }
+    .nav{
+      display:grid;
+      gap:8px;
+    }
+    .nav button{
+      width:100%;
+      justify-content:flex-start;
+      border-radius:16px;
+      padding:14px 16px;
+      background:transparent;
+      color:var(--text);
+      border:1px solid transparent;
+      text-align:left;
+    }
+    .nav button.active{
+      background:color-mix(in srgb, var(--brand) 14%, var(--panel));
+      border-color:color-mix(in srgb, var(--brand) 20%, var(--line));
+      color:var(--brand);
+    }
+    .stats-grid{
+      display:grid;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:12px;
+    }
+    .stat{
+      border-radius:18px;
+      background:color-mix(in srgb, var(--panel) 86%, white);
+      border:1px solid var(--line);
+      padding:14px;
+    }
+    .stat .label{font-size:12px;color:var(--muted);font-weight:700}
+    .stat .value{font-size:28px;font-weight:900;margin-top:4px}
+    .stat .hint{margin-top:4px;font-size:12px;color:var(--muted);line-height:1.5}
+    .main{
+      min-width:0;
+      display:grid;
+      gap:18px;
+    }
+    .panel{
+      display:none;
+      animation:fadeIn .22s ease;
+    }
+    .panel.active{display:block}
+    @keyframes fadeIn{
+      from{opacity:.0;transform:translateY(8px)}
+      to{opacity:1;transform:translateY(0)}
+    }
+    .grid-2{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:16px;
+    }
+    .seat-layout-grid{
+      display:grid;
+      grid-template-columns:1fr;
+      gap:16px;
+      align-items:start;
+    }
+    .seat-workspace{
+      display:grid;
+      grid-template-columns:minmax(0, 1.45fr) minmax(260px, .75fr);
+      gap:16px;
+      align-items:start;
+    }
+    .field{
+      display:grid;
+      gap:8px;
+      margin-bottom:14px;
+    }
+    label{font-weight:800;color:var(--text)}
+    input[type="text"], input[type="date"], select, textarea{
+      width:100%;
+      border:1px solid var(--line);
+      background:var(--panel);
+      color:var(--text);
+      border-radius:14px;
+      padding:12px 14px;
+      font:inherit;
+      outline:none;
+    }
+    textarea{resize:vertical;min-height:120px;line-height:1.65}
+    input:focus, textarea:focus, select:focus{
+      border-color:color-mix(in srgb, var(--brand) 58%, var(--line));
+      box-shadow:0 0 0 4px color-mix(in srgb, var(--brand) 14%, transparent);
+    }
+    .list{display:grid;gap:10px}
+    .list-item{
+      border:1px solid var(--line);
+      background:var(--panel);
+      border-radius:18px;
+      padding:14px;
+      display:flex;
+      gap:12px;
+      align-items:flex-start;
+      justify-content:space-between;
+    }
+    .list-item strong{display:block}
+    .list-item small{display:block;color:var(--muted);margin-top:4px;line-height:1.5}
+    .item-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+    .chips{display:flex;flex-wrap:wrap;gap:8px}
+    .chip{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      border-radius:999px;
+      padding:8px 12px;
+      border:1px solid var(--line);
+      background:var(--panel);
+      cursor:pointer;
+      user-select:none;
+      font-size:13px;
+      font-weight:700;
+    }
+    .chip.active{
+      background:color-mix(in srgb, var(--brand) 14%, var(--panel));
+      color:var(--brand);
+      border-color:color-mix(in srgb, var(--brand) 24%, var(--line));
+    }
+    .subtle{color:var(--muted);font-size:13px;line-height:1.6}
+    .pill-input{
+      display:flex;
+      gap:8px;
+      align-items:center;
+    }
+    .pill-input input{
+      flex:1;
+    }
+    .template-grid{
+      display:grid;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:12px;
+    }
+    .template-card{
+      border:1px solid var(--line);
+      border-radius:20px;
+      background:linear-gradient(180deg, color-mix(in srgb, var(--panel) 92%, white), color-mix(in srgb, var(--panel-2) 42%, var(--panel)));
+      padding:14px;
+      display:grid;
+      gap:10px;
+    }
+    .template-card header{
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      align-items:flex-start;
+    }
+    .template-card header strong{
+      font-size:15px;
+    }
+    .template-card .template-actions{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+    }
+    .template-editor-tools{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      margin-top:8px;
+    }
+    .template-editor-tools .btn-ghost,
+    .template-editor-tools .btn-primary{
+      padding:10px 14px;
+      font-size:13px;
+    }
+    .seat-board{
+      display:grid;
+      gap:10px;
+      min-height:580px;
+    }
+    .seat-board .seat-grid,
+    .seat-board .seat-freeform-board{
+      min-height:560px;
+    }
+    .student-page-bar{
+      display:flex;
+      justify-content:space-between;
+      gap:12px;
+      align-items:flex-end;
+      flex-wrap:wrap;
+      margin-bottom:14px;
+      padding:12px 14px;
+      border:1px solid color-mix(in srgb, var(--brand) 12%, var(--line));
+      border-radius:18px;
+      background:linear-gradient(180deg, rgba(255,255,255,.84), rgba(255,236,243,.9));
+    }
+    .student-page-tabs{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      margin-top:8px;
+    }
+    .student-page-tabs .btn-ghost{
+      padding:8px 12px;
+      border-radius:999px;
+    }
+    .student-page-tabs .btn-ghost.active{
+      background:color-mix(in srgb, var(--brand) 16%, var(--panel));
+      color:var(--brand);
+      border-color:color-mix(in srgb, var(--brand) 28%, var(--line));
+    }
+    .student-page-actions{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+    }
+    .class-badge{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:10px 14px;
+      border-radius:999px;
+      border:1px solid color-mix(in srgb, var(--brand) 20%, var(--line));
+      background:linear-gradient(180deg, rgba(255,255,255,.95), rgba(255,236,243,.92));
+      color:var(--brand);
+      font-weight:900;
+      box-shadow:0 8px 18px rgba(214,130,150,.12);
+      flex-wrap:wrap;
+    }
+    .class-badge small{
+      font-weight:800;
+      color:var(--muted);
+    }
+    .student-page-help{
+      margin-top:10px;
+      padding:12px 14px;
+      border:1px solid color-mix(in srgb, var(--brand) 32%, var(--line));
+      border-radius:16px;
+      background:linear-gradient(180deg, color-mix(in srgb, var(--panel) 98%, white), color-mix(in srgb, var(--panel-2) 88%, white));
+      color:var(--text);
+      line-height:1.7;
+      box-shadow:0 10px 24px rgba(0,0,0,.05);
+    }
+    .student-page-flow{
+      display:grid;
+      grid-template-columns:repeat(4, minmax(0, 1fr));
+      gap:8px;
+      margin-top:10px;
+      align-items:stretch;
+    }
+    .student-page-flow .step{
+      padding:10px 8px;
+      border-radius:14px;
+      border:1px solid color-mix(in srgb, var(--brand) 28%, var(--line));
+      background:linear-gradient(180deg, color-mix(in srgb, var(--panel) 100%, white), color-mix(in srgb, var(--panel-2) 76%, white));
+      text-align:center;
+      font-size:12px;
+      color:var(--text);
+      font-weight:700;
+      min-height:64px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+    .student-page-flow .arrow{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      color:var(--brand);
+      font-size:20px;
+      font-weight:900;
+      text-shadow:0 1px 0 rgba(255,255,255,.75);
+    }
+    .seat-mode-grid{
+      display:grid;
+      gap:12px;
+    }
+    .seat-toolbar{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      align-items:center;
+    }
+    .seat-mode-toggle{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+    }
+    .seat-mode-toggle .btn-ghost.active{
+      background:color-mix(in srgb, var(--brand) 16%, var(--panel));
+      border-color:color-mix(in srgb, var(--brand) 28%, var(--line));
+      color:var(--brand);
+    }
+    .seat-student-list .list-item{
+      cursor:grab;
+      background:linear-gradient(135deg, color-mix(in srgb, var(--panel) 94%, white), color-mix(in srgb, var(--panel-2) 48%, white));
+    }
+    .seat-student-list{
+      display:grid;
+      grid-template-columns:repeat(5, minmax(0, 1fr));
+      gap:6px;
+    }
+    .seat-student-list .seat-student-card{
+      min-height:46px;
+      padding:6px 8px;
+      border-radius:10px;
+      border:1px solid color-mix(in srgb, var(--line) 88%, white);
+      box-shadow:none;
+      background:linear-gradient(180deg, color-mix(in srgb, var(--panel) 98%, white), color-mix(in srgb, var(--panel-2) 90%, white));
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      text-align:center;
+    }
+    .seat-student-list .seat-student-card .seat-no{
+      font-size:11px;
+      line-height:1.1;
+      font-weight:900;
+      color:var(--muted);
+      max-width:100%;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+    }
+    .seat-student-list .seat-student-card .seat-name{
+      font-size:12px;
+      line-height:1.1;
+      font-weight:900;
+      max-width:100%;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+    }
+    .student-metrics{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:8px;
+      margin-top:10px;
+    }
+    .student-metrics .field{
+      margin-bottom:0;
+      gap:6px;
+    }
+    .student-metrics label{
+      font-size:12px;
+    }
+    .student-metrics input{
+      padding:9px 10px;
+      border-radius:12px;
+      font-size:13px;
+    }
+    .seat-student-list .list-item.dragging{
+      opacity:.6;
+      cursor:grabbing;
+    }
+    #studentList .list-item.dragover,
+    .seat-student-list .list-item.dragover{
+      outline:3px solid color-mix(in srgb, var(--brand) 26%, transparent);
+      border-color:color-mix(in srgb, var(--brand) 38%, var(--line));
+      background:color-mix(in srgb, var(--brand) 10%, var(--panel));
+    }
+    .student-drop-hint{
+      border:1px dashed color-mix(in srgb, var(--brand) 24%, var(--line));
+      background:color-mix(in srgb, var(--brand) 8%, var(--panel));
+      border-radius:16px;
+      padding:12px;
+      margin-top:10px;
+      font-size:13px;
+      color:var(--muted);
+      line-height:1.55;
+    }
+    .tag-flow{
+      display:grid;
+      grid-template-columns:1fr auto 1fr;
+      gap:10px;
+      align-items:center;
+      margin-top:12px;
+      margin-bottom:8px;
+    }
+    .tag-flow-step{
+      border:1px solid color-mix(in srgb, var(--brand) 14%, var(--line));
+      background:linear-gradient(180deg, rgba(255,255,255,.9), rgba(255,240,245,.92));
+      border-radius:16px;
+      padding:12px 10px;
+      min-height:72px;
+      display:grid;
+      gap:6px;
+      text-align:center;
+    }
+    .tag-flow-step .step-num{
+      display:inline-flex;
+      margin:0 auto;
+      width:26px;
+      height:26px;
+      border-radius:999px;
+      align-items:center;
+      justify-content:center;
+      background:color-mix(in srgb, var(--brand) 16%, var(--panel));
+      color:var(--brand);
+      font-weight:900;
+      font-size:13px;
+    }
+    .tag-flow-step .step-title{
+      font-weight:900;
+      font-size:14px;
+    }
+    .tag-flow-step .step-sub{
+      font-size:12px;
+      line-height:1.45;
+      color:var(--muted);
+    }
+    .tag-flow-arrow{
+      font-size:22px;
+      color:color-mix(in srgb, var(--brand) 60%, var(--muted));
+      font-weight:900;
+      text-align:center;
+    }
+    .seat-grid{
+      display:grid;
+      gap:10px;
+      padding:12px;
+      border-radius:22px;
+      background:
+        radial-gradient(circle at top left, rgba(255,255,255,.55), transparent 20%),
+        linear-gradient(180deg, color-mix(in srgb, var(--panel) 92%, white), color-mix(in srgb, var(--panel-2) 62%, var(--panel)));
+      border:1px dashed var(--line);
+    }
+    .seat-row{
+      display:grid;
+      gap:10px;
+    }
+    .seat-cell{
+      min-height:72px;
+      border:1px solid var(--line);
+      border-radius:18px;
+      background:color-mix(in srgb, var(--panel) 90%, white);
+      padding:10px;
+      display:flex;
+      flex-direction:column;
+      justify-content:space-between;
+      gap:8px;
+    }
+    .seat-cell.dragover{
+      outline:3px solid color-mix(in srgb, var(--brand) 28%, transparent);
+      border-color:color-mix(in srgb, var(--brand) 42%, var(--line));
+    }
+    .seat-cell .seat-label{
+      font-size:12px;
+      font-weight:800;
+      color:var(--muted);
+    }
+    .seat-cell .seat-name{
+      font-size:14px;
+      font-weight:900;
+    }
+    .seat-freeform-toolbar{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      align-items:center;
+    }
+    .seat-freeform-board{
+      position:relative;
+      min-height:420px;
+      border-radius:22px;
+      border:1px dashed var(--line);
+      background:
+        radial-gradient(circle at top left, rgba(255,255,255,.55), transparent 20%),
+        linear-gradient(180deg, color-mix(in srgb, var(--panel) 92%, white), color-mix(in srgb, var(--panel-2) 58%, var(--panel)));
+      overflow:hidden;
+    }
+    .seat-freeform-guide{
+      position:absolute;
+      inset:14px;
+      border-radius:18px;
+      border:1px dashed color-mix(in srgb, var(--brand) 16%, var(--line));
+      pointer-events:none;
+      opacity:.75;
+    }
+    .seat-slot{
+      position:absolute;
+      min-width:112px;
+      min-height:84px;
+      border-radius:18px;
+      border:1px solid color-mix(in srgb, var(--brand) 18%, var(--line));
+      background:color-mix(in srgb, var(--panel) 88%, white);
+      box-shadow:0 10px 24px rgba(214,97,138,.08);
+      padding:10px;
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+      user-select:none;
+      cursor:move;
+      touch-action:none;
+    }
+    .seat-slot.dragging{
+      opacity:.72;
+      z-index:5;
+    }
+    .seat-slot .seat-slot-handle{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:8px;
+      font-size:12px;
+      font-weight:900;
+      color:var(--muted);
+    }
+    .seat-slot .seat-slot-name{
+      font-size:14px;
+      font-weight:900;
+      line-height:1.35;
+    }
+    .seat-slot.empty .seat-slot-name{
+      color:color-mix(in srgb, var(--muted) 85%, var(--text));
+    }
+    .seat-slot-actions{
+      display:flex;
+      gap:6px;
+      flex-wrap:wrap;
+      margin-top:auto;
+    }
+    .seat-slot-actions .btn-ghost,
+    .seat-slot-actions .btn-danger{
+      padding:6px 10px;
+      font-size:12px;
+      border-radius:999px;
+    }
+    .honor-board{
+      display:grid;
+      gap:12px;
+    }
+    .honor-stats{
+      display:grid;
+      grid-template-columns:repeat(3,minmax(0,1fr));
+      gap:10px;
+    }
+    .honor-stat{
+      border:1px solid var(--line);
+      border-radius:18px;
+      background:linear-gradient(180deg, color-mix(in srgb, var(--panel) 94%, white), color-mix(in srgb, var(--panel-2) 42%, var(--panel)));
+      padding:12px 14px;
+    }
+    .honor-stat .label{
+      color:var(--muted);
+      font-size:12px;
+      font-weight:800;
+    }
+    .honor-stat .value{
+      font-size:24px;
+      font-weight:900;
+      margin-top:4px;
+    }
+    .honor-list .list-item{
+      align-items:center;
+    }
+    .honor-list .meta{
+      font-size:12px;
+      color:var(--muted);
+      margin-top:4px;
+      line-height:1.5;
+    }
+    .draggable-tag{
+      background:linear-gradient(135deg, rgba(255,255,255,.9), rgba(255,227,236,.95));
+    }
+    .draggable-tag.dragging{
+      opacity:.55;
+      transform:scale(.98);
+    }
+    .memo-label-panel{
+      display:grid;
+      gap:10px;
+      margin-top:12px;
+      padding:12px;
+      border-radius:18px;
+      background:linear-gradient(180deg, rgba(255,255,255,.72), rgba(255,236,243,.92));
+      border:1px solid color-mix(in srgb, var(--brand) 16%, var(--line));
+    }
+    .memo-label-row{
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      align-items:center;
+    }
+    .memo-label-list{
+      display:grid;
+      gap:8px;
+    }
+    .memo-label-item{
+      display:grid;
+      grid-template-columns:auto minmax(0,1fr) auto;
+      gap:8px;
+      align-items:center;
+      padding:8px 10px;
+      border-radius:14px;
+      background:rgba(255,255,255,.82);
+      border:1px solid color-mix(in srgb, var(--line) 80%, white);
+    }
+    .memo-label-chip{
+      border:none;
+      cursor:pointer;
+      text-align:left;
+      white-space:nowrap;
+    }
+    .memo-label-edit{
+      width:100%;
+      border-radius:12px;
+      border:1px solid var(--line);
+      padding:8px 10px;
+      background:var(--panel);
+      font:inherit;
+      color:var(--text);
+    }
+    .memo-label-edit:focus{
+      outline:none;
+      border-color:color-mix(in srgb, var(--brand) 55%, var(--line));
+      box-shadow:0 0 0 3px rgba(255,159,181,.18);
+    }
+    .import-board,
+    .reminder-board{
+      display:grid;
+      gap:12px;
+      margin-top:12px;
+      padding:14px;
+      border-radius:18px;
+      background:linear-gradient(180deg, rgba(255,255,255,.78), rgba(255,241,246,.9));
+      border:1px solid color-mix(in srgb, var(--brand) 14%, var(--line));
+    }
+    .side .reminder-board .grid-2,
+    .side .reminder-board .grid-3{
+      grid-template-columns:1fr;
+    }
+    .side .reminder-board .toolbar{
+      flex-direction:column;
+      align-items:stretch;
+    }
+    .side .reminder-board .toolbar button{
+      width:100%;
+    }
+    .import-board .list,
+    .reminder-board .list{
+      max-height:280px;
+      overflow:auto;
+    }
+    .import-metrics{
+      display:grid;
+      grid-template-columns:repeat(3,minmax(0,1fr));
+      gap:10px;
+    }
+    .grid-3{
+      display:grid;
+      grid-template-columns:repeat(3,minmax(0,1fr));
+      gap:12px;
+    }
+    .import-metric{
+      border-radius:16px;
+      padding:10px 12px;
+      background:rgba(255,255,255,.85);
+      border:1px solid var(--line);
+    }
+    .import-metric .label{font-size:12px;color:var(--muted);font-weight:800}
+    .import-metric .value{font-size:18px;font-weight:900;margin-top:4px}
+    .import-metric .hint{font-size:12px;color:var(--muted);margin-top:4px;line-height:1.5}
+    .reminder-item .meta{font-size:12px;color:var(--muted);line-height:1.5;margin-top:4px}
+    .reminder-item[data-state="due"]{border-color:color-mix(in srgb, #ff9fb5 45%, var(--line))}
+    .reminder-item[data-state="overdue"]{border-color:color-mix(in srgb, #f06f7d 55%, var(--line));background:color-mix(in srgb, #fff0f2 85%, white)}
+    .reminder-item[data-state="done"]{opacity:.72}
+    .type-badge{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      padding:4px 10px;
+      border-radius:999px;
+      font-size:12px;
+      font-weight:800;
+      background:rgba(255,255,255,.84);
+      border:1px solid var(--line);
+    }
+    .drop-zone{
+      min-height:72px;
+      border:1.5px dashed color-mix(in srgb, var(--brand) 30%, var(--line));
+      border-radius:18px;
+      padding:12px;
+      background:color-mix(in srgb, var(--panel) 94%, white);
+    }
+    .drop-zone.dragover{
+      background:color-mix(in srgb, var(--brand) 12%, var(--panel));
+    }
+    .preview{
+      border:1px dashed var(--line);
+      background:linear-gradient(180deg, color-mix(in srgb, var(--panel) 92%, white), color-mix(in srgb, var(--panel-2) 52%, var(--panel)));
+      border-radius:20px;
+      padding:16px;
+    }
+    .preview h3{margin:0 0 8px;font-size:16px}
+    .preview-grid{
+      display:grid;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:12px;
+    }
+    .preview-card{
+      border-radius:16px;
+      background:var(--panel);
+      border:1px solid var(--line);
+      padding:12px 14px;
+    }
+    .preview-card .label{font-size:12px;color:var(--muted);font-weight:800}
+    .preview-card .value{font-size:20px;font-weight:900;margin-top:4px}
+    .link-row{
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+    }
+    .mini-note{
+      font-size:12px;
+      color:var(--muted);
+      line-height:1.5;
+    }
+    .modal-backdrop{
+      position:fixed;
+      inset:0;
+      background:rgba(10,12,18,.48);
+      display:none;
+      align-items:flex-end;
+      justify-content:center;
+      padding:18px;
+      z-index:50;
+    }
+    .modal-backdrop.open{display:flex}
+    .modal{
+      width:min(760px,100%);
+      max-height:min(88vh,860px);
+      overflow:auto;
+      background:var(--panel);
+      color:var(--text);
+      border-radius:28px;
+      box-shadow:var(--shadow);
+      border:1px solid var(--line);
+    }
+    .modal header{
+      position:sticky;
+      top:0;
+      background:linear-gradient(180deg, color-mix(in srgb, var(--panel) 90%, white), var(--panel));
+      border-bottom:1px solid var(--line);
+      padding:16px 18px;
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      align-items:flex-start;
+    }
+    .modal header h3{margin:0;font-size:18px}
+    .modal .body{padding:18px}
+    .modal footer{
+      position:sticky;
+      bottom:0;
+      padding:16px 18px;
+      background:linear-gradient(0deg, color-mix(in srgb, var(--panel) 90%, white), var(--panel));
+      border-top:1px solid var(--line);
+      display:flex;
+      gap:10px;
+      justify-content:flex-end;
+      flex-wrap:wrap;
+    }
+    .bottom-nav{
+      display:none;
+      position:fixed;
+      left:12px;
+      right:12px;
+      bottom:12px;
+      z-index:40;
+      background:color-mix(in srgb, var(--panel) 94%, white);
+      border:1px solid var(--line);
+      border-radius:22px;
+      box-shadow:var(--shadow);
+      padding:10px;
+      gap:8px;
+      grid-auto-flow:column;
+      grid-auto-columns:minmax(88px,1fr);
+      overflow-x:auto;
+    }
+    .bottom-nav button{
+      padding:12px 8px;
+      border-radius:16px;
+      background:transparent;
+      border:1px solid transparent;
+      color:var(--text);
+      font-size:12px;
+      min-width:92px;
+    }
+    .bottom-nav button.active{
+      background:color-mix(in srgb, var(--brand) 14%, var(--panel));
+      color:var(--brand);
+      border-color:color-mix(in srgb, var(--brand) 22%, var(--line));
+    }
+    .toast{
+      position:fixed;
+      left:50%;
+      bottom:22px;
+      transform:translateX(-50%);
+      background:rgba(15,23,42,.92);
+      color:#fff;
+      border-radius:999px;
+      padding:12px 16px;
+      box-shadow:var(--shadow);
+      opacity:0;
+      pointer-events:none;
+      transition:opacity .18s ease, transform .18s ease;
+      z-index:80;
+    }
+    .toast.show{
+      opacity:1;
+      transform:translateX(-50%) translateY(-4px);
+    }
+    .footer-note{
+      position:fixed;
+      left:50%;
+      bottom:6px;
+      transform:translateX(-50%);
+      font-size:11px;
+      color:var(--muted);
+      background:color-mix(in srgb, var(--panel) 88%, transparent);
+      border:1px solid color-mix(in srgb, var(--line) 70%, transparent);
+      border-radius:999px;
+      padding:4px 10px;
+      box-shadow:0 6px 18px rgba(0,0,0,.06);
+      pointer-events:none;
+      z-index:35;
+    }
+    .empty{
+      border:1px dashed var(--line);
+      background:color-mix(in srgb, var(--panel) 88%, white);
+      border-radius:18px;
+      padding:18px;
+      color:var(--muted);
+      line-height:1.7;
+    }
+    @media (max-width: 1100px){
+      .layout{grid-template-columns:1fr}
+      .side{position:static}
+    }
+    @media (max-width: 760px){
+      .app{padding:12px;padding-bottom:108px}
+      .grid-2,.preview-grid,.seat-layout-grid,.seat-workspace{grid-template-columns:1fr}
+      .seat-student-list{grid-template-columns:repeat(4, minmax(0, 1fr))}
+      .stats-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+      .honor-stats{grid-template-columns:1fr}
+      .bottom-nav{display:grid}
+      .side{display:none}
+      .hero{padding:18px}
+    }
+    @media print{
+      body{background:#fff}
+      .hero,.side,.bottom-nav,.toolbar,.no-print,.toast,.modal-backdrop,.footer-note{display:none !important}
+      .app{padding:0;max-width:none}
+      .card{box-shadow:none;border:1px solid #ccc}
+      .panel{display:block !important}
+    }
+  </style>
+</head>
+<body>
+  <div class="app" id="app">
+    <section class="hero">
+      <div class="hero-top">
+        <div>
+          <h1 id="pageTitle">班級經營工具包</h1>
+          <p id="pageSubtitle">課務、學生、座位、提醒與榮譽點數，一頁整合管理。</p>
+          <div class="hero-badges">
+            <span class="badge">今日概況</span>
+            <span class="badge">可拖拉編排</span>
+            <span class="badge">完整中文介面</span>
+          </div>
+        </div>
+        <div class="toolbar no-print">
+          <button class="btn-secondary" id="btnDemo">載入範例</button>
+          <button class="btn-secondary" id="btnBackup">匯出 JSON</button>
+          <button class="btn-secondary" id="btnRestore">還原 JSON</button>
+          <input id="fileRestore" type="file" accept=".json" hidden />
+          <button class="btn-secondary" id="btnTheme">切換主題</button>
+          <button class="btn-primary" id="btnQuickAdd">快速新增</button>
+        </div>
+      </div>
+    </section>
+
+    <div class="layout">
+      <aside class="side">
+        <section class="card">
+          <div class="card-header">
+            <div class="section-title">
+              <h2>側邊導覽</h2>
+              <span class="badge" id="modeBadge">操作模式</span>
+            </div>
+            <div class="subtle">快速切換各分頁，方便進行日常班級經營。</div>
+          </div>
+          <div class="card-body">
+            <div class="nav" id="sideNav"></div>
+          </div>
+        </section>
+        <section class="card">
+          <div class="card-header">
+            <div class="section-title">
+              <h2>今日概況</h2>
+              <span class="badge" id="todayBadge"></span>
+            </div>
+            <div class="reminder-board">
+              <div class="section-title">
+                <h3>提醒中心</h3>
+                <span class="badge">考試 / 調代課 / 行程變動</span>
+              </div>
+              <div class="grid-2">
+                <div class="preview">
+                  <h3>提醒預設</h3>
+                  <div class="grid-3">
+                    <div class="field">
+                      <label for="reminderExamLeadDays">考試前幾天提醒</label>
+                      <input id="reminderExamLeadDays" type="text" value="3" />
+                    </div>
+                    <div class="field">
+                      <label for="reminderSubLeadDays">調代課前幾天提醒</label>
+                      <input id="reminderSubLeadDays" type="text" value="1" />
+                    </div>
+                    <div class="field">
+                      <label for="reminderChangeLeadDays">行程變動前幾天提醒</label>
+                      <input id="reminderChangeLeadDays" type="text" value="1" />
+                    </div>
+                  </div>
+                  <div class="subtle">可先設定每種提醒的預設提前天數，匯入行事曆或課表後也會自動帶入。</div>
+                </div>
+                <div class="preview">
+                  <h3>手動新增提醒</h3>
+                  <div class="field">
+                    <label for="reminderType">提醒類型</label>
+                    <select id="reminderType">
+                      <option value="exam">考試提醒</option>
+                      <option value="substitute">調代課提醒</option>
+                      <option value="change">行程變動提醒</option>
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label for="reminderTitle">提醒標題</label>
+                    <input id="reminderTitle" type="text" placeholder="例如：數學期中考、國語調課" />
+                  </div>
+                  <div class="grid-2">
+                    <div class="field">
+                      <label for="reminderDate">提醒日期</label>
+                      <input id="reminderDate" type="date" />
+                    </div>
+                    <div class="field">
+                      <label for="reminderLeadDays">提前天數</label>
+                      <input id="reminderLeadDays" type="text" value="3" />
+                    </div>
+                  </div>
+                  <div class="field">
+                    <label for="reminderNote">備註</label>
+                    <textarea id="reminderNote" placeholder="可填寫考試範圍、代課老師、行程說明"></textarea>
+                  </div>
+                  <div class="toolbar no-print">
+                    <button class="btn-primary" id="btnAddReminder">新增提醒</button>
+                    <button class="btn-ghost" id="btnPresetExamReminder">套用考試提醒</button>
+                    <button class="btn-ghost" id="btnPresetSubReminder">套用調代課提醒</button>
+                    <button class="btn-ghost" id="btnPresetChangeReminder">套用行程變動提醒</button>
+                  </div>
+                </div>
+              </div>
+              <div class="list" id="reminderList"></div>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="stats-grid" id="summaryStats"></div>
+          </div>
+        </section>
+      </aside>
+
+      <main class="main">
+        <section class="card panel active" data-panel="dashboard">
+          <div class="card-header">
+            <div class="section-title">
+              <h2>今日總覽</h2>
+              <span class="badge">班務</span>
+            </div>
+            <div class="subtle">在這裡查看今天的重點、待辦與即時提醒。</div>
+          </div>
+          <div class="card-body">
+            <div class="grid-2">
+              <div class="preview">
+                <h3>今日重點輸入</h3>
+                <div class="field">
+                  <label for="dailyFocus">今日焦點</label>
+                  <input id="dailyFocus" type="text" placeholder="今天班上最重要的一件事" />
+                </div>
+                <div class="field">
+                  <label for="dailyMemo">今日備忘</label>
+                  <textarea id="dailyMemo" placeholder="可寫下提醒、注意事項或當天紀錄"></textarea>
+                </div>
+                <div class="memo-label-panel">
+                  <div class="memo-label-row">
+                    <div class="subtle">可點選預設標籤，也可以自行新增常用備註。</div>
+                    <div class="pill-input" style="flex:1; min-width:220px">
+                      <input id="memoLabelInput" type="text" placeholder="輸入新標籤後按新增" />
+                      <button class="btn-primary" id="btnAddMemoLabel">新增標籤</button>
+                    </div>
+                  </div>
+                  <div class="memo-label-list" id="memoLabelList"></div>
+                </div>
+              </div>
+              <div class="preview">
+                <h3>今日統計</h3>
+                <div class="preview-grid" id="dashboardStats"></div>
+              </div>
+            </div>
+            <div style="height:16px"></div>
+            <div class="grid-2">
+              <section class="preview">
+                <h3>近期事件</h3>
+                <div id="recentEvents"></div>
+              </section>
+              <section class="preview">
+                <h3>待辦事項</h3>
+                <div id="todoSnapshot"></div>
+              </section>
+            </div>
+            <div class="import-board">
+              <div class="section-title">
+                <h3>資料匯入</h3>
+                <span class="badge">課表 / 行事曆</span>
+              </div>
+              <div class="import-metrics" id="importMetrics"></div>
+              <div class="grid-2">
+                <section class="preview">
+                  <h3>課表匯入</h3>
+                  <div class="subtle">可匯入 CSV、TXT、JSON、DOCX，或掃描圖片。系統會自動抓出日期、時間、課程與教室資料。</div>
+                  <div class="toolbar no-print" style="margin-top:10px">
+                    <button class="btn-primary" id="btnImportSchedule">匯入課表</button>
+                    <button class="btn-ghost" id="btnDownloadScheduleSample">下載課表範例</button>
+                    <input id="scheduleFile" type="file" accept=".csv,.tsv,.txt,.json,.docx,.png,.jpg,.jpeg,.webp" hidden />
+                    <button class="btn-ghost" id="btnClearScheduleImport">清除課表</button>
+                  </div>
+                  <div style="height:10px"></div>
+                  <div class="list" id="scheduleImportList"></div>
+                </section>
+                <section class="preview">
+                  <h3>行事曆匯入</h3>
+                  <div class="subtle">可匯入 ICS、CSV、TXT、JSON、DOCX，或掃描圖片。系統會從行程中建立提醒。</div>
+                  <div class="toolbar no-print" style="margin-top:10px">
+                    <button class="btn-primary" id="btnImportCalendar">匯入行事曆</button>
+                    <button class="btn-ghost" id="btnDownloadCalendarSample">下載行事曆範例</button>
+                    <input id="calendarFile" type="file" accept=".ics,.csv,.tsv,.txt,.json,.docx,.png,.jpg,.jpeg,.webp" hidden />
+                    <button class="btn-ghost" id="btnClearCalendarImport">清除行事曆</button>
+                  </div>
+                  <div style="height:10px"></div>
+                  <div class="list" id="calendarImportList"></div>
+                </section>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="card panel" data-panel="students">
+          <div class="card-header">
+            <div class="section-title">
+              <h2>學生名單</h2>
+              <span class="badge">匯入 / 匯出</span>
+            </div>
+            <div class="subtle">支援 CSV、TXT 與 JSON，可快速建立學生資料與備註。</div>
+          </div>
+          <div class="card-body">
+            <div class="student-page-bar">
+              <div>
+                <div class="subtle">學生分頁</div>
+                <div class="student-page-tabs" id="studentPageTabs"></div>
+              </div>
+            <div class="student-page-actions no-print">
+              <button class="btn-primary" id="btnAddStudentPage">新增分頁</button>
+              <button class="btn-ghost" id="btnDuplicateStudentPage">複製分頁</button>
+              <button class="btn-ghost" id="btnDeleteStudentPage">刪除分頁</button>
+            </div>
+          </div>
+          <div class="student-page-help">
+            <div><strong>這三個按鈕是在做「班級分頁」管理。</strong>按下之後，會在上方新增一個班級標籤，方便一位老師分開管理不同班級的學生名單。</div>
+            <div class="student-page-flow" aria-label="學生分頁操作流程圖">
+              <div class="step">① 按「新增分頁」</div>
+              <div class="arrow">→</div>
+              <div class="step">② 上方出現新班級標籤</div>
+              <div class="arrow">→</div>
+              <div class="step">③ 輸入或匯入該班學生</div>
+              <div class="arrow">→</div>
+              <div class="step">④ 座位表、榮譽點數一起同步</div>
+            </div>
+            <div style="margin-top:8px">「複製分頁」是快速複製同班設定做範本；「刪除分頁」就是刪掉這個班級標籤與它的資料。</div>
+          </div>
+          <div class="field">
+              <label for="studentPageName">目前分頁名稱</label>
+              <input id="studentPageName" type="text" placeholder="例如：五年三班" />
+            </div>
+            <div class="grid-2">
+              <div>
+                <div class="field">
+                  <label for="studentSearch">搜尋學生</label>
+                  <input id="studentSearch" type="text" placeholder="輸入姓名、座號或標籤" />
+                </div>
+                <div class="field">
+                  <label for="studentQuickNote">學生備註</label>
+                  <textarea id="studentQuickNote" placeholder="可記錄過敏、用藥提醒或特殊需求"></textarea>
+                </div>
+                <div class="toolbar no-print">
+                  <button class="btn-primary" id="btnAddStudent">新增學生</button>
+                  <button class="btn-ghost" id="btnImportStudents">匯入學生</button>
+                  <input id="studentsFile" type="file" accept=".csv,.tsv,.txt,.json" hidden />
+                  <button class="btn-ghost" id="btnExportStudentsCsv">匯出 CSV</button>
+                  <button class="btn-ghost" id="btnExportStudentsJson">匯出 JSON</button>
+                </div>
+                <div style="height:12px"></div>
+                <div class="list" id="studentList"></div>
+              </div>
+              <div>
+                <section class="preview">
+                  <h3>貼上學生名單</h3>
+                  <div class="subtle">可直接貼上座號與姓名，系統會自動整理成學生資料。</div>
+                  <div class="field" style="margin-top:12px">
+                    <textarea id="studentPaste" placeholder="1, 小安&#10;2, 小羽&#10;3, 小宇"></textarea>
+                  </div>
+                  <div class="toolbar no-print">
+                    <button class="btn-primary" id="btnApplyPaste">套用貼上內容</button>
+                    <button class="btn-ghost" id="btnClearStudents">清空學生名單</button>
+                  </div>
+                </section>
+                <div style="height:16px"></div>
+                <section class="preview">
+                  <h3>拖拉標籤</h3>
+                  <div class="subtle">先把標籤往上拖到學生名單裡的學生卡片上，就能直接套用標籤；也可以在下方拖拉排序。</div>
+                  <div class="tag-flow" aria-label="標籤拖拉示意圖">
+                    <div class="tag-flow-step">
+                      <div class="step-num">1</div>
+                      <div class="step-title">抓住標籤</div>
+                      <div class="step-sub">從下方標籤列拖起想要的標籤</div>
+                    </div>
+                    <div class="tag-flow-arrow">↑</div>
+                    <div class="tag-flow-step">
+                      <div class="step-num">2</div>
+                      <div class="step-title">拖到學生卡片</div>
+                      <div class="step-sub">把標籤放到上方學生名單的某位學生身上</div>
+                    </div>
+                  </div>
+                  <div class="student-drop-hint">小提醒：標籤可以拖到學生名單上的學生卡片，套用後會顯示在該學生資料裡；如果拖回標籤區，則可以重新排列順序。</div>
+                  <div style="height:12px"></div>
+                  <div class="pill-input">
+                    <input id="tagInput" type="text" placeholder="輸入新標籤，例如：運動隊長" />
+                    <button class="btn-primary" id="btnAddTag">新增標籤</button>
+                  </div>
+                  <div style="height:10px"></div>
+                  <div class="chips" id="tagChips"></div>
+                </section>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="card panel" data-panel="seating">
+          <div class="card-header">
+            <div class="section-title">
+              <h2>座位表</h2>
+              <span class="badge">拖拉安排</span>
+            </div>
+            <div class="subtle">可用固定格狀，也可切換任意拖拉，先排座位位置再拖入學生名單。</div>
+            <div class="class-badge" id="seatClassBadge">目前班級：<span>未設定</span></div>
+          </div>
+          <div class="card-body">
+            <div class="seat-layout-grid">
+              <div class="preview">
+                <div class="section-title" style="margin-bottom:10px">
+                  <h3>座位設定</h3>
+                  <span class="badge">上方大橫排</span>
+                </div>
+                <div class="field">
+                  <label for="seatLayoutMode">座位模式</label>
+                  <select id="seatLayoutMode">
+                    <option value="grid">固定格狀</option>
+                    <option value="freeform">任意拖拉</option>
+                  </select>
+                </div>
+                <div class="grid-2">
+                  <div class="field">
+                    <label for="seatRows">排數</label>
+                    <input id="seatRows" type="text" value="4" />
+                  </div>
+                  <div class="field">
+                    <label for="seatCols">每排座位數</label>
+                    <input id="seatCols" type="text" value="5" />
+                  </div>
+                </div>
+                <div class="field">
+                  <label for="seatNote">座位備註</label>
+                  <textarea id="seatNote" placeholder="例如：高個子安排後排、需提醒近視座位"></textarea>
+                </div>
+                <div class="seat-mode-grid" id="seatGridModeTools">
+                  <div class="toolbar no-print">
+                    <button class="btn-primary" id="btnBuildSeats">建立座位表</button>
+                    <button class="btn-ghost" id="btnClearSeats">清空座位</button>
+                    <button class="btn-ghost" id="btnPrintSeats">列印座位表</button>
+                  </div>
+                </div>
+                <div class="seat-mode-grid" id="seatFreeformTools" style="display:none">
+                  <div class="seat-freeform-toolbar no-print">
+                    <button class="btn-primary" id="btnAddSeatSlot">新增座位框</button>
+                    <button class="btn-ghost" id="btnPresetGroupSeats">套用分組示意</button>
+                    <button class="btn-ghost" id="btnPresetUSeats">套用 U 型示意</button>
+                    <button class="btn-ghost" id="btnClearSeatSlots">清空座位框</button>
+                    <button class="btn-ghost" type="button" data-print-seats>列印座位表</button>
+                  </div>
+                  <div class="subtle">先把座位框拖到想要的位置，之後再把學生拖進座位框。</div>
+                </div>
+                <div style="height:10px"></div>
+                <div class="drop-zone" id="seatDropZone">把學生拖到這裡即可清空座位</div>
+              </div>
+            </div>
+            <div class="seat-workspace" style="margin-top:16px">
+              <div class="seat-board">
+                <div class="seat-toolbar">
+                  <span class="badge" id="seatModeBadge">固定格狀</span>
+                  <span class="subtle" id="seatModeHint">拖拉學生到座位，隨時調整安排。</span>
+                </div>
+                <div class="seat-grid" id="seatGrid"></div>
+                <div class="seat-freeform-board" id="seatFreeformBoard" style="display:none">
+                  <div class="seat-freeform-guide"></div>
+                </div>
+              </div>
+              <div>
+                <section class="preview">
+                  <h3>可拖拉學生名單（棋盤式）</h3>
+                  <div class="subtle">學生會用棋盤式卡片排列，通常約 30 人，直接拖曳到座位格或任意座位框即可完成安排。</div>
+                  <div class="field" style="margin-top:12px">
+                    <label for="seatStudentSearch">搜尋學生</label>
+                    <input id="seatStudentSearch" type="text" placeholder="輸入姓名、座號或標籤" />
+                  </div>
+                  <div class="list seat-student-list" id="seatStudentList"></div>
+                </section>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="card panel" data-panel="tasks">
+          <div class="card-header">
+            <div class="section-title">
+              <h2>任務分派</h2>
+              <span class="badge">班務</span>
+            </div>
+            <div class="subtle">輸入任務後可以快速分派，或讓系統隨機輪派學生。</div>
+          </div>
+          <div class="card-body">
+            <div class="grid-2">
+              <div>
+                <div class="field">
+                  <label for="taskInput">任務內容</label>
+                  <textarea id="taskInput" placeholder="發作業 | 發下數學習作&#10;整理圖書 | 整理閱讀角"></textarea>
+                </div>
+                <div class="field">
+                  <label for="taskExtra">補充說明</label>
+                  <input id="taskExtra" type="text" placeholder="可填寫時段、注意事項或負責人" />
+                </div>
+                <div class="toolbar no-print">
+                  <button class="btn-primary" id="btnApplyTasks">套用任務</button>
+                  <button class="btn-ghost" id="btnRotateTasks">隨機分派</button>
+                  <button class="btn-ghost" id="btnClearTaskAssign">清除指派</button>
+                </div>
+              </div>
+              <div>
+                <div class="list" id="taskList"></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="card panel" data-panel="templates">
+          <div class="card-header">
+            <div class="section-title">
+              <h2>範本庫</h2>
+              <span class="badge">可編輯模板</span>
+            </div>
+            <div class="subtle">可自訂常用範本，例如晨間提醒、下午茶選單與聯絡簿內容。</div>
+          </div>
+          <div class="card-body">
+            <div class="grid-2">
+              <div class="preview">
+                <h3>編輯範本</h3>
+                <div class="field">
+                  <label for="templateTitle">範本名稱</label>
+                  <input id="templateTitle" type="text" placeholder="例如：晨間提醒" />
+                </div>
+                <div class="field">
+                  <label for="templateBody">範本內容</label>
+                  <textarea id="templateBody" placeholder="可直接輸入常用文字"></textarea>
+                </div>
+                <div class="field">
+                  <label for="templateCategory">範本分類</label>
+                  <input id="templateCategory" type="text" placeholder="例如：班務、通知、生活" />
+                </div>
+                <div class="toolbar no-print">
+                  <button class="btn-primary" id="btnSaveTemplate">儲存範本</button>
+                  <button class="btn-ghost" id="btnResetTemplates">重設範本</button>
+                  <button class="btn-ghost" id="btnExportTemplates">匯出範本</button>
+                  <button class="btn-ghost" id="btnImportTemplates">匯入範本</button>
+                  <input id="templatesFile" type="file" accept=".json" hidden />
+                </div>
+              </div>
+              <div>
+                <div class="field">
+                  <label for="teaMenu">今天的下午茶選單</label>
+                  <textarea id="teaMenu" placeholder="鮮奶\n水果\n小點心"></textarea>
+                </div>
+                <div class="field">
+                  <label for="dailySchedule">今日時間表</label>
+                  <textarea id="dailySchedule" placeholder="08:00 早自習&#10;10:10 數學&#10;13:30 午休"></textarea>
+                </div>
+                <div class="list" id="templateList"></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="card panel" data-panel="events">
+          <div class="card-header">
+            <div class="section-title">
+              <h2>事件行事曆</h2>
+              <span class="badge">提醒 / 記錄</span>
+            </div>
+            <div class="subtle">記錄班級活動、考試、調課與其他重要事件。</div>
+          </div>
+          <div class="card-body">
+            <div class="grid-2">
+              <div class="preview">
+                <h3>新增事件</h3>
+                <div class="field">
+                  <label for="eventTitle">事件標題</label>
+                  <input id="eventTitle" type="text" placeholder="例如：期中考、校外教學" />
+                </div>
+                <div class="field">
+                  <label for="eventDate">日期</label>
+                  <input id="eventDate" type="date" />
+                </div>
+                <div class="field">
+                  <label for="eventType">類型</label>
+                  <select id="eventType">
+                    <option value="班務">班務</option>
+                    <option value="考試">考試</option>
+                    <option value="活動">活動</option>
+                    <option value="通知">通知</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="eventNote">備註</label>
+                  <textarea id="eventNote" placeholder="可補充地點、對象或提醒內容"></textarea>
+                </div>
+                <div class="toolbar no-print">
+                  <button class="btn-primary" id="btnAddEvent">新增事件</button>
+                  <button class="btn-ghost" id="btnClearEvents">清空事件</button>
+                </div>
+              </div>
+              <div>
+                <div class="list" id="eventList"></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="card panel" data-panel="journal">
+          <div class="card-header">
+            <div class="section-title">
+              <h2>教學日誌</h2>
+              <span class="badge">每日工作記錄</span>
+            </div>
+            <div class="subtle">記錄每天的教學內容、觀察、反思與後續追蹤，方便日後回看與整理。</div>
+          </div>
+          <div class="card-body">
+            <div class="grid-2">
+              <div class="preview">
+                <h3>存入教學日誌</h3>
+                <div class="grid-2">
+                  <div class="field">
+                    <label for="journalDate">日期</label>
+                    <input id="journalDate" type="date" />
+                  </div>
+                  <div class="field">
+                    <label for="journalClassPeriod">節次 / 時段</label>
+                    <input id="journalClassPeriod" type="text" placeholder="例如：第 2 節、下午導師時間" />
+                  </div>
+                </div>
+                <div class="grid-2">
+                  <div class="field">
+                    <label for="journalSubject">科目 / 主題</label>
+                    <input id="journalSubject" type="text" placeholder="例如：數學、班級經營" />
+                  </div>
+                  <div class="field">
+                    <label for="journalTitle">標題</label>
+                    <input id="journalTitle" type="text" placeholder="例如：分數單元引導" />
+                  </div>
+                </div>
+                <div class="field">
+                  <label for="journalContent">教學內容紀錄</label>
+                  <textarea id="journalContent" placeholder="今天教了什麼、學生反應如何、班級狀況如何"></textarea>
+                </div>
+                <div class="grid-2">
+                  <div class="field">
+                    <label for="journalReflection">教學反思</label>
+                    <textarea id="journalReflection" placeholder="今天哪些地方做得好、哪些地方可以調整"></textarea>
+                  </div>
+                  <div class="field">
+                    <label for="journalFollowUp">後續追蹤</label>
+                    <textarea id="journalFollowUp" placeholder="明天要補充什麼、要提醒什麼"></textarea>
+                  </div>
+                </div>
+                <div class="field">
+                  <label for="journalTags">日誌標籤</label>
+                  <input id="journalTags" type="text" placeholder="例如：朗讀, 分組合作, 作業提醒" />
+                </div>
+                <div class="toolbar no-print">
+                  <button class="btn-primary" id="btnSaveJournal">存入教學日誌</button>
+                  <button class="btn-ghost" id="btnResetJournalForm">清空表單</button>
+                </div>
+              </div>
+              <div class="preview">
+                <h3>日誌搜尋與回看</h3>
+                <div class="field">
+                  <label for="journalSearch">搜尋教學日誌</label>
+                  <input id="journalSearch" type="text" placeholder="輸入日期、標題、科目、標籤或內容" />
+                </div>
+                <div class="subtle">可以快速搜尋歷史紀錄，方便整理教學脈絡與班級工作。</div>
+                <div style="height:12px"></div>
+                <div class="list" id="journalList"></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="card panel" data-panel="todos">
+          <div class="card-header">
+            <div class="section-title">
+              <h2>待辦清單</h2>
+              <span class="badge">工作事項</span>
+            </div>
+            <div class="subtle">建立要完成的事項，方便每日追蹤進度。</div>
+          </div>
+          <div class="card-body">
+            <div class="grid-2">
+              <div class="preview">
+                <h3>新增待辦</h3>
+                <div class="field">
+                  <label for="todoText">內容</label>
+                  <input id="todoText" type="text" placeholder="例如：整理作業、提醒帶美勞用品" />
+                </div>
+                <div class="field">
+                  <label for="todoDue">到期日期</label>
+                  <input id="todoDue" type="date" />
+                </div>
+                <div class="field">
+                  <label for="todoPriority">優先度</label>
+                  <select id="todoPriority">
+                    <option value="高">高</option>
+                    <option value="中" selected>中</option>
+                    <option value="低">低</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="todoNote">待辦備註</label>
+                  <textarea id="todoNote" placeholder="例如：完成後再通知家長"></textarea>
+                </div>
+                <div class="toolbar no-print">
+                  <button class="btn-primary" id="btnAddTodo">新增待辦</button>
+                  <button class="btn-ghost" id="btnClearTodos">清空待辦</button>
+                </div>
+              </div>
+              <div>
+                <div class="list" id="todoList"></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="card panel" data-panel="honor">
+          <div class="card-header">
+            <div class="section-title">
+              <h2>榮譽點數</h2>
+              <span class="badge">加減分 / 兌獎 / 日期記錄</span>
+            </div>
+            <div class="subtle">記錄加減分、兌換獎品，並保留日期與原因。</div>
+            <div class="class-badge" id="honorClassBadge">目前班級：<span>未設定</span></div>
+          </div>
+          <div class="card-body">
+            <div class="honor-board">
+              <div class="honor-stats" id="honorStats"></div>
+              <div class="grid-2">
+                <section class="preview">
+                  <h3>加減分記錄</h3>
+                  <div class="field">
+                    <label for="honorStudentSelect">學生</label>
+                    <select id="honorStudentSelect"></select>
+                  </div>
+                  <div class="grid-2">
+                    <div class="field">
+                      <label for="honorPoints">點數</label>
+                      <input id="honorPoints" type="text" value="1" />
+                    </div>
+                    <div class="field">
+                      <label for="honorDate">日期</label>
+                      <input id="honorDate" type="date" />
+                    </div>
+                  </div>
+                  <div class="field">
+                    <label for="honorReason">原因</label>
+                    <textarea id="honorReason" placeholder="例如：主動幫忙、作業完成佳"></textarea>
+                  </div>
+                  <div class="toolbar no-print">
+                    <button class="btn-primary" id="btnHonorAdd">記錄加減分</button>
+                    <button class="btn-ghost" id="btnHonorPlus1">+1</button>
+                    <button class="btn-ghost" id="btnHonorPlus5">+5</button>
+                    <button class="btn-ghost" id="btnHonorMinus1">-1</button>
+                    <button class="btn-ghost" id="btnHonorMinus5">-5</button>
+                  </div>
+                  <div class="subtle" style="margin-top:10px">支援快速加分與扣分，適合日常班級紀錄。</div>
+                </section>
+                <section class="preview">
+                  <h3>兌獎設定</h3>
+                  <div class="grid-2">
+                    <div class="field">
+                      <label for="honorRewardName">獎品名稱</label>
+                      <input id="honorRewardName" type="text" placeholder="例如：貼紙、小禮物" />
+                    </div>
+                    <div class="field">
+                      <label for="honorRewardCost">需要點數</label>
+                      <input id="honorRewardCost" type="text" value="5" />
+                    </div>
+                  </div>
+                  <div class="field">
+                    <label for="honorRewardStock">庫存</label>
+                    <input id="honorRewardStock" type="text" placeholder="可留空代表不限量" />
+                  </div>
+                  <div class="toolbar no-print">
+                    <button class="btn-primary" id="btnHonorSaveReward">儲存獎品</button>
+                    <button class="btn-ghost" id="btnHonorResetRewards">重設獎品</button>
+                  </div>
+                  <div style="height:12px"></div>
+                  <div class="list" id="honorRewardList"></div>
+                </section>
+              </div>
+              <div class="grid-2">
+                <section class="preview">
+                  <h3>學生點數表</h3>
+                  <div class="field">
+                    <label for="honorSearch">搜尋學生</label>
+                    <input id="honorSearch" type="text" placeholder="輸入姓名、座號或標籤" />
+                  </div>
+                  <div class="list honor-list" id="honorStudentList"></div>
+                </section>
+                <section class="preview">
+                  <h3>兌獎記錄</h3>
+                  <div class="subtle">顯示最近的加減分與兌獎歷程。</div>
+                  <div style="height:12px"></div>
+                  <div class="list" id="honorLogList"></div>
+                </section>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="card panel" data-panel="settings">
+          <div class="card-header">
+            <div class="section-title">
+              <h2>設定</h2>
+              <span class="badge">系統 / 介面</span>
+            </div>
+            <div class="subtle">可調整班級資訊、主題與備份還原。</div>
+          </div>
+          <div class="card-body">
+            <div class="grid-2">
+              <div class="preview">
+                <h3>基本設定</h3>
+                <div class="field">
+                  <label for="className">班級名稱</label>
+                  <input id="className" type="text" placeholder="例如：五年三班" />
+                </div>
+                <div class="field">
+                  <label for="teacherName">老師名稱</label>
+                  <input id="teacherName" type="text" placeholder="例如：王老師" />
+                </div>
+                <div class="field">
+                  <label for="themeSelect">主題</label>
+                  <select id="themeSelect">
+                    <option value="light">淺色</option>
+                    <option value="dark">深色</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="welcomeText">歡迎訊息</label>
+                  <textarea id="welcomeText" placeholder="可放在首頁的班級歡迎文字"></textarea>
+                </div>
+                <div class="toolbar no-print">
+                  <button class="btn-primary" id="btnSaveSettings">儲存設定</button>
+                  <button class="btn-ghost" id="btnPrint">列印 / PDF</button>
+                </div>
+              </div>
+              <div class="preview">
+                <h3>備份還原</h3>
+                <div class="subtle">你可以先匯出 JSON 備份，再從檔案還原資料。</div>
+                <div style="height:12px"></div>
+                <div class="field">
+                  <label for="backupText">JSON 備份內容</label>
+                  <textarea id="backupText" readonly></textarea>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <nav class="bottom-nav no-print" id="bottomNav"></nav>
+  <div class="toast" id="toast"></div>
+  <div class="footer-note no-print">本工作台由凱西老師設計。</div>
+
+  <div class="modal-backdrop" id="modalBackdrop" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <header>
+        <div>
+          <h3 id="modalTitle">快速新增</h3>
+          <div class="subtle" id="modalSubtitle">先選擇要新增的項目，再填入內容。</div>
+        </div>
+        <button class="btn-ghost" id="btnCloseModal">關閉</button>
+      </header>
+      <div class="body" id="modalBody"></div>
+      <footer>
+        <button class="btn-ghost" id="btnModalCancel">取消</button>
+        <button class="btn-primary" id="btnModalSave">儲存</button>
+      </footer>
+    </div>
+  </div>
+
+  <script>
+    const STORAGE_KEY = "kathy_classroom_dashboard_v1";
+    const THEME_KEY = "kathy_classroom_theme";
+    const PANELS = ["dashboard","students","seating","tasks","templates","events","journal","todos","honor","settings"];
+    const state = {
+      activePanel: "dashboard",
+      className: "",
+      teacherName: "",
+      studentPages: [],
+      activeStudentPageId: "",
+      students: [],
+      templates: [],
+      tasks: [],
+      events: [],
+      journals: [],
+      todos: [],
+      tags: [],
+      seating: defaultSeating(),
+      daily: { focus: "", memo: "", memoLabels: defaultMemoLabels(), scheduleImports: [], calendarImports: [], teaMenu: "", schedule: "", note: "" },
+      settings: { theme: "light" },
+      honor: { balances: {}, rewards: [], logs: [] },
+      reminders: { examLeadDays: 3, substituteLeadDays: 1, changeLeadDays: 1, items: [], alerted: {} },
+    };
+    const $ = (id) => document.getElementById(id);
+    let modalMode = null;
+    let editContext = null;
+    let journalEditId = null;
+    let toastTimer = null;
+
+    function uid(prefix = "id") {
+      return `${prefix}_${Math.random().toString(36).slice(2, 9)}`;
+    }
+
+    function escapeHtml(text) {
+      return String(text ?? "").replace(/[&<>"']/g, (ch) => ({
+        "&":"&amp;",
+        "<":"&lt;",
+        ">":"&gt;",
+        "\"":"&quot;",
+        "'":"&#39;"
+      }[ch]));
+    }
+
+    function safeSlug(text) {
+      return String(text || "classroom")
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, "-")
+        .replace(/[^a-z0-9_-]/g, "")
+        .replace(/-+/g, "-")
+        .slice(0, 40) || "classroom";
+    }
+
+    function parseLines(text) {
+      return String(text || "")
+        .replace(/^\uFEFF/, "")
+        .split(/\r?\n/)
+        .map((line) => line.trim())
+        .filter(Boolean);
+    }
+
+    function parseSimpleCsv(text) {
+      return parseLines(text).map((line) => line.split(",").map((cell) => cell.trim()));
+    }
+
+    function exportTextFile(filename, text, mimeType = "text/plain;charset=utf-8") {
+      exportBlob(filename, new Blob([text], { type: mimeType }));
+    }
+
+    function csvCell(value) {
+      return `"${String(value ?? "").replace(/"/g, '""')}"`;
+    }
+
+    function scheduleSampleCsv() {
+      return [
+        ["日期", "時間", "課程", "教室", "教師", "備註"],
+        ["2026-07-14", "08:10", "國語", "301", "王老師", "朗讀與討論"],
+        ["2026-07-14", "10:10", "數學", "301", "王老師", "分數單元"],
+        ["2026-07-14", "13:30", "生活課", "301", "王老師", "分組活動"]
+      ].map((row) => row.map(csvCell).join(",")).join("\n");
+    }
+
+    function calendarSampleCsv() {
+      return [
+        ["日期", "時間", "標題", "地點", "教師", "備註"],
+        ["2026-07-15", "09:00", "期末考提醒", "教務處", "王老師", "提前提醒學生複習"],
+        ["2026-07-16", "14:00", "調代課", "301", "代理老師", "第三節調課"],
+        ["2026-07-18", "08:00", "親師溝通", "辦公室", "王老師", "準備聯絡事項"]
+      ].map((row) => row.map(csvCell).join(",")).join("\n");
+    }
+
+    function downloadScheduleSample() {
+      exportTextFile(`課表範例_${safeSlug(state.className)}.csv`, "\uFEFF" + scheduleSampleCsv(), "text/csv;charset=utf-8");
+    }
+
+    function downloadCalendarSample() {
+      exportTextFile(`學校行事曆範例_${safeSlug(state.className)}.csv`, "\uFEFF" + calendarSampleCsv(), "text/csv;charset=utf-8");
+    }
+
+    function loadRemoteScript(src, globalName) {
+      if (globalName && window[globalName]) return Promise.resolve(window[globalName]);
+      const key = `__loader_${src}`;
+      if (!window[key]) {
+        window[key] = new Promise((resolve, reject) => {
+          const existing = document.querySelector(`script[data-dynamic-src="${src}"]`);
+          if (existing) {
+            existing.addEventListener("load", () => resolve(globalName ? window[globalName] : window));
+            existing.addEventListener("error", reject);
+            return;
+          }
+          const script = document.createElement("script");
+          script.src = src;
+          script.async = true;
+          script.dataset.dynamicSrc = src;
+          script.onload = () => resolve(globalName ? window[globalName] : window);
+          script.onerror = () => reject(new Error(`無法載入 ${src}`));
+          document.head.appendChild(script);
+        });
+      }
+      return window[key];
+    }
+
+    async function ensureJsZip() {
+      if (window.JSZip) return window.JSZip;
+      return loadRemoteScript("https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js", "JSZip");
+    }
+
+    async function ensureTesseract() {
+      if (window.Tesseract) return window.Tesseract;
+      return loadRemoteScript("https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js", "Tesseract");
+    }
+
+    async function readDocxText(file) {
+      const JSZip = await ensureJsZip();
+      const zip = await JSZip.loadAsync(await file.arrayBuffer());
+      const xmlFile = zip.file("word/document.xml");
+      if (!xmlFile) return "";
+      const xmlText = await xmlFile.async("text");
+      const xml = new DOMParser().parseFromString(xmlText, "application/xml");
+      return Array.from(xml.getElementsByTagName("w:p")).map((paragraph) => {
+        let line = "";
+        Array.from(paragraph.getElementsByTagName("w:r")).forEach((run) => {
+          Array.from(run.childNodes || []).forEach((node) => {
+            if (node.nodeName === "w:t") line += node.textContent || "";
+            if (node.nodeName === "w:tab") line += "\t";
+            if (node.nodeName === "w:br") line += "\n";
+          });
+        });
+        return line.trim();
+      }).filter(Boolean).join("\n");
+    }
+
+    async function readImageText(file) {
+      const Tesseract = await ensureTesseract();
+      const result = await Tesseract.recognize(file, "chi_tra+eng");
+      return String(result?.data?.text || "");
+    }
+
+    async function extractUploadedText(file) {
+      const name = String(file?.name || "").toLowerCase();
+      if (name.endsWith(".docx")) return readDocxText(file);
+      if (/\.(png|jpg|jpeg|webp)$/.test(name)) return readImageText(file);
+      if (typeof file.text === "function") return file.text();
+      const reader = new FileReader();
+      return new Promise((resolve, reject) => {
+        reader.onload = () => resolve(String(reader.result || ""));
+        reader.onerror = () => reject(reader.error || new Error("讀取檔案失敗"));
+        reader.readAsText(file, "utf-8");
+      });
+    }
+
+    function studentDisplay(student) {
+      return [student.number, student.name].filter(Boolean).join(" / ");
+    }
+
+    function uniqueList(values) {
+      return Array.from(new Set((values || []).map((value) => String(value || "").trim()).filter(Boolean)));
+    }
+
+    function defaultStudent() {
+      return {
+        id: uid("stu"),
+        number: "",
+        name: "",
+        tags: [],
+        note: "",
+        homework: "",
+        score: ""
+      };
+    }
+
+    function normalizeStudent(value) {
+      return {
+        id: String(value?.id || uid("stu")),
+        number: String(value?.number || "").trim(),
+        name: String(value?.name || "").trim(),
+        tags: uniqueList(Array.isArray(value?.tags) ? value.tags : String(value?.tags || "").split(/[|,;\/]/g)),
+        note: String(value?.note || "").trim(),
+        homework: String(value?.homework || value?.assignment || "").trim(),
+        score: String(value?.score || value?.grade || "").trim()
+      };
+    }
+
+    function normalizeStudentPage(value, fallbackTitle = "") {
+      const students = Array.isArray(value?.students) ? value.students.map(normalizeStudent).filter((item) => item.name) : [];
+      const seating = normalizeSeating(value?.seating || defaultSeating());
+      const honor = normalizeHonor(value?.honor || defaultHonor());
+      return {
+        id: String(value?.id || uid("page")),
+        title: String(value?.title || fallbackTitle || "未命名班級").trim() || "未命名班級",
+        students,
+        seating,
+        honor
+      };
+    }
+
+    function defaultStudentPages() {
+      return [normalizeStudentPage({ id: uid("page"), title: "五年三班", students: [] }, "五年三班")];
+    }
+
+    function splitTagText(value) {
+      return uniqueList(String(value || "").split(/[，,;|\/\n]/g).map((item) => item.trim()));
+    }
+
+    function summarizeText(value, maxLength = 80) {
+      const text = String(value || "").replace(/\s+/g, " ").trim();
+      if (!text) return "";
+      return text.length > maxLength ? `${text.slice(0, maxLength)}…` : text;
+    }
+
+    function defaultMemoLabels() {
+      return [
+        "食物過敏",
+        "務必補發",
+        "需協助提醒使用藥物",
+        "特殊體質"
+      ];
+    }
+
+    function normalizeMemoLabels(value) {
+      const labels = Array.isArray(value) ? value : defaultMemoLabels();
+      const clean = uniqueList(labels.map((item) => String(item || "").trim()).filter(Boolean));
+      return clean.length ? clean : defaultMemoLabels();
+    }
+
+    function defaultReminders() {
+      return {
+        examLeadDays: 3,
+        substituteLeadDays: 1,
+        changeLeadDays: 1,
+        items: [],
+        alerted: {}
+      };
+    }
+
+    function normalizeReminders(value) {
+      const base = defaultReminders();
+      const raw = value && typeof value === "object" ? value : {};
+      const items = Array.isArray(raw.items)
+        ? raw.items.map((item) => ({
+            id: String(item?.id || uid("rem")),
+            type: ["exam", "substitute", "change"].includes(String(item?.type || "")) ? String(item.type) : "change",
+            title: String(item?.title || "").trim(),
+            date: String(item?.date || ""),
+            leadDays: Math.max(0, Number(item?.leadDays ?? base.examLeadDays) || 0),
+            note: String(item?.note || "").trim(),
+            source: String(item?.source || "manual"),
+            done: Boolean(item?.done)
+          })).filter((item) => item.title)
+        : [];
+      return {
+        examLeadDays: Math.max(0, Number(raw.examLeadDays ?? base.examLeadDays) || 0),
+        substituteLeadDays: Math.max(0, Number(raw.substituteLeadDays ?? base.substituteLeadDays) || 0),
+        changeLeadDays: Math.max(0, Number(raw.changeLeadDays ?? base.changeLeadDays) || 0),
+        alerted: raw.alerted && typeof raw.alerted === "object" ? raw.alerted : {},
+        items
+      };
+    }
+
+    function normalizeJournalEntries(value) {
+      return (Array.isArray(value) ? value : []).map((item) => ({
+        id: String(item?.id || uid("jrn")),
+        date: String(item?.date || "").trim(),
+        classPeriod: String(item?.classPeriod || item?.period || "").trim(),
+        subject: String(item?.subject || item?.topic || "").trim(),
+        title: String(item?.title || item?.summary || "").trim(),
+        content: String(item?.content || item?.body || "").trim(),
+        reflection: String(item?.reflection || item?.note || "").trim(),
+        followUp: String(item?.followUp || item?.nextStep || "").trim(),
+        tags: splitTagText(Array.isArray(item?.tags) ? item.tags.join(",") : item?.tags),
+        createdAt: String(item?.createdAt || new Date().toISOString()),
+        updatedAt: String(item?.updatedAt || item?.createdAt || new Date().toISOString())
+      })).filter((item) => item.date || item.title || item.content || item.subject);
+    }
+
+    function reminderTypeLabel(type) {
+      return ({ exam: "考試提醒", substitute: "調代課提醒", change: "行程變動提醒" })[type] || "提醒";
+    }
+
+    function reminderLeadDaysForType(type) {
+      return ({
+        exam: state.reminders.examLeadDays,
+        substitute: state.reminders.substituteLeadDays,
+        change: state.reminders.changeLeadDays
+      })[type] ?? state.reminders.changeLeadDays;
+    }
+
+    function normalizeImportedRows(items) {
+      return (items || []).map((item) => ({
+        id: String(item?.id || uid("imp")),
+        date: String(item?.date || ""),
+        title: String(item?.title || "").trim(),
+        time: String(item?.time || "").trim(),
+        room: String(item?.room || "").trim(),
+        teacher: String(item?.teacher || "").trim(),
+        note: String(item?.note || "").trim(),
+        source: String(item?.source || "manual")
+      })).filter((item) => item.title || item.date || item.time);
+    }
+
+    function parseCalendarDate(value) {
+      const raw = String(value || "").trim();
+      if (!raw) return "";
+      if (/^\d{8}$/.test(raw)) return `${raw.slice(0,4)}-${raw.slice(4,6)}-${raw.slice(6,8)}`;
+      if (/^\d{8}T\d{6}Z?$/.test(raw)) return `${raw.slice(0,4)}-${raw.slice(4,6)}-${raw.slice(6,8)}`;
+      return raw.slice(0, 10);
+    }
+
+    function classifyReminderType(text) {
+      const hay = String(text || "");
+      if (/(考試|測驗|期中|期末|小考)/.test(hay)) return "exam";
+      if (/(調代課|代課|調課|補課)/.test(hay)) return "substitute";
+      if (/(行程|變動|異動|更動)/.test(hay)) return "change";
+      return "change";
+    }
+
+    function parseScheduleImport(text, fileName = "") {
+      const content = String(text || "").trim();
+      if (!content) return [];
+      if (fileName.toLowerCase().endsWith(".json") || content.startsWith("{")) {
+        try {
+          const data = JSON.parse(content);
+          const rows = Array.isArray(data) ? data : Array.isArray(data.items) ? data.items : [];
+          return normalizeImportedRows(rows.map((item) => ({
+            date: item.date || item.day || "",
+            title: item.title || item.subject || item.course || "",
+            time: item.time || item.period || "",
+            room: item.room || item.location || "",
+            teacher: item.teacher || item.instructor || "",
+            note: item.note || item.memo || "",
+            source: "schedule"
+          })));
+        } catch (err) {
+          console.warn(err);
+        }
+      }
+      return normalizeImportedRows(parseLines(content).map((line, index) => {
+        const parts = line.split(/[,|\t]/).map((item) => item.trim()).filter(Boolean);
+        if (index === 0 && /date|time|title|room|teacher|note|日期|時間|課程|教室|老師|備註/i.test(parts.join(","))) return null;
+        return {
+          date: parts[0] || "",
+          time: parts[1] || "",
+          title: parts[2] || parts[0] || line,
+          room: parts[3] || "",
+          teacher: parts[4] || "",
+          note: parts.slice(5).join(" "),
+          source: "schedule"
+        };
+      }));
+    }
+
+    function parseIcsEvents(text) {
+      const events = [];
+      const blocks = String(text || "").split(/BEGIN:VEVENT/i).slice(1);
+      for (const block of blocks) {
+        const body = block.split(/END:VEVENT/i)[0] || "";
+        const read = (key) => {
+          const re = new RegExp(`^${key}(?:;[^:]*)?:(.+)$`, "mi");
+          const m = body.match(re);
+          return m ? m[1].trim() : "";
+        };
+        const start = parseCalendarDate(read("DTSTART"));
+        events.push({
+          date: start,
+          title: read("SUMMARY"),
+          time: "",
+          room: read("LOCATION"),
+          note: read("DESCRIPTION"),
+          source: "calendar"
+        });
+      }
+      return normalizeImportedRows(events);
+    }
+
+    function parseCalendarImport(text, fileName = "") {
+      const content = String(text || "").trim();
+      if (!content) return [];
+      if (fileName.toLowerCase().endsWith(".ics") || /BEGIN:VCALENDAR/i.test(content)) return parseIcsEvents(content);
+      if (fileName.toLowerCase().endsWith(".json") || content.startsWith("{")) {
+        try {
+          const data = JSON.parse(content);
+          const rows = Array.isArray(data) ? data : Array.isArray(data.events) ? data.events : [];
+          return normalizeImportedRows(rows.map((item) => ({
+            date: item.date || item.start || item.begin || "",
+            title: item.title || item.summary || item.subject || "",
+            time: item.time || item.startTime || "",
+            room: item.room || item.location || "",
+            teacher: item.teacher || "",
+            note: item.note || item.description || "",
+            source: "calendar"
+          })));
+        } catch (err) {
+          console.warn(err);
+        }
+      }
+      return normalizeImportedRows(parseLines(content).map((line, index) => {
+        const parts = line.split(/[,|\t]/).map((item) => item.trim()).filter(Boolean);
+        if (index === 0 && /date|time|title|room|teacher|note|日期|時間|課程|教室|老師|備註/i.test(parts.join(","))) return null;
+        return {
+          date: parts[0] || "",
+          time: parts[1] || "",
+          title: parts[2] || line,
+          room: parts[3] || "",
+          teacher: parts[4] || "",
+          note: parts.slice(5).join(" "),
+          source: "calendar"
+        };
+      }));
+    }
+
+    function syncImportedReminders() {
+      const manual = state.reminders.items.filter((item) => item.source !== "auto");
+      const auto = [];
+      [...(state.daily.scheduleImports || []), ...(state.daily.calendarImports || [])].forEach((item) => {
+        const type = classifyReminderType(`${item.title} ${item.note}`);
+        const date = item.date || "";
+        if (!date) return;
+        auto.push({
+          id: `auto_${item.id}`,
+          type,
+          title: item.title,
+          date,
+          leadDays: reminderLeadDaysForType(type),
+          note: item.note || item.room || item.teacher || "",
+          source: "auto",
+          done: false
+        });
+      });
+      state.reminders.items = normalizeReminders({ ...state.reminders, items: [...manual, ...auto] }).items;
+    }
+
+    function reminderDueState(item) {
+      if (item.done) return "done";
+      if (!item.date) return "pending";
+      const due = new Date(item.date);
+      if (Number.isNaN(due.getTime())) return "pending";
+      const today = new Date();
+      today.setHours(0,0,0,0);
+      due.setHours(0,0,0,0);
+      const diffDays = Math.round((due - today) / 86400000);
+      if (diffDays < 0) return "overdue";
+      if (diffDays <= Number(item.leadDays || 0)) return "due";
+      return "pending";
+    }
+
+    function reminderLeadText(item) {
+      const lead = Number(item.leadDays || 0);
+      return lead > 0 ? `提前 ${lead} 天提醒` : "當天提醒";
+    }
+
+    function dueReminderList() {
+      const today = new Date();
+      today.setHours(0,0,0,0);
+      return state.reminders.items.filter((item) => {
+        if (!item.date || item.done) return false;
+        const due = new Date(item.date);
+        if (Number.isNaN(due.getTime())) return false;
+        due.setHours(0,0,0,0);
+        const diffDays = Math.round((due - today) / 86400000);
+        return diffDays <= Number(item.leadDays || 0) && diffDays >= -2;
+      });
+    }
+
+    function reminderKey(item) {
+      return `${item.id}:${item.date}:${item.title}`;
+    }
+
+    function checkReminderAlerts() {
+      const due = dueReminderList();
+      if (!due.length) return;
+      state.reminders.alerted = state.reminders.alerted && typeof state.reminders.alerted === "object" ? state.reminders.alerted : {};
+      const fresh = due.filter((item) => state.reminders.alerted[reminderKey(item)] !== item.date);
+      if (!fresh.length) return;
+      const first = fresh[0];
+      state.reminders.alerted[reminderKey(first)] = first.date;
+      persist();
+      if (typeof Notification !== "undefined" && Notification.permission === "granted") {
+        try { new Notification(`提醒：${first.title}`, { body: `${reminderTypeLabel(first.type)}，${first.date}` }); } catch (err) { void err; }
+      }
+      showToast(`提醒：${first.title}`);
+    }
+
+    function defaultTemplates() {
+      return [
+        { id: uid("tpl"), title: "晨間提醒", category: "班務", body: "先點名，再檢查聯絡簿。\n提醒學生帶好用品。" },
+        { id: uid("tpl"), title: "下午茶選單", category: "生活", body: "鮮奶\n蘋果\n小餐包" },
+        { id: uid("tpl"), title: "聯絡簿模板", category: "通知", body: "今天的重點：\n1. 完成作業\n2. 帶回聯絡簿" }
+      ];
+    }
+
+    function normalizeTemplate(value) {
+      return {
+        id: String(value?.id || uid("tpl")),
+        title: String(value?.title || "").trim(),
+        category: String(value?.category || "").trim(),
+        body: String(value?.body || "").trim()
+      };
+    }
+
+    function defaultSeating(rows = 4, cols = 5) {
+      return {
+        mode: "grid",
+        rows,
+        cols,
+        cells: Array.from({ length: rows * cols }, () => ""),
+        note: "",
+        slots: []
+      };
+    }
+
+    function defaultSeatSlots() {
+      return [];
+    }
+
+    function normalizeSeatSlots(value) {
+      return (Array.isArray(value) ? value : []).map((slot, index) => ({
+        id: String(slot?.id || uid("slot")),
+        label: String(slot?.label || `座位 ${index + 1}`).trim() || `座位 ${index + 1}`,
+        x: Math.min(96, Math.max(4, Number(slot?.x ?? 50) || 50)),
+        y: Math.min(96, Math.max(4, Number(slot?.y ?? 50) || 50)),
+        studentIds: uniqueList(Array.isArray(slot?.studentIds)
+          ? slot.studentIds
+          : slot?.studentId ? [slot.studentId] : [])
+      }));
+    }
+
+    function currentStudentPageId() {
+      return state.activeStudentPageId || state.studentPages[0]?.id || "";
+    }
+
+    function currentStudentPage() {
+      const id = currentStudentPageId();
+      return state.studentPages.find((page) => page.id === id) || state.studentPages[0] || null;
+    }
+
+    function ensureStudentPage() {
+      if (!Array.isArray(state.studentPages) || !state.studentPages.length) {
+        state.studentPages = defaultStudentPages();
+      }
+      if (!state.activeStudentPageId || !state.studentPages.some((page) => page.id === state.activeStudentPageId)) {
+        state.activeStudentPageId = state.studentPages[0]?.id || "";
+      }
+      const page = currentStudentPage();
+      if (!page) {
+        state.studentPages = defaultStudentPages();
+        state.activeStudentPageId = state.studentPages[0].id;
+      }
+      state.students = currentStudentPage()?.students || [];
+      state.className = currentStudentPage()?.title || state.className;
+      return currentStudentPage();
+    }
+
+    function syncCurrentStudentPage() {
+      const page = currentStudentPage();
+      if (!page) return;
+      page.title = String(state.className || page.title || "未命名班級").trim() || "未命名班級";
+      page.students = state.students.map(normalizeStudent).filter((item) => item.name);
+      page.seating = normalizeSeating(state.seating || page.seating || defaultSeating());
+      page.honor = normalizeHonor(state.honor || page.honor || defaultHonor());
+    }
+
+    function createStudentPage(title = "新班級") {
+      const page = normalizeStudentPage({ title, students: [], seating: defaultSeating(), honor: defaultHonor() }, title);
+      state.studentPages.push(page);
+      state.activeStudentPageId = page.id;
+      state.className = page.title;
+      state.students = page.students;
+      state.seating = page.seating;
+      state.honor = page.honor;
+      persist();
+      render();
+      setPanel("students");
+      showToast("已新增學生分頁");
+    }
+
+    function switchStudentPage(pageId) {
+      syncCurrentStudentPage();
+      const page = state.studentPages.find((item) => item.id === pageId);
+      if (!page) return;
+      state.activeStudentPageId = page.id;
+      state.className = page.title;
+      state.students = page.students;
+      state.seating = page.seating || defaultSeating();
+      state.honor = page.honor || defaultHonor();
+      persist();
+      render();
+      setPanel("students");
+      showToast(`已切換到 ${page.title}`);
+    }
+
+    function renameCurrentStudentPage(title) {
+      const page = currentStudentPage();
+      if (!page) return;
+      page.title = String(title || "").trim() || "未命名班級";
+      state.className = page.title;
+      persist();
+      renderStudentPageTabs();
+      refreshStats();
+    }
+
+    function duplicateCurrentStudentPage() {
+      const page = currentStudentPage();
+      if (!page) return;
+      const copy = normalizeStudentPage({
+        title: `${page.title}（複本）`,
+        students: page.students.map((student) => ({ ...student, id: uid("stu") })),
+        seating: defaultSeating(),
+        honor: defaultHonor()
+      }, `${page.title}（複本）`);
+      state.studentPages.push(copy);
+      state.activeStudentPageId = copy.id;
+      state.className = copy.title;
+      state.students = copy.students;
+      state.seating = copy.seating;
+      state.honor = copy.honor;
+      persist();
+      render();
+      setPanel("students");
+      showToast("已複製學生分頁");
+    }
+
+    function deleteCurrentStudentPage() {
+      if (state.studentPages.length <= 1) return showToast("至少要保留一個學生分頁");
+      const page = currentStudentPage();
+      if (!page) return;
+      if (!confirm(`確定要刪除「${page.title}」這個學生分頁嗎？`)) return;
+      state.studentPages = state.studentPages.filter((item) => item.id !== page.id);
+      state.activeStudentPageId = state.studentPages[0]?.id || "";
+      state.className = state.studentPages[0]?.title || "";
+      state.students = state.studentPages[0]?.students || [];
+      state.seating = state.studentPages[0]?.seating || defaultSeating();
+      state.honor = state.studentPages[0]?.honor || defaultHonor();
+      persist();
+      render();
+      setPanel("students");
+      showToast("已刪除學生分頁");
+    }
+
+    function normalizeSeating(value) {
+      const mode = value?.mode === "freeform" ? "freeform" : "grid";
+      const rows = Math.max(1, Number(value?.rows || 4));
+      const cols = Math.max(1, Number(value?.cols || 5));
+      const cells = Array.isArray(value?.cells) ? value.cells.slice(0, rows * cols) : [];
+      while (cells.length < rows * cols) cells.push("");
+      return {
+        mode,
+        rows,
+        cols,
+        cells,
+        note: String(value?.note || ""),
+        slots: normalizeSeatSlots(value?.slots || defaultSeatSlots())
+      };
+    }
+
+    function defaultHonor() {
+      return { balances: {}, rewards: honorSeedRewards(), logs: [] };
+    }
+
+    function normalizeHonor(value) {
+      const balances = {};
+      const rawBalances = value?.balances && typeof value.balances === "object" ? value.balances : {};
+      Object.entries(rawBalances).forEach(([id, score]) => {
+        balances[String(id)] = Number(score) || 0;
+      });
+      const rewards = Array.isArray(value?.rewards)
+        ? value.rewards.map((reward) => ({
+            id: String(reward?.id || uid("rew")),
+            name: String(reward?.name || "").trim(),
+            cost: Math.max(0, Number(reward?.cost) || 0),
+            stock: reward?.stock === "" || reward?.stock == null ? null : Math.max(0, Number(reward?.stock) || 0)
+          })).filter((reward) => reward.name)
+        : [];
+      const logs = Array.isArray(value?.logs)
+        ? value.logs.map((log) => ({
+            id: String(log?.id || uid("hon")),
+            date: String(log?.date || ""),
+            studentId: String(log?.studentId || ""),
+            studentName: String(log?.studentName || ""),
+            type: String(log?.type || "??"),
+            points: Number(log?.points) || 0,
+            reason: String(log?.reason || ""),
+            rewardName: String(log?.rewardName || "")
+          }))
+        : [];
+      return { balances, rewards, logs };
+    }
+
+    function honorPoints(studentId) {
+      return Number(state.honor.balances[studentId] || 0);
+    }
+
+    function setHonorPoints(studentId, value) {
+      const points = Number(value) || 0;
+      state.honor.balances[studentId] = points;
+      const student = state.students.find((item) => item.id === studentId);
+      if (student) student.points = points;
+    }
+
+    function honorStudentName(studentId) {
+      return state.students.find((item) => item.id === studentId)?.name || "?芰摮貊?";
+    }
+
+    function honorToday() {
+      return new Date().toISOString().slice(0, 10);
+    }
+
+    function honorSelectedStudentId() {
+      return $("honorStudentSelect")?.value || state.students[0]?.id || "";
+    }
+
+    function honorSelectedRewardId() {
+      return state.honor.rewards[0]?.id || "";
+    }
+
+    function honorSeedRewards() {
+      return [
+        { id: uid("rew"), name: "貼紙", cost: 5, stock: 20 },
+        { id: uid("rew"), name: "小禮物", cost: 10, stock: 10 },
+        { id: uid("rew"), name: "神秘獎勵", cost: 15, stock: null }
+      ];
+    }
+
+    function honorAddLog(entry) {
+      state.honor.logs.unshift(entry);
+    }
+
+    function honorSyncStudents() {
+      state.students.forEach((student) => {
+        if (!(student.id in state.honor.balances)) {
+          state.honor.balances[student.id] = Number(student.points || 0) || 0;
+        }
+        student.points = honorPoints(student.id);
+      });
+    }
+
+    function honorTotals() {
+      const balances = state.students.map((student) => honorPoints(student.id));
+      return {
+        total: balances.reduce((sum, value) => sum + value, 0),
+        positive: balances.filter((value) => value > 0).length,
+        negative: balances.filter((value) => value < 0).length,
+        active: balances.filter((value) => value !== 0).length,
+        logs: state.honor.logs.length,
+        rewards: state.honor.rewards.length
+      };
+    }
+
+    function honorSelectedStudent() {
+      return state.students.find((item) => item.id === honorSelectedStudentId()) || null;
+    }
+
+    function honorRewardById(rewardId) {
+      return state.honor.rewards.find((reward) => reward.id === rewardId) || null;
+    }
+
+    function syncTagsFromStudents() {
+      const tags = [];
+      state.students.forEach((student) => {
+        (student.tags || []).forEach((tag) => {
+          const clean = String(tag || "").trim();
+          if (clean && !tags.includes(clean)) tags.push(clean);
+        });
+      });
+      state.tags = uniqueList([...state.tags, ...tags]);
+    }
+
+    function moveTag(fromIndex, toIndex) {
+      if (fromIndex === toIndex) return;
+      const list = state.tags.slice();
+      const [item] = list.splice(fromIndex, 1);
+      if (!item) return;
+      list.splice(toIndex, 0, item);
+      state.tags = uniqueList(list);
+      persist();
+      refreshTagChips();
+    }
+
+    function addTagToStudent(studentId, tag) {
+      const student = state.students.find((item) => item.id === studentId);
+      const cleanTag = String(tag || "").trim();
+      if (!student || !cleanTag) return false;
+      student.tags = uniqueList([...(student.tags || []), cleanTag]);
+      syncTagsFromStudents();
+      persist();
+      renderStudentList();
+      renderSeatStudentList();
+      showToast(`已套用標籤：${cleanTag}`);
+      return true;
+    }
+
+    function stats() {
+      return {
+        students: state.students.length,
+        studentPages: state.studentPages.length,
+        tasks: state.tasks.length,
+        events: state.events.length,
+        journals: state.journals.length,
+        todos: state.todos.filter((todo) => !todo.done).length
+      };
+    }
+
+    function persist() {
+      syncCurrentStudentPage();
+      const payload = {
+        className: state.className,
+        teacherName: state.teacherName,
+        studentPages: state.studentPages,
+        activeStudentPageId: state.activeStudentPageId,
+        students: state.students,
+        templates: state.templates,
+        tasks: state.tasks,
+        events: state.events,
+        journals: state.journals,
+        todos: state.todos,
+        tags: state.tags,
+        seating: state.seating,
+        daily: state.daily,
+        settings: state.settings,
+        honor: state.honor,
+        reminders: state.reminders
+      };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+      localStorage.setItem(THEME_KEY, state.settings.theme);
+      refreshBackupPreview();
+    }
+    function load() {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        try {
+          const data = JSON.parse(raw);
+          const legacySeating = normalizeSeating(data.seating || defaultSeating());
+          const legacyHonor = normalizeHonor(data.honor || defaultHonor());
+          state.className = data.className || "";
+          state.teacherName = data.teacherName || "";
+          state.studentPages = Array.isArray(data.studentPages) && data.studentPages.length
+            ? data.studentPages.map((page) => normalizeStudentPage(page)).filter((page) => page.title || page.students.length)
+            : [normalizeStudentPage({ id: uid("page"), title: data.className || "五年三班", students: Array.isArray(data.students) ? data.students : [], seating: legacySeating, honor: legacyHonor }, data.className || "五年三班")];
+          state.activeStudentPageId = String(data.activeStudentPageId || state.studentPages[0]?.id || "");
+          state.students = Array.isArray(data.students) ? data.students.map(normalizeStudent).filter((item) => item.name) : [];
+          state.templates = Array.isArray(data.templates) ? data.templates : defaultTemplates();
+          state.tasks = Array.isArray(data.tasks) ? data.tasks : [];
+          state.events = Array.isArray(data.events) ? data.events : [];
+          state.journals = Array.isArray(data.journals) ? data.journals : [];
+          state.todos = Array.isArray(data.todos) ? data.todos : [];
+          state.tags = Array.isArray(data.tags) ? data.tags : [];
+          state.seating = legacySeating;
+          state.daily = Object.assign({ focus: "", memo: "", memoLabels: defaultMemoLabels(), scheduleImports: [], calendarImports: [], teaMenu: "", schedule: "", note: "" }, data.daily || {});
+          state.settings = Object.assign({ theme: "light" }, data.settings || {});
+          state.honor = legacyHonor;
+          state.reminders = normalizeReminders(data.reminders || defaultReminders());
+        } catch (err) {
+          console.warn(err);
+        }
+      } else {
+        state.settings.theme = localStorage.getItem(THEME_KEY) === "dark" ? "dark" : "light";
+        state.templates = defaultTemplates();
+        state.seating = defaultSeating();
+        state.honor = defaultHonor();
+        state.reminders = defaultReminders();
+        state.studentPages = defaultStudentPages();
+        state.activeStudentPageId = state.studentPages[0].id;
+      }
+      if (!state.templates.length) state.templates = defaultTemplates();
+      state.seating = normalizeSeating(state.seating);
+      state.honor = normalizeHonor(state.honor);
+      state.reminders = normalizeReminders(state.reminders);
+      state.journals = normalizeJournalEntries(state.journals);
+      state.studentPages = Array.isArray(state.studentPages) && state.studentPages.length
+        ? state.studentPages.map((page) => normalizeStudentPage(page)).filter((page) => page.title || page.students.length)
+        : defaultStudentPages();
+      if (!state.activeStudentPageId || !state.studentPages.some((page) => page.id === state.activeStudentPageId)) {
+        state.activeStudentPageId = state.studentPages[0]?.id || "";
+      }
+      const activePage = currentStudentPage();
+      state.students = activePage?.students || state.studentPages[0]?.students || [];
+      state.seating = activePage?.seating || state.studentPages[0]?.seating || defaultSeating();
+      state.honor = activePage?.honor || state.studentPages[0]?.honor || defaultHonor();
+      state.className = activePage?.title || state.className || state.studentPages[0]?.title || "";
+      state.daily.memoLabels = normalizeMemoLabels(state.daily.memoLabels);
+      state.daily.scheduleImports = normalizeImportedRows(state.daily.scheduleImports);
+      state.daily.calendarImports = normalizeImportedRows(state.daily.calendarImports);
+      syncImportedReminders();
+      honorSyncStudents();
+      syncTagsFromStudents();
+      applyTheme();
+    }
+
+    function applyTheme() {
+      document.documentElement.dataset.theme = state.settings.theme === "dark" ? "dark" : "light";
+      $("themeSelect").value = state.settings.theme === "dark" ? "dark" : "light";
+    }
+
+    function showToast(text) {
+      const el = $("toast");
+      el.textContent = text;
+      el.classList.add("show");
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => el.classList.remove("show"), 1800);
+    }
+
+    function titleForPanel(name) {
+      return ({
+        dashboard: "總覽",
+        students: "學生名單",
+        seating: "座位表",
+        tasks: "任務分派",
+        templates: "範本庫",
+        events: "事件行事曆",
+        journal: "教學日誌",
+        todos: "待辦清單",
+        honor: "榮譽點數",
+        settings: "設定",
+      })[name] || name;
+    }
+
+    function buildNav(container) {
+      container.innerHTML = "";
+      PANELS.forEach((name) => {
+        const btn = document.createElement("button");
+        btn.dataset.nav = name;
+        btn.className = name === state.activePanel ? "active" : "";
+        btn.textContent = titleForPanel(name);
+        btn.addEventListener("click", () => setPanel(name));
+        container.appendChild(btn);
+      });
+    }
+
+    function setPanel(name) {
+      state.activePanel = name;
+      document.querySelectorAll("[data-panel]").forEach((panel) => {
+        panel.classList.toggle("active", panel.dataset.panel === name);
+      });
+      document.querySelectorAll("[data-nav]").forEach((btn) => {
+        btn.classList.toggle("active", btn.dataset.nav === name);
+      });
+      $("modeBadge").textContent = titleForPanel(name);
+    }
+
+    function refreshStats() {
+      const s = stats();
+      const today = new Date();
+      $("todayBadge").textContent = today.toLocaleDateString("zh-TW", { month:"long", day:"numeric" });
+      const blocks = [
+        ["學生", s.students, "名單數"],
+        ["分頁", s.studentPages, "班級數"],
+        ["任務", s.tasks, "項目數"],
+        ["事件", s.events, "行事曆數"],
+        ["日誌", s.journals, "教學紀錄"],
+        ["待辦", s.todos, "未完成"]
+      ];
+      $("summaryStats").innerHTML = blocks.map(([label, value, hint]) => `
+        <div class="stat">
+          <div class="label">${label}</div>
+          <div class="value">${value}</div>
+          <div class="hint">${hint}</div>
+        </div>
+      `).join("");
+      $("dashboardStats").innerHTML = `
+        <div class="preview-card"><div class="label">學生</div><div class="value">${s.students}</div></div>
+        <div class="preview-card"><div class="label">分頁</div><div class="value">${s.studentPages}</div></div>
+        <div class="preview-card"><div class="label">任務</div><div class="value">${s.tasks}</div></div>
+        <div class="preview-card"><div class="label">事件</div><div class="value">${s.events}</div></div>
+        <div class="preview-card"><div class="label">日誌</div><div class="value">${s.journals}</div></div>
+        <div class="preview-card"><div class="label">待辦</div><div class="value">${s.todos}</div></div>
+      `;
+      $("recentEvents").innerHTML = state.events.length
+        ? state.events.slice(-3).reverse().map(renderEventMini).join("")
+        : `<div class="empty">目前還沒有近期事件。</div>`;
+      $("todoSnapshot").innerHTML = state.todos.length
+        ? state.todos.slice(0,4).map(renderTodoMini).join("")
+        : `<div class="empty">目前還沒有待辦事項。</div>`;
+      $("pageTitle").textContent = state.className ? `${state.className} 的班級工作台` : "班級工作台";
+      $("pageSubtitle").textContent = state.teacherName
+        ? `${state.teacherName} 的班級工作台，名單、任務、事件、待辦與範本集中管理。`
+        : "班級工作台，名單、任務、事件、待辦與範本集中管理。";
+      if ($("seatClassBadge")) $("seatClassBadge").innerHTML = `目前班級：<span>${escapeHtml(state.className || "未設定")}</span>`;
+      if ($("honorClassBadge")) $("honorClassBadge").innerHTML = `目前班級：<span>${escapeHtml(state.className || "未設定")}</span>`;
+    }
+
+    function renderStudentList() {
+      const q = $("studentSearch").value.trim().toLowerCase();
+      const list = state.students.filter((student) => {
+        const hay = [student.number, student.name, (student.tags || []).join(" "), student.note, student.homework, student.score].join(" ").toLowerCase();
+        return !q || hay.includes(q);
+      });
+      $("studentList").innerHTML = list.length ? list.map((student) => `
+        <div class="list-item" draggable="true" data-student-id="${student.id}">
+          <div>
+            <strong>${escapeHtml(studentDisplay(student))}</strong>
+            <small>${escapeHtml(student.tags?.length ? `標籤：${student.tags.join("、")}` : "尚未加標籤")}｜點數：${escapeHtml(honorPoints(student.id))}${student.note ? `｜${escapeHtml(student.note)}` : ""}</small>
+            <div class="student-metrics">
+              <div class="field">
+                <label>繳交作業</label>
+                <input type="text" data-student-homework="${student.id}" value="${escapeHtml(student.homework || "")}" placeholder="例如：已交 / 未交 / 補交" />
+              </div>
+              <div class="field">
+                <label>分數紀錄</label>
+                <input type="text" data-student-score="${student.id}" value="${escapeHtml(student.score || "")}" placeholder="例如：95、A、待補登" />
+              </div>
+            </div>
+          </div>
+          <div class="item-actions">
+            <button class="btn-ghost" data-edit-student="${student.id}">編輯</button>
+            <button class="btn-danger" data-delete-student="${student.id}">刪除</button>
+          </div>
+        </div>
+      `).join("") : `<div class="empty">目前還沒有學生名單，可以貼上文字、匯入 CSV，或直接新增。</div>`;
+      refreshTagChips();
+    }
+
+    function renderStudentPageTabs() {
+      const container = $("studentPageTabs");
+      if (!container) return;
+      if (!state.studentPages.length) {
+        container.innerHTML = `<span class="subtle">目前沒有分頁。</span>`;
+        return;
+      }
+      container.innerHTML = state.studentPages.map((page) => `
+        <button type="button" class="btn-ghost ${page.id === state.activeStudentPageId ? "active" : ""}" data-student-page-id="${page.id}">
+          ${escapeHtml(page.title || "未命名班級")} <small>(${page.students?.length || 0})</small>
+        </button>
+      `).join("");
+    }
+
+    function renderSeatStudentList() {
+      const qEl = $("seatStudentSearch");
+      const q = qEl ? qEl.value.trim().toLowerCase() : "";
+      const list = state.students.filter((student) => {
+        const hay = [student.number, student.name].join(" ").toLowerCase();
+        return !q || hay.includes(q);
+      });
+      $("seatStudentList").innerHTML = list.length ? list.map((student) => `
+        <div class="list-item seat-student-card" draggable="true" data-student-id="${student.id}" title="${escapeHtml(studentDisplay(student))}">
+          <div class="seat-no">${escapeHtml(student.number || "未編號")}</div>
+          <div class="seat-name">${escapeHtml(student.name || "未命名")}</div>
+        </div>
+      `).join("") : `<div class="empty">目前沒有可拖拉的學生名單。</div>`;
+    }
+
+    function refreshTagChips() {
+      const counts = new Map();
+      state.students.forEach((student) => {
+        (student.tags || []).forEach((tag) => counts.set(tag, (counts.get(tag) || 0) + 1));
+      });
+      state.tags = uniqueList([...state.tags, ...counts.keys()]);
+      const tags = state.tags.length ? state.tags : Array.from(counts.entries()).sort((a,b) => b[1] - a[1]).map((item) => item[0]);
+      $("tagChips").innerHTML = tags.length ? tags.map((tag, index) => `<span class="chip draggable-tag" draggable="true" data-tag="${escapeHtml(tag)}" data-index="${index}">${escapeHtml(tag)} <small>(${counts.get(tag) || 0})</small></span>`).join("") : `<span class="subtle">目前沒有可拖拉的標籤。</span>`;
+    }
+
+    function ensureMemoLabels() {
+      state.daily.memoLabels = normalizeMemoLabels(state.daily.memoLabels);
+      return state.daily.memoLabels;
+    }
+
+    function insertIntoTextarea(id, text) {
+      const el = $(id);
+      if (!el) return;
+      const value = String(text || "");
+      const start = typeof el.selectionStart === "number" ? el.selectionStart : el.value.length;
+      const end = typeof el.selectionEnd === "number" ? el.selectionEnd : el.value.length;
+      const before = el.value.slice(0, start);
+      const after = el.value.slice(end);
+      const prefix = before && !/[\s\n]$/.test(before) ? " " : "";
+      const next = `${before}${prefix}${value}${after}`;
+      el.value = next;
+      if (id === "dailyMemo") state.daily.memo = next.trim();
+      el.focus();
+      const pos = (before + prefix + value).length;
+      try {
+        el.setSelectionRange(pos, pos);
+      } catch (err) {
+        void err;
+      }
+      persist();
+      refreshStats();
+    }
+
+    function renderMemoLabels() {
+      const labels = ensureMemoLabels();
+      const container = $("memoLabelList");
+      if (!container) return;
+      container.innerHTML = labels.length ? labels.map((label, index) => `
+        <div class="memo-label-item">
+          <button type="button" class="chip memo-label-chip" data-memo-insert="${escapeHtml(label)}">${escapeHtml(label)}</button>
+          <input type="text" class="memo-label-edit" data-memo-edit-index="${index}" value="${escapeHtml(label)}" />
+          <button type="button" class="btn-ghost" data-memo-remove-index="${index}">刪除</button>
+        </div>
+      `).join("") : `<div class="empty">目前還沒有備註標籤。</div>`;
+    }
+
+    function renderTaskList() {
+      $("taskList").innerHTML = state.tasks.length ? state.tasks.map((task) => `
+        <div class="list-item">
+          <div>
+            <strong>${escapeHtml(task.title)}</strong>
+            <small>${escapeHtml(task.detail || "沒有補充說明")} ${task.assignee ? `｜負責人：${escapeHtml(task.assignee)}` : ""}</small>
+          </div>
+          <div class="item-actions">
+            <button class="btn-ghost" data-assign-task="${task.id}">指派</button>
+            <button class="btn-ghost" data-edit-task="${task.id}">編輯</button>
+            <button class="btn-danger" data-delete-task="${task.id}">刪除</button>
+          </div>
+        </div>
+      `).join("") : `<div class="empty">目前還沒有任務，請先輸入任務內容。</div>`;
+    }
+
+    function renderEventList() {
+      $("eventList").innerHTML = state.events.length ? state.events.slice().reverse().map((event) => `
+        <div class="list-item">
+          <div>
+            <strong>${escapeHtml(event.title)}</strong>
+            <small>${escapeHtml([event.date || "未設定日期", event.type || "事件", event.note || ""].filter(Boolean).join(" ｜ "))}</small>
+          </div>
+          <div class="item-actions">
+            <button class="btn-danger" data-delete-event="${event.id}">刪除</button>
+          </div>
+        </div>
+      `).join("") : `<div class="empty">目前還沒有事件。</div>`;
+    }
+
+    function renderJournalList() {
+      const q = $("journalSearch").value.trim().toLowerCase();
+      const items = state.journals.filter((entry) => {
+        const hay = [
+          entry.date,
+          entry.classPeriod,
+          entry.subject,
+          entry.title,
+          entry.content,
+          entry.reflection,
+          entry.followUp,
+          (entry.tags || []).join(" ")
+        ].join(" ").toLowerCase();
+        return !q || hay.includes(q);
+      });
+      $("journalList").innerHTML = items.length ? items.map((entry) => `
+        <div class="list-item">
+          <div>
+            <strong>${escapeHtml([entry.date || "未設定日期", entry.title || entry.subject || "未命名日誌"].filter(Boolean).join(" ｜ "))}</strong>
+            <small>${escapeHtml([entry.classPeriod ? `節次：${entry.classPeriod}` : "", entry.subject ? `主題：${entry.subject}` : "", entry.tags?.length ? `標籤：${entry.tags.join("、")}` : ""].filter(Boolean).join(" ｜ "))}</small>
+            ${entry.content ? `<div class="meta" style="margin-top:6px">${escapeHtml(summarizeText(entry.content, 120))}</div>` : ""}
+            ${entry.reflection ? `<div class="meta" style="margin-top:4px">反思：${escapeHtml(summarizeText(entry.reflection, 90))}</div>` : ""}
+            ${entry.followUp ? `<div class="meta" style="margin-top:4px">追蹤：${escapeHtml(summarizeText(entry.followUp, 90))}</div>` : ""}
+            ${entry.tags?.length ? `<div class="chips" style="margin-top:10px">${entry.tags.map((tag) => `<span class="chip">${escapeHtml(tag)}</span>`).join("")}</div>` : ""}
+          </div>
+          <div class="item-actions">
+            <button class="btn-ghost" data-edit-journal="${entry.id}">編輯</button>
+            <button class="btn-danger" data-delete-journal="${entry.id}">刪除</button>
+          </div>
+        </div>
+      `).join("") : `<div class="empty">目前還沒有教學日誌。你可以先記錄今天的課堂內容、反思與後續追蹤。</div>`;
+    }
+
+    function renderTodoList() {
+      $("todoList").innerHTML = state.todos.length ? state.todos.slice().reverse().map((todo) => `
+        <div class="list-item">
+          <div>
+            <strong>${todo.done ? "完成" : "待辦"}｜${escapeHtml(todo.text)}</strong>
+            <small>${escapeHtml(todo.due || "未設定日期")}｜優先度：${escapeHtml(todo.priority || "普通")}</small>
+          </div>
+          <div class="item-actions">
+            <button class="btn-ghost" data-toggle-todo="${todo.id}">${todo.done ? "標記未完成" : "完成"}</button>
+            <button class="btn-danger" data-delete-todo="${todo.id}">刪除</button>
+          </div>
+        </div>
+      `).join("") : `<div class="empty">目前還沒有待辦事項。</div>`;
+    }
+
+    function renderEventMini(event) {
+      return `
+        <div class="list-item" style="margin-bottom:10px">
+          <div>
+            <strong>${escapeHtml(event.title)}</strong>
+            <small>${escapeHtml([event.date || "未設定日期", event.type || "事件"].join(" ｜ "))}</small>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderTodoMini(todo) {
+      return `
+        <div class="list-item" style="margin-bottom:10px">
+          <div>
+            <strong>${todo.done ? "完成" : "待辦"}｜${escapeHtml(todo.text)}</strong>
+            <small>${escapeHtml(todo.due || "未設定日期")}｜優先度：${escapeHtml(todo.priority || "普通")}</small>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderTemplateList() {
+      $("templateList").innerHTML = state.templates.length ? state.templates.map((template) => `
+        <div class="template-card" data-template-id="${template.id}">
+          <header>
+            <div>
+              <strong>${escapeHtml(template.title)}</strong>
+              <div class="subtle">${escapeHtml(template.category || "未分類")}</div>
+            </div>
+            <div class="template-actions">
+              <button class="btn-ghost" data-load-template="${template.id}">套用</button>
+              <button class="btn-ghost" data-edit-template="${template.id}">編輯</button>
+              <button class="btn-danger" data-delete-template="${template.id}">刪除</button>
+            </div>
+          </header>
+          <textarea data-template-body="${template.id}">${escapeHtml(template.body || "")}</textarea>
+        </div>
+      `).join("") : `<div class="empty">目前還沒有範本。</div>`;
+    }
+
+    function seatMode() {
+      return state.seating.mode === "freeform" ? "freeform" : "grid";
+    }
+
+    function syncSeatModeUI() {
+      const mode = seatMode();
+      const isFreeform = mode === "freeform";
+      const gridTools = $("seatGridModeTools");
+      const freeformTools = $("seatFreeformTools");
+      const gridBoard = $("seatGrid");
+      const freeformBoard = $("seatFreeformBoard");
+      const badge = $("seatModeBadge");
+      const hint = $("seatModeHint");
+      const modeSelect = $("seatLayoutMode");
+      if (modeSelect) modeSelect.value = mode;
+      if (gridTools) gridTools.style.display = isFreeform ? "none" : "grid";
+      if (freeformTools) freeformTools.style.display = isFreeform ? "grid" : "none";
+      if (gridBoard) gridBoard.style.display = isFreeform ? "none" : "grid";
+      if (freeformBoard) freeformBoard.style.display = isFreeform ? "block" : "none";
+      if (badge) badge.textContent = isFreeform ? "任意拖拉" : "固定格狀";
+      if (hint) hint.textContent = isFreeform
+        ? "先排出座位框，再把學生拖進去。"
+        : "拖拉學生到座位，隨時調整安排。";
+    }
+
+    function renderSeatGrid() {
+      const rows = Math.max(1, Number($("seatRows").value || state.seating.rows || 4));
+      const cols = Math.max(1, Number($("seatCols").value || state.seating.cols || 5));
+      state.seating = normalizeSeating({ ...state.seating, mode: "grid", rows, cols, cells: state.seating.cells });
+      const cells = state.seating.cells;
+      const grid = [];
+      for (let r = 0; r < rows; r++) {
+        const rowCells = [];
+        for (let c = 0; c < cols; c++) {
+          const index = r * cols + c;
+          const studentId = cells[index] || "";
+          const student = state.students.find((item) => item.id === studentId);
+          rowCells.push(`
+            <div class="seat-cell" data-seat-index="${index}">
+              <div class="seat-label">第 ${r + 1} 排 - ${c + 1} 號</div>
+              <div class="seat-name">${student ? escapeHtml(studentDisplay(student)) : "可拖拉學生到此"}</div>
+            </div>
+          `);
+        }
+        grid.push(`<div class="seat-row" style="grid-template-columns:repeat(${cols},minmax(0,1fr))">${rowCells.join("")}</div>`);
+      }
+      $("seatGrid").innerHTML = grid.join("");
+      persist();
+    }
+
+    function renderSeatFreeformBoard() {
+      state.seating = normalizeSeating({ ...state.seating, mode: "freeform", slots: state.seating.slots, cells: state.seating.cells });
+      const slots = state.seating.slots || [];
+      const board = $("seatFreeformBoard");
+      const children = [];
+      if (!slots.length) {
+        children.push(`
+          <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:24px;text-align:center;color:var(--muted);font-weight:700">
+            目前還沒有座位框，先按「新增座位框」或套用分組 / U 型示意。
+          </div>
+        `);
+      }
+      children.push(`<div class="seat-freeform-guide"></div>`);
+      children.push(...slots.map((slot, index) => {
+        const slotStudents = (slot.studentIds || [])
+          .map((studentId) => state.students.find((item) => item.id === studentId))
+          .filter(Boolean);
+        const title = slot.label || `座位 ${index + 1}`;
+        const studentSummary = slotStudents.length
+          ? slotStudents.map((student) => escapeHtml(studentDisplay(student))).join("、")
+          : "拖入學生名單";
+        return `
+          <div class="seat-slot ${slotStudents.length ? "" : "empty"}" draggable="true" data-seat-slot-index="${index}" style="left:${slot.x}%; top:${slot.y}%; transform:translate(-50%,-50%);">
+            <div class="seat-slot-handle">
+              <span>${escapeHtml(title)}</span>
+              <span>${slotStudents.length ? `已放入 ${slotStudents.length} 人` : "等待拖拉"}</span>
+            </div>
+            <div class="seat-slot-name">${studentSummary}</div>
+            <div class="seat-slot-actions">
+              <button type="button" class="btn-ghost" data-seat-slot-clear="${index}">清空</button>
+              <button type="button" class="btn-danger" data-seat-slot-delete="${index}">刪除</button>
+            </div>
+          </div>
+        `;
+      }));
+      board.innerHTML = children.join("");
+      persist();
+    }
+
+    function renderSeatLayout() {
+      state.seating = normalizeSeating(state.seating);
+      syncSeatModeUI();
+      if (seatMode() === "freeform") {
+        renderSeatFreeformBoard();
+      } else {
+        renderSeatGrid();
+      }
+    }
+
+    function setSeatLayoutMode(mode) {
+      state.seating.mode = mode === "freeform" ? "freeform" : "grid";
+      persist();
+      renderSeatLayout();
+    }
+
+    function seatSlotStudentText(slot) {
+      const slotStudents = (slot.studentIds || [])
+        .map((studentId) => state.students.find((item) => item.id === studentId))
+        .filter(Boolean);
+      return slotStudents.map((student) => studentDisplay(student)).join("、");
+    }
+
+    function addStudentToSeatSlot(studentId, slotIndex) {
+      const student = state.students.find((item) => item.id === studentId);
+      const targetSlot = state.seating.slots?.[slotIndex];
+      if (!student || !targetSlot) return;
+      state.seating.slots = (state.seating.slots || []).map((slot, index) => {
+        const current = uniqueList(Array.isArray(slot.studentIds) ? slot.studentIds : slot.studentId ? [slot.studentId] : []);
+        if (index === slotIndex) {
+          return { ...slot, studentIds: uniqueList([...current, studentId]) };
+        }
+        return { ...slot, studentIds: current.filter((id) => id !== studentId) };
+      });
+      persist();
+      renderSeatFreeformBoard();
+    }
+
+    function seatSlotPositionForIndex(index) {
+      const pattern = [
+        [14, 24], [38, 24], [62, 24], [86, 24],
+        [14, 58], [38, 58], [62, 58], [86, 58],
+        [14, 82], [38, 82], [62, 82], [86, 82]
+      ];
+      const point = pattern[index % pattern.length];
+      const offset = Math.floor(index / pattern.length) * 7;
+      return {
+        x: Math.min(96, point[0] + offset),
+        y: Math.min(96, point[1] + Math.floor(index / pattern.length) * 6)
+      };
+    }
+
+    function addSeatSlot(slot = null) {
+      const nextIndex = (state.seating.slots || []).length;
+      const pos = slot || seatSlotPositionForIndex(nextIndex);
+      state.seating.slots = normalizeSeatSlots([...(state.seating.slots || []), {
+        id: uid("slot"),
+        label: `座位 ${nextIndex + 1}`,
+        x: pos.x,
+        y: pos.y,
+        studentIds: []
+      }]);
+      state.seating.mode = "freeform";
+      persist();
+      renderSeatLayout();
+      setPanel("seating");
+    }
+
+    function deleteSeatSlot(index) {
+      state.seating.slots = (state.seating.slots || []).filter((_, i) => i !== index);
+      persist();
+      renderSeatLayout();
+    }
+
+    function clearSeatSlotStudent(index) {
+      const slot = state.seating.slots?.[index];
+      if (!slot) return;
+      slot.studentIds = [];
+      persist();
+      renderSeatFreeformBoard();
+    }
+
+    function clearSeatPlacements() {
+      if (seatMode() === "freeform") {
+        (state.seating.slots || []).forEach((slot) => { slot.studentIds = []; });
+      } else {
+        state.seating.cells = state.seating.cells.map(() => "");
+      }
+      persist();
+      renderSeatLayout();
+    }
+
+    function applyGroupSeatPreset() {
+      state.seating.mode = "freeform";
+      state.seating.slots = normalizeSeatSlots([
+        { id: uid("slot"), label: "組 1", x: 18, y: 24, studentIds: [] },
+        { id: uid("slot"), label: "組 2", x: 42, y: 24, studentIds: [] },
+        { id: uid("slot"), label: "組 3", x: 66, y: 24, studentIds: [] },
+        { id: uid("slot"), label: "組 4", x: 82, y: 52, studentIds: [] },
+        { id: uid("slot"), label: "組 5", x: 58, y: 72, studentIds: [] },
+        { id: uid("slot"), label: "組 6", x: 34, y: 72, studentIds: [] }
+      ]);
+      persist();
+      renderSeatLayout();
+      setPanel("seating");
+      showToast("已套用分組示意");
+    }
+
+    function applyUSeatPreset() {
+      state.seating.mode = "freeform";
+      state.seating.slots = normalizeSeatSlots([
+        { id: uid("slot"), label: "左上", x: 16, y: 22, studentIds: [] },
+        { id: uid("slot"), label: "中上", x: 34, y: 22, studentIds: [] },
+        { id: uid("slot"), label: "右上", x: 52, y: 22, studentIds: [] },
+        { id: uid("slot"), label: "右中", x: 72, y: 42, studentIds: [] },
+        { id: uid("slot"), label: "右下", x: 72, y: 72, studentIds: [] },
+        { id: uid("slot"), label: "中下", x: 52, y: 88, studentIds: [] },
+        { id: uid("slot"), label: "左下", x: 34, y: 72, studentIds: [] },
+        { id: uid("slot"), label: "左中", x: 16, y: 42, studentIds: [] }
+      ]);
+      persist();
+      renderSeatLayout();
+      setPanel("seating");
+      showToast("已套用 U 型示意");
+    }
+
+    function moveSeatSlot(slotIndex, clientX, clientY) {
+      const board = $("seatFreeformBoard");
+      const slot = state.seating.slots?.[slotIndex];
+      if (!(board instanceof HTMLElement) || !slot) return;
+      const rect = board.getBoundingClientRect();
+      if (!rect.width || !rect.height) return;
+      const x = Math.min(96, Math.max(4, ((clientX - rect.left) / rect.width) * 100));
+      const y = Math.min(96, Math.max(4, ((clientY - rect.top) / rect.height) * 100));
+      slot.x = x;
+      slot.y = y;
+      persist();
+      renderSeatFreeformBoard();
+    }
+
+    function refreshBackupPreview() {
+      $("backupText").value = JSON.stringify({
+        className: state.className,
+        teacherName: state.teacherName,
+        studentPages: state.studentPages,
+        activeStudentPageId: state.activeStudentPageId,
+        students: state.students,
+        templates: state.templates,
+        tasks: state.tasks,
+        events: state.events,
+        todos: state.todos,
+        tags: state.tags,
+        seating: state.seating,
+        daily: state.daily,
+        settings: state.settings,
+        reminders: state.reminders
+      }, null, 2);
+    }
+
+    function renderHonorPanel() {
+      const stats = honorTotals();
+      $("honorStats").innerHTML = [
+        ["總點數", stats.total, "全部學生點數總和"],
+        ["有點數學生", stats.active, "點數不為 0 的人數"],
+        ["紀錄筆數", stats.logs, "加減分與兌獎紀錄"],
+        ["正分人數", stats.positive, "點數大於 0"],
+        ["負分人數", stats.negative, "點數小於 0"],
+        ["獎項數量", stats.rewards, "目前可兌換獎品"]
+      ].map(([label, value, hint]) => `
+        <div class="honor-stat">
+          <div class="label">${escapeHtml(label)}</div>
+          <div class="value">${escapeHtml(value)}</div>
+          <div class="hint">${escapeHtml(hint)}</div>
+        </div>
+      `).join("");
+
+      const q = $("honorSearch").value.trim().toLowerCase();
+      const students = state.students.filter((student) => {
+        const hay = [student.number, student.name, (student.tags || []).join(" "), student.note, String(honorPoints(student.id))].join(" ").toLowerCase();
+        return !q || hay.includes(q);
+      });
+      $("honorStudentList").innerHTML = students.length ? students.map((student) => {
+        const points = honorPoints(student.id);
+        const badgeColor = points > 0 ? "style=\"color:#166b46\"" : points < 0 ? "style=\"color:#b24159\"" : "";
+        return `
+          <div class="list-item">
+            <div>
+              <strong>${escapeHtml(studentDisplay(student))}</strong>
+              <div class="meta">點數：<span ${badgeColor}>${escapeHtml(points)}</span>${student.note ? `｜${escapeHtml(student.note)}` : ""}</div>
+            </div>
+            <div class="item-actions">
+              <button class="btn-ghost" data-honor-plus="1" data-honor-student="${student.id}">+1</button>
+              <button class="btn-ghost" data-honor-plus="5" data-honor-student="${student.id}">+5</button>
+              <button class="btn-ghost" data-honor-plus="-1" data-honor-student="${student.id}">-1</button>
+              <button class="btn-ghost" data-honor-plus="-5" data-honor-student="${student.id}">-5</button>
+            </div>
+          </div>
+        `;
+      }).join("") : `<div class="empty">目前還沒有學生點數資料。</div>`;
+
+      $("honorRewardList").innerHTML = state.honor.rewards.length ? state.honor.rewards.map((reward) => {
+        const stockText = reward.stock == null ? "不限庫存" : `庫存 ${reward.stock}`;
+        return `
+          <div class="list-item">
+            <div>
+              <strong>${escapeHtml(reward.name)}</strong>
+              <div class="meta">所需點數 ${escapeHtml(reward.cost)}｜${escapeHtml(stockText)}</div>
+            </div>
+            <div class="item-actions">
+              <button class="btn-primary" data-redeem-reward="${reward.id}">兌獎</button>
+              <button class="btn-danger" data-delete-reward="${reward.id}">刪除</button>
+            </div>
+          </div>
+        `;
+      }).join("") : `<div class="empty">目前還沒有獎品。</div>`;
+
+      $("honorLogList").innerHTML = state.honor.logs.length ? state.honor.logs.slice(0, 20).map((log) => `
+        <div class="list-item">
+          <div>
+            <strong>${escapeHtml(log.date || honorToday())}｜${escapeHtml(log.studentName || "未知學生")}｜${escapeHtml(log.type || "加分")} ${escapeHtml(log.points >= 0 ? `+${log.points}` : String(log.points))}</strong>
+            <div class="meta">${escapeHtml(log.reason || log.rewardName || "無")}</div>
+          </div>
+        </div>
+      `).join("") : `<div class="empty">目前還沒有榮譽點數紀錄。</div>`;
+
+      const select = $("honorStudentSelect");
+      if (select) {
+        const current = select.value;
+        select.innerHTML = state.students.length ? state.students.map((student) => `
+          <option value="${student.id}">${escapeHtml(studentDisplay(student))}｜${escapeHtml(honorPoints(student.id))} 點</option>
+        `).join("") : `<option value="">沒有學生</option>`;
+        if (state.students.some((student) => student.id === current)) select.value = current;
+        else if (state.students[0]) select.value = state.students[0].id;
+      }
+    }
+
+    function renderImportPanel() {
+      const scheduleItems = state.daily.scheduleImports || [];
+      const calendarItems = state.daily.calendarImports || [];
+      const metrics = $("importMetrics");
+      if (metrics) {
+        metrics.innerHTML = [
+          ["課表筆數", scheduleItems.length, "今日課表匯入"],
+          ["行事曆筆數", calendarItems.length, "已匯入行程"],
+          ["提醒筆數", state.reminders.items.length, "考試 / 調代課 / 變動"]
+        ].map(([label, value, hint]) => `
+          <div class="import-metric">
+            <div class="label">${escapeHtml(label)}</div>
+            <div class="value">${escapeHtml(value)}</div>
+            <div class="hint">${escapeHtml(hint)}</div>
+          </div>
+        `).join("");
+      }
+      $("scheduleImportList").innerHTML = scheduleItems.length ? scheduleItems.map((item) => `
+        <div class="list-item">
+          <div>
+            <strong>${escapeHtml([item.date, item.time, item.title].filter(Boolean).join(" ｜ "))}</strong>
+            <div class="meta">${escapeHtml([item.room ? `教室：${item.room}` : "", item.teacher ? `教師：${item.teacher}` : "", item.note || ""].filter(Boolean).join(" ｜ "))}</div>
+          </div>
+        </div>
+      `).join("") : `<div class="empty">目前沒有匯入課表。</div>`;
+      $("calendarImportList").innerHTML = calendarItems.length ? calendarItems.map((item) => `
+        <div class="list-item">
+          <div>
+            <strong>${escapeHtml([item.date, item.time, item.title].filter(Boolean).join(" ｜ "))}</strong>
+            <div class="meta">${escapeHtml([item.room ? `地點：${item.room}` : "", item.teacher ? `教師：${item.teacher}` : "", item.note || ""].filter(Boolean).join(" ｜ "))}</div>
+          </div>
+        </div>
+      `).join("") : `<div class="empty">目前沒有匯入行事曆。</div>`;
+    }
+
+    function renderReminderPanel() {
+      $("reminderExamLeadDays").value = String(state.reminders.examLeadDays || 0);
+      $("reminderSubLeadDays").value = String(state.reminders.substituteLeadDays || 0);
+      $("reminderChangeLeadDays").value = String(state.reminders.changeLeadDays || 0);
+      const list = state.reminders.items.length ? state.reminders.items.slice().sort((a, b) => String(a.date || "").localeCompare(String(b.date || ""))).map((item) => {
+        const stateName = reminderDueState(item);
+        return `
+          <div class="list-item reminder-item" data-state="${stateName}">
+            <div>
+              <strong>${escapeHtml(item.title)}</strong>
+              <div class="meta">
+                <span class="type-badge">${escapeHtml(reminderTypeLabel(item.type))}</span>
+                <span>日期：${escapeHtml(item.date || "未設定")}</span>
+                <span>｜${escapeHtml(reminderLeadText(item))}</span>
+                ${item.note ? `<div style="margin-top:4px">${escapeHtml(item.note)}</div>` : ""}
+                ${item.source === "auto" ? `<div style="margin-top:4px">來源：匯入自動提醒</div>` : ""}
+              </div>
+            </div>
+            <div class="item-actions">
+              <button class="btn-ghost" data-toggle-reminder="${item.id}">${item.done ? "取消完成" : "完成"}</button>
+              <button class="btn-danger" data-remove-reminder="${item.id}">刪除</button>
+            </div>
+          </div>
+        `;
+      }).join("") : `<div class="empty">目前還沒有提醒規則。你可以先新增考試、調代課或行程變動提醒。</div>`;
+      $("reminderList").innerHTML = list;
+    }
+
+    function addReminder(item = null) {
+      const source = item || {
+        type: $("reminderType").value,
+        title: $("reminderTitle").value.trim(),
+        date: $("reminderDate").value,
+        leadDays: $("reminderLeadDays").value,
+        note: $("reminderNote").value.trim(),
+        source: "manual",
+        done: false
+      };
+      if (!source.title) return showToast("請先輸入提醒標題");
+      if (!source.date) return showToast("請先選擇提醒日期");
+      const type = ["exam", "substitute", "change"].includes(source.type) ? source.type : "change";
+      state.reminders.items.unshift({
+        id: uid("rem"),
+        type,
+        title: String(source.title).trim(),
+        date: String(source.date),
+        leadDays: Math.max(0, Number(source.leadDays ?? reminderLeadDaysForType(type)) || 0),
+        note: String(source.note || "").trim(),
+        source: String(source.source || "manual"),
+        done: Boolean(source.done)
+      });
+      state.reminders.items = normalizeReminders(state.reminders).items;
+      persist();
+      render();
+      showToast("提醒已新增");
+    }
+
+    function toggleReminderDone(reminderId) {
+      const item = state.reminders.items.find((entry) => entry.id === reminderId);
+      if (!item) return;
+      item.done = !item.done;
+      persist();
+      render();
+    }
+
+    function deleteReminder(reminderId) {
+      state.reminders.items = state.reminders.items.filter((item) => item.id !== reminderId);
+      persist();
+      render();
+    }
+
+    function applyReminderPreset(type) {
+      $("reminderType").value = type;
+      $("reminderLeadDays").value = String(reminderLeadDaysForType(type));
+      $("reminderTitle").focus();
+    }
+
+    function addHonorRecord(deltaOverride = null) {
+      const studentId = honorSelectedStudentId();
+      const student = state.students.find((item) => item.id === studentId);
+      if (!student) return showToast("請先選擇學生");
+      const raw = deltaOverride == null ? $("honorPoints").value.trim() : String(deltaOverride);
+      const points = Number(raw);
+      if (!Number.isFinite(points) || points === 0) return showToast("請輸入不等於 0 的點數");
+      const date = $("honorDate").value || honorToday();
+      const reason = $("honorReason").value.trim() || (points > 0 ? "加分紀錄" : "減分紀錄");
+      const next = honorPoints(studentId) + points;
+      setHonorPoints(studentId, next);
+      honorAddLog({
+        id: uid("hon"),
+        date,
+        studentId,
+        studentName: student.name,
+        type: points > 0 ? "加分" : "減分",
+        points,
+        reason
+      });
+      persist();
+      render();
+      showToast(`已為 ${student.name} 記錄 ${points > 0 ? "+" : ""}${points} 點`);
+    }
+
+    function saveHonorReward() {
+      const name = $("honorRewardName").value.trim();
+      const cost = Math.max(0, Number($("honorRewardCost").value || 0));
+      const stockRaw = $("honorRewardStock").value.trim();
+      const stock = stockRaw === "" ? null : Math.max(0, Number(stockRaw) || 0);
+      if (!name) return showToast("請先輸入獎品名稱");
+      const existing = state.honor.rewards.find((reward) => reward.name === name);
+      if (existing) {
+        existing.cost = cost;
+        existing.stock = stock;
+      } else {
+        state.honor.rewards.unshift({ id: uid("rew"), name, cost, stock });
+      }
+      persist();
+      render();
+      showToast("獎品已儲存");
+    }
+
+    function resetHonorRewards() {
+      if (!confirm("確定要重設範例獎品嗎？")) return;
+      state.honor.rewards = honorSeedRewards();
+      persist();
+      render();
+      showToast("已重設範例獎品");
+    }
+
+    function deleteHonorReward(rewardId) {
+      state.honor.rewards = state.honor.rewards.filter((reward) => reward.id !== rewardId);
+      persist();
+      render();
+      showToast("獎品已刪除");
+    }
+
+    function redeemHonorReward(rewardId) {
+      const student = honorSelectedStudent();
+      const reward = honorRewardById(rewardId);
+      if (!student || !reward) return showToast("請先選擇學生與獎品");
+      if (reward.stock !== null && reward.stock <= 0) return showToast("獎品庫存已售完");
+      const cost = Number(reward.cost) || 0;
+      const current = honorPoints(student.id);
+      if (current < cost) return showToast("學生點數不足");
+      setHonorPoints(student.id, current - cost);
+      if (reward.stock !== null) reward.stock -= 1;
+      honorAddLog({
+        id: uid("hon"),
+        date: honorToday(),
+        studentId: student.id,
+        studentName: student.name,
+        type: "兌獎",
+        points: -cost,
+        reason: `兌換 ${reward.name}`,
+        rewardName: reward.name
+      });
+      persist();
+      render();
+      showToast(`已為 ${student.name} 兌換 ${reward.name}`);
+    }
+    function render() {
+      ensureStudentPage();
+      $("studentPageName").value = state.className;
+      $("className").value = state.className;
+      $("teacherName").value = state.teacherName;
+      $("themeSelect").value = state.settings.theme;
+      $("welcomeText").value = state.daily.note || "";
+      $("dailyFocus").value = state.daily.focus || "";
+      $("dailyMemo").value = state.daily.memo || "";
+      $("teaMenu").value = state.daily.teaMenu || "";
+      $("dailySchedule").value = state.daily.schedule || "";
+      $("studentQuickNote").value = state.daily.note || "";
+      $("taskExtra").value = state.daily.note || "";
+      $("todoNote").value = state.daily.note || "";
+      $("seatRows").value = String(state.seating.rows || 4);
+      $("seatCols").value = String(state.seating.cols || 5);
+      $("seatLayoutMode").value = seatMode();
+      $("seatNote").value = state.seating.note || "";
+      if (document.activeElement !== $("studentPaste")) {
+        $("studentPaste").value = state.students.map((student) => `${student.number || ""}, ${student.name}`).join("\n");
+      }
+      if (document.activeElement !== $("taskInput")) {
+        $("taskInput").value = state.tasks.map((task) => task.detail ? `${task.title} | ${task.detail}` : task.title).join("\n");
+      }
+      if (document.activeElement !== $("eventDate") && !$("eventDate").value) $("eventDate").value = new Date().toISOString().slice(0, 10);
+      if (document.activeElement !== $("todoDue") && !$("todoDue").value) $("todoDue").value = new Date().toISOString().slice(0, 10);
+      if (document.activeElement !== $("honorDate") && !$("honorDate").value) $("honorDate").value = honorToday();
+      if (document.activeElement !== $("templateBody")) $("templateBody").value = state.templates[0]?.body || "請輸入範本內容";
+      if (document.activeElement !== $("templateTitle")) $("templateTitle").value = state.templates[0]?.title || "聯絡簿模板";
+      if (document.activeElement !== $("templateCategory")) $("templateCategory").value = state.templates[0]?.category || "班務";
+      if (document.activeElement !== $("honorPoints")) $("honorPoints").value = "1";
+      ensureMemoLabels();
+      renderStudentList();
+      renderStudentPageTabs();
+      renderMemoLabels();
+      renderSeatStudentList();
+      renderSeatLayout();
+      renderTaskList();
+      renderTemplateList();
+      renderEventList();
+      renderJournalList();
+      renderTodoList();
+      honorSyncStudents();
+      renderHonorPanel();
+      renderImportPanel();
+      renderReminderPanel();
+      renderSeatLayout();
+      refreshStats();
+      refreshBackupPreview();
+      checkReminderAlerts();
+    }
+
+    function saveSettings() {
+      renameCurrentStudentPage($("className").value.trim());
+      state.teacherName = $("teacherName").value.trim();
+      state.settings.theme = $("themeSelect").value === "dark" ? "dark" : "light";
+      state.daily.note = $("welcomeText").value.trim();
+      state.daily.focus = $("dailyFocus").value.trim();
+      state.daily.memo = $("dailyMemo").value.trim();
+      state.daily.teaMenu = $("teaMenu").value.trim();
+      state.daily.schedule = $("dailySchedule").value.trim();
+      applyTheme();
+      persist();
+      refreshStats();
+      showToast("已完成");
+    }
+
+    function saveCurrentTemplate() {
+      const title = $("templateTitle").value.trim();
+      const body = $("templateBody").value.trim();
+      const category = $("templateCategory").value.trim();
+      if (!title) return showToast("請先輸入範本名稱");
+      const existing = state.templates.find((item) => item.title === title);
+      if (existing) {
+        existing.body = body;
+        existing.category = category;
+      } else {
+        state.templates.unshift({ id: uid("tpl"), title, body, category });
+      }
+      persist();
+      render();
+      showToast("已完成");
+    }
+
+    function exportTemplatesJson() {
+      const payload = {
+        version: 1,
+        exportedAt: new Date().toISOString(),
+        templates: state.templates
+      };
+      exportBlob(`範本匯出_${safeSlug(state.className)}.json`, new Blob([JSON.stringify(payload, null, 2)], { type: "application/json;charset=utf-8" }));
+      showToast("範本已匯出");
+    }
+
+    function importTemplates(file) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const data = JSON.parse(String(reader.result || "{}"));
+          const incoming = Array.isArray(data) ? data : Array.isArray(data.templates) ? data.templates : [];
+          const next = incoming.map(normalizeTemplate).filter((item) => item.title || item.body || item.category);
+          state.templates = next;
+          persist();
+          render();
+          setPanel("templates");
+          showToast("範本已匯入");
+        } catch (err) {
+          console.error(err);
+          showToast("範本匯入失敗");
+        }
+      };
+      reader.readAsText(file, "utf-8");
+    }
+
+    function resetTemplates() {
+      if (!confirm("確定要重設範本嗎？")) return;
+      state.templates = defaultTemplates();
+      persist();
+      render();
+      showToast("已完成");
+    }
+
+    function loadTemplateToEditor(templateId) {
+      const template = state.templates.find((item) => item.id === templateId);
+      if (!template) return;
+      $("templateTitle").value = template.title || "";
+      $("templateBody").value = template.body || "";
+      $("templateCategory").value = template.category || "";
+      setPanel("templates");
+    }
+
+    function deleteTemplate(templateId) {
+      state.templates = state.templates.filter((item) => item.id !== templateId);
+      persist();
+      render();
+      showToast("已完成");
+    }
+
+    function applyTemplateBodyToDaily(templateId) {
+      const template = state.templates.find((item) => item.id === templateId);
+      if (!template) return;
+      $("dailyMemo").value = template.body || "";
+      state.daily.memo = template.body || "";
+      persist();
+      render();
+      setPanel("dashboard");
+      showToast(`已套用範本：${template.title}`);
+    }
+
+    function rebuildSeatGrid() {
+      const rows = Math.max(1, Number($("seatRows").value || 4));
+      const cols = Math.max(1, Number($("seatCols").value || 5));
+      state.seating = defaultSeating(rows, cols);
+      persist();
+      renderSeatLayout();
+      showToast("已重設範例資料");
+    }
+
+    function clearSeats() {
+      state.seating = normalizeSeating({
+        ...state.seating,
+        rows: Math.max(1, Number($("seatRows").value || 4)),
+        cols: Math.max(1, Number($("seatCols").value || 5))
+      });
+      if (seatMode() === "freeform") {
+        state.seating.slots = (state.seating.slots || []).map((slot) => ({ ...slot, studentId: "" }));
+      } else {
+        state.seating.cells = state.seating.cells.map(() => "");
+      }
+      persist();
+      renderSeatLayout();
+      showToast("已完成");
+    }
+
+    function openModal(mode, data = null) {
+      modalMode = mode;
+      editContext = data;
+      const backdrop = $("modalBackdrop");
+      const title = $("modalTitle");
+      const subtitle = $("modalSubtitle");
+      const body = $("modalBody");
+      backdrop.classList.add("open");
+      backdrop.setAttribute("aria-hidden", "false");
+
+      if (mode === "student") {
+        title.textContent = data ? "編輯學生" : "新增學生";
+        subtitle.textContent = "可輸入座號、姓名、標籤與備註。";
+        body.innerHTML = `
+          <div class="grid-2">
+            <div class="field"><label>座號</label><input id="modalStudentNumber" type="text" value="${escapeHtml(data?.number || "")}" /></div>
+            <div class="field"><label>姓名</label><input id="modalStudentName" type="text" value="${escapeHtml(data?.name || "")}" /></div>
+          </div>
+          <div class="field"><label>標籤</label><input id="modalStudentTags" type="text" value="${escapeHtml((data?.tags || []).join(", "))}" placeholder="可用逗號分隔多個標籤" /></div>
+          <div class="field"><label>備註</label><textarea id="modalStudentNote">${escapeHtml(data?.note || "")}</textarea></div>
+          <div class="grid-2">
+            <div class="field"><label>繳交作業</label><input id="modalStudentHomework" type="text" value="${escapeHtml(data?.homework || "")}" placeholder="例如：已交 / 未交 / 補交" /></div>
+            <div class="field"><label>分數紀錄</label><input id="modalStudentScore" type="text" value="${escapeHtml(data?.score || "")}" placeholder="例如：95、A、待補登" /></div>
+          </div>
+        `;
+      } else if (mode === "task") {
+        title.textContent = data ? "編輯任務" : "新增任務";
+        subtitle.textContent = "可建立班級任務與指定負責人。";
+        body.innerHTML = `
+          <div class="field"><label>標題</label><input id="modalTaskTitle" type="text" value="${escapeHtml(data?.title || "")}" /></div>
+          <div class="field"><label>內容</label><textarea id="modalTaskDetail">${escapeHtml(data?.detail || "")}</textarea></div>
+          <div class="field"><label>負責人</label><input id="modalTaskAssignee" type="text" value="${escapeHtml(data?.assignee || "")}" placeholder="可指定學生姓名" /></div>
+        `;
+      } else {
+        title.textContent = "快速新增";
+        subtitle.textContent = "先選擇要新增的項目。";
+        body.innerHTML = `
+          <div class="field">
+            <label>類型</label>
+            <select id="modalQuickType">
+              <option value="student">學生</option>
+              <option value="event">事件</option>
+              <option value="todo">待辦</option>
+              <option value="journal">教學日誌</option>
+            </select>
+          </div>
+        `;
+      }
+    }
+
+    function closeModal() {
+      modalMode = null;
+      editContext = null;
+      $("modalBackdrop").classList.remove("open");
+      $("modalBackdrop").setAttribute("aria-hidden", "true");
+    }
+
+    function saveModal() {
+      if (modalMode === "student") {
+        const number = $("modalStudentNumber").value.trim();
+        const name = $("modalStudentName").value.trim();
+        const tags = $("modalStudentTags").value.split(",").map((x) => x.trim()).filter(Boolean);
+        const note = $("modalStudentNote").value.trim();
+        const homework = $("modalStudentHomework").value.trim();
+        const score = $("modalStudentScore").value.trim();
+        if (!name) return showToast("請輸入姓名");
+        if (editContext) {
+          const item = state.students.find((student) => student.id === editContext.id);
+          if (item) Object.assign(item, { number, name, tags, note, homework, score });
+        } else {
+          state.students.unshift({ id: uid("stu"), number, name, tags, note, homework, score });
+        }
+        syncTagsFromStudents();
+        persist();
+        render();
+        setPanel("students");
+        closeModal();
+        showToast(editContext ? "學生資料已更新" : "學生資料已新增");
+      } else if (modalMode === "task") {
+        const title = $("modalTaskTitle").value.trim();
+        const detail = $("modalTaskDetail").value.trim();
+        const assignee = $("modalTaskAssignee").value.trim();
+        if (!title) return showToast("請輸入標題");
+        if (editContext) {
+          const item = state.tasks.find((task) => task.id === editContext.id);
+          if (item) Object.assign(item, { title, detail, assignee });
+        } else {
+          state.tasks.unshift({ id: uid("task"), title, detail, assignee });
+        }
+        persist();
+        render();
+        setPanel("tasks");
+        closeModal();
+        showToast(editContext ? "任務已更新" : "任務已新增");
+      } else if (modalMode === "quick") {
+        const type = $("modalQuickType").value;
+        closeModal();
+        if (type === "student") openModal("student");
+        if (type === "event") {
+          setPanel("events");
+          $("eventTitle").focus();
+        }
+        if (type === "todo") {
+          setPanel("todos");
+          $("todoText").focus();
+        }
+        if (type === "journal") {
+          setPanel("journal");
+          $("journalTitle").focus();
+        }
+        return;
+      }
+    }
+
+    function exportBlob(filename, blob) {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+
+    function exportStudentsCsv() {
+      const rows = [["Number","Name","Tags","Note","Homework","Score"], ...state.students.map((student) => [
+        student.number || "",
+        student.name || "",
+        (student.tags || []).join(" | "),
+        student.note || "",
+        student.homework || "",
+        student.score || ""
+      ])];
+      const csv = rows.map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(",")).join("\n");
+      exportBlob(`摮貊??_${safeSlug(state.className)}.csv`, new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" }));
+    }
+
+    function exportStudentsJson() {
+      exportBlob(`摮貊??_${safeSlug(state.className)}.json`, new Blob([JSON.stringify(state.students.map(normalizeStudent), null, 2)], { type: "application/json;charset=utf-8" }));
+    }
+
+    function backupJson() {
+      const backup = {
+        version: 1,
+        savedAt: new Date().toISOString(),
+        className: state.className,
+        teacherName: state.teacherName,
+        studentPages: state.studentPages,
+        activeStudentPageId: state.activeStudentPageId,
+        students: state.students,
+        tasks: state.tasks,
+        events: state.events,
+        journals: state.journals,
+        todos: state.todos,
+        tags: state.tags,
+        templates: state.templates,
+        seating: state.seating,
+        daily: state.daily,
+        settings: state.settings,
+        honor: state.honor,
+        reminders: state.reminders
+      };
+      exportBlob(`?剔??遢_${safeSlug(state.className)}.json`, new Blob([JSON.stringify(backup, null, 2)], { type: "application/json;charset=utf-8" }));
+    }
+
+    function restoreBackup(file) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const data = JSON.parse(String(reader.result || "{}"));
+          const legacySeating = normalizeSeating(data.seating || defaultSeating());
+          const legacyHonor = normalizeHonor(data.honor || defaultHonor());
+          state.className = data.className || state.className;
+          state.teacherName = data.teacherName || state.teacherName;
+          state.studentPages = Array.isArray(data.studentPages) && data.studentPages.length
+            ? data.studentPages.map((page) => normalizeStudentPage(page)).filter((page) => page.title || page.students.length)
+            : [normalizeStudentPage({ id: uid("page"), title: data.className || "五年三班", students: Array.isArray(data.students) ? data.students : [], seating: legacySeating, honor: legacyHonor }, data.className || "五年三班")];
+          state.activeStudentPageId = String(data.activeStudentPageId || state.studentPages[0]?.id || "");
+          state.students = Array.isArray(data.students) ? data.students.map(normalizeStudent).filter((item) => item.name) : [];
+          state.tasks = Array.isArray(data.tasks) ? data.tasks : [];
+          state.events = Array.isArray(data.events) ? data.events : [];
+          state.journals = Array.isArray(data.journals) ? data.journals : [];
+          state.todos = Array.isArray(data.todos) ? data.todos : [];
+          state.tags = Array.isArray(data.tags) ? data.tags : [];
+          state.templates = Array.isArray(data.templates) ? data.templates.map(normalizeTemplate) : state.templates;
+          state.seating = legacySeating;
+          state.daily = Object.assign({ focus: "", memo: "", memoLabels: defaultMemoLabels(), scheduleImports: [], calendarImports: [], teaMenu: "", schedule: "", note: "" }, data.daily || state.daily);
+          state.settings = Object.assign({ theme: "light" }, data.settings || {});
+          state.honor = legacyHonor;
+          state.daily.memoLabels = normalizeMemoLabels(state.daily.memoLabels);
+          state.daily.scheduleImports = normalizeImportedRows(state.daily.scheduleImports);
+          state.daily.calendarImports = normalizeImportedRows(state.daily.calendarImports);
+          state.reminders = normalizeReminders(data.reminders || state.reminders);
+          state.journals = normalizeJournalEntries(data.journals || state.journals);
+          syncImportedReminders();
+          applyTheme();
+          persist();
+          render();
+      showToast("已完成");
+        } catch (err) {
+          console.error(err);
+          showToast("備份還原失敗");
+        }
+      };
+      reader.readAsText(file, "utf-8");
+    }
+
+    async function importScheduleFile(file) {
+      try {
+        const text = await extractUploadedText(file);
+        state.daily.scheduleImports = parseScheduleImport(String(text || ""), file.name);
+        syncImportedReminders();
+        persist();
+        render();
+        showToast("課表已匯入");
+      } catch (err) {
+        console.error(err);
+        showToast("課表匯入失敗");
+      }
+    }
+
+    async function importCalendarFile(file) {
+      try {
+        const text = await extractUploadedText(file);
+        state.daily.calendarImports = parseCalendarImport(String(text || ""), file.name);
+        syncImportedReminders();
+        persist();
+        render();
+        showToast("行事曆已匯入");
+      } catch (err) {
+        console.error(err);
+        showToast("行事曆匯入失敗");
+      }
+    }
+
+    function clearScheduleImport() {
+      state.daily.scheduleImports = [];
+      syncImportedReminders();
+      persist();
+      render();
+      showToast("課表已清除");
+    }
+
+    function clearCalendarImport() {
+      state.daily.calendarImports = [];
+      syncImportedReminders();
+      persist();
+      render();
+      showToast("行事曆已清除");
+    }
+
+    function applyPasteStudents() {
+      const rows = parseSimpleCsv($("studentPaste").value);
+      const parsed = rows.map((row, index) => {
+        const number = row[0] && row[1] ? row[0] : String(index + 1);
+        const name = row[1] || row[0] || "";
+        return {
+          id: uid("stu"),
+          number: String(number).trim(),
+          name: String(name).trim(),
+          tags: [],
+          note: "",
+          homework: "",
+          score: ""
+        };
+      }).filter((item) => item.name);
+      showToast("已完成");
+      state.students = parsed;
+      syncTagsFromStudents();
+      persist();
+      render();
+      setPanel("students");
+      showToast("已完成");
+    }
+
+    function importStudents(file) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const text = String(reader.result || "");
+        if (file.name.toLowerCase().endsWith(".json")) {
+          try {
+            const data = JSON.parse(text);
+            state.students = (Array.isArray(data) ? data : []).map(normalizeStudent).filter((item) => item.name);
+            persist();
+            render();
+      showToast("已完成");
+          } catch (err) {
+            console.error(err);
+            showToast("JSON 匯入失敗");
+          }
+          return;
+        }
+        const rows = parseSimpleCsv(text);
+        const parsed = rows.map((row, index) => {
+          const header = row.join(",");
+          if (index === 0 && /name|number/i.test(header)) return null;
+          const number = row[0] || String(index + 1);
+          const name = row[1] || row[0];
+          return {
+            id: uid("stu"),
+            number: String(number).trim(),
+            name: String(name).trim(),
+            tags: row[2] ? String(row[2]).split(/[|;]/).map((x) => x.trim()).filter(Boolean) : [],
+            note: row[3] || "",
+            homework: row[4] || "",
+            score: row[5] || ""
+          };
+        }).filter(Boolean).filter((item) => item.name);
+        state.students = parsed;
+        syncTagsFromStudents();
+        persist();
+        render();
+      showToast("已完成");
+      };
+      reader.readAsText(file, "utf-8");
+    }
+
+    function applyTasksFromInput() {
+      const lines = parseLines($("taskInput").value);
+      state.tasks = lines.map((line) => {
+        const parts = line.split("|").map((part) => part.trim()).filter(Boolean);
+        return {
+          id: uid("task"),
+          title: parts[0] || line,
+          detail: parts[1] || "",
+          assignee: ""
+        };
+      });
+      persist();
+      render();
+      showToast("已完成");
+    }
+
+    function rotateTasks() {
+      showToast("已完成");
+      const pool = [...state.students];
+      const start = Math.floor(Math.random() * pool.length);
+      state.tasks.forEach((task, index) => {
+        task.assignee = pool[(start + index) % pool.length].name;
+      });
+      persist();
+      render();
+      showToast("已完成");
+    }
+
+    function clearTaskAssignments() {
+      state.tasks.forEach((task) => task.assignee = "");
+      persist();
+      render();
+      showToast("已完成");
+    }
+
+    function addEvent() {
+      const title = $("eventTitle").value.trim();
+      showToast("已完成");
+      state.events.push({
+        id: uid("evt"),
+        title,
+        date: $("eventDate").value || "",
+        type: $("eventType").value,
+        note: $("eventNote").value.trim()
+      });
+      persist();
+      render();
+      setPanel("events");
+      showToast("已完成");
+    }
+
+    function addTodo() {
+      const text = $("todoText").value.trim();
+      showToast("已完成");
+      state.todos.push({
+        id: uid("todo"),
+        text,
+        due: $("todoDue").value || "",
+        priority: $("todoPriority").value,
+        done: false
+      });
+      persist();
+      render();
+      setPanel("todos");
+      showToast("已完成");
+    }
+
+    function resetJournalForm() {
+      journalEditId = null;
+      $("journalDate").value = new Date().toISOString().slice(0, 10);
+      $("journalClassPeriod").value = "";
+      $("journalSubject").value = "";
+      $("journalTitle").value = "";
+      $("journalContent").value = "";
+      $("journalReflection").value = "";
+      $("journalFollowUp").value = "";
+      $("journalTags").value = "";
+      $("journalSearch").value = "";
+      renderJournalList();
+    }
+
+    function loadJournalToForm(entryId) {
+      const entry = state.journals.find((item) => item.id === entryId);
+      if (!entry) return;
+      journalEditId = entry.id;
+      $("journalDate").value = entry.date || new Date().toISOString().slice(0, 10);
+      $("journalClassPeriod").value = entry.classPeriod || "";
+      $("journalSubject").value = entry.subject || "";
+      $("journalTitle").value = entry.title || "";
+      $("journalContent").value = entry.content || "";
+      $("journalReflection").value = entry.reflection || "";
+      $("journalFollowUp").value = entry.followUp || "";
+      $("journalTags").value = (entry.tags || []).join(", ");
+      setPanel("journal");
+      $("journalTitle").focus();
+    }
+
+    function saveJournalEntry() {
+      const existingId = journalEditId;
+      const entry = {
+        id: existingId || uid("jrn"),
+        date: $("journalDate").value || new Date().toISOString().slice(0, 10),
+        classPeriod: $("journalClassPeriod").value.trim(),
+        subject: $("journalSubject").value.trim(),
+        title: $("journalTitle").value.trim(),
+        content: $("journalContent").value.trim(),
+        reflection: $("journalReflection").value.trim(),
+        followUp: $("journalFollowUp").value.trim(),
+        tags: splitTagText($("journalTags").value),
+        createdAt: existingId ? (state.journals.find((item) => item.id === existingId)?.createdAt || new Date().toISOString()) : new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+      if (!entry.title && !entry.content && !entry.subject) return showToast("請先輸入教學日誌內容");
+      const normalized = normalizeJournalEntries([entry])[0];
+      if (!normalized) return showToast("請先輸入教學日誌內容");
+      const index = state.journals.findIndex((item) => item.id === existingId);
+      if (index >= 0) {
+        state.journals[index] = normalized;
+      } else {
+        state.journals.unshift(normalized);
+      }
+      persist();
+      render();
+      setPanel("journal");
+      const message = existingId ? "教學日誌已更新" : "教學日誌已存入";
+      resetJournalForm();
+      showToast(message);
+    }
+
+    function deleteJournalEntry(entryId) {
+      state.journals = state.journals.filter((item) => item.id !== entryId);
+      if (journalEditId === entryId) resetJournalForm();
+      persist();
+      render();
+      showToast("教學日誌已刪除");
+    }
+
+    function printPage() {
+      window.print();
+    }
+
+    function printSeatBoard() {
+      const seatingPanel = document.querySelector('[data-panel="seating"]');
+      const seatBoard = seatingPanel?.querySelector(".seat-board");
+      if (!seatingPanel || !seatBoard) {
+        showToast("找不到座位表內容");
+        return;
+      }
+      const win = window.open("", "_blank", "width=1200,height=900");
+      if (!win) {
+        showToast("瀏覽器阻擋列印視窗");
+        return;
+      }
+      const clonedBoard = seatBoard.cloneNode(true);
+      clonedBoard.querySelectorAll(".btn-ghost,.btn-danger,.seat-slot-actions").forEach((node) => node.remove());
+      const className = escapeHtml(state.className || "未設定");
+      const seatModeLabel = seatMode() === "freeform" ? "任意拖拉" : "固定格狀";
+      const note = escapeHtml(state.seating.note || "");
+      win.document.open();
+      win.document.write(`<!doctype html>
+        <html lang="zh-Hant">
+        <head>
+          <meta charset="utf-8" />
+          <meta name="viewport" content="width=device-width, initial-scale=1" />
+          <title>座位表列印</title>
+          <style>
+            :root{color-scheme:light}
+            body{margin:0;font-family:"Noto Sans TC","Microsoft JhengHei",sans-serif;background:#fff;color:#222}
+            .page{padding:24px}
+            .header{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;margin-bottom:16px}
+            .title{font-size:24px;font-weight:800}
+            .meta{font-size:14px;color:#555;line-height:1.6;text-align:right}
+            .seat-board{border:1px solid #ccc;border-radius:16px;padding:16px;box-shadow:none !important;background:#fff}
+            .seat-toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px}
+            .badge{display:inline-flex;align-items:center;padding:4px 10px;border-radius:999px;border:1px solid #bbb;font-size:12px;font-weight:700}
+            .subtle{color:#666;font-size:13px}
+            .seat-grid{display:grid;gap:10px}
+            .seat-row{display:grid;gap:10px;margin-bottom:10px}
+            .seat-cell{min-height:92px;border:1px solid #b9b9b9;border-radius:14px;padding:10px;display:flex;flex-direction:column;justify-content:center;gap:8px;background:#fff}
+            .seat-label{font-size:12px;color:#666;font-weight:700}
+            .seat-name{font-size:16px;font-weight:800;line-height:1.35;white-space:normal;word-break:break-word}
+            .seat-freeform-board{position:relative;min-height:720px;border:1px dashed #c7c7c7;border-radius:18px;background:#fff;overflow:hidden}
+            .seat-freeform-guide{position:absolute;inset:12px;border:1px dashed rgba(0,0,0,.12);border-radius:14px;pointer-events:none}
+            .seat-slot{position:absolute;min-width:140px;max-width:260px;border:1px solid #b9b9b9;border-radius:16px;padding:12px;background:#fff}
+            .seat-slot-handle{display:flex;justify-content:space-between;gap:8px;font-size:12px;font-weight:700;color:#555;margin-bottom:8px}
+            .seat-slot-name{font-size:15px;font-weight:800;line-height:1.4;white-space:normal;word-break:break-word}
+            .seat-slot.empty{opacity:1}
+            .seat-slot-actions{display:none !important}
+            @page{size:auto;margin:12mm}
+          </style>
+        </head>
+        <body>
+          <div class="page">
+            <div class="header">
+              <div>
+                <div class="title">座位表</div>
+                <div class="subtle">${className}</div>
+              </div>
+              <div class="meta">
+                <div>座位模式：${seatModeLabel}</div>
+                <div>${note ? `座位備註：${note}` : " "}</div>
+              </div>
+            </div>
+            ${clonedBoard.outerHTML}
+          </div>
+        </body>
+        </html>`);
+      win.document.close();
+      win.focus();
+      win.onload = () => {
+        setTimeout(() => {
+          win.print();
+          win.close();
+        }, 250);
+      };
+    }
+    function seedDemo() {
+      state.className = "五年三班";
+      state.teacherName = "王老師";
+      state.students = [
+        { id: uid("stu"), number: "1", name: "小安", tags: ["食物過敏"], note: "", homework: "已交", score: "95" },
+        { id: uid("stu"), number: "2", name: "小羽", tags: ["需協助提醒使用藥物"], note: "", homework: "未交", score: "88" },
+        { id: uid("stu"), number: "3", name: "小宇", tags: ["特殊體質"], note: "提醒補帶餐具", homework: "已交", score: "90" },
+        { id: uid("stu"), number: "4", name: "小晴", tags: [], note: "", homework: "補交", score: "" }
+      ];
+      state.tasks = [
+        { id: uid("task"), title: "發作業", detail: "把數學習作發下去", assignee: "小安" },
+        { id: uid("task"), title: "整理圖書", detail: "把閱讀角書本分類", assignee: "小羽" },
+        { id: uid("task"), title: "擦黑板", detail: "下課前完成", assignee: "小宇" }
+      ];
+      state.events = [
+        { id: uid("evt"), title: "班會", date: new Date().toISOString().slice(0,10), type: "班務", note: "今天討論班級規範" }
+      ];
+      state.journals = [
+        {
+          id: uid("jrn"),
+          date: new Date().toISOString().slice(0, 10),
+          classPeriod: "第 1 節",
+          subject: "國語",
+          title: "課文導入與朗讀",
+          content: "透過圖片與提問引導學生進入課文，並完成分段朗讀。",
+          reflection: "學生參與度高，但部分同學朗讀速度偏慢。",
+          followUp: "明天再安排小組輪讀，並加強生字複習。",
+          tags: ["導入", "朗讀"],
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        }
+      ];
+      state.todos = [
+        { id: uid("todo"), text: "準備下週考卷", due: new Date().toISOString().slice(0,10), priority: "高", done: false },
+        { id: uid("todo"), text: "整理聯絡簿", due: "", priority: "中", done: true }
+      ];
+      state.tags = ["食物過敏", "特殊體質", "需協助提醒使用藥物"];
+      state.templates = defaultTemplates();
+      state.seating = defaultSeating();
+      state.studentPages = [
+        normalizeStudentPage({ id: uid("page"), title: "五年三班", students: state.students.map(normalizeStudent), seating: defaultSeating(), honor: defaultHonor() }, "五年三班"),
+        normalizeStudentPage({
+          id: uid("page"),
+          title: "五年四班",
+          students: [
+            { id: uid("stu"), number: "1", name: "小妍", tags: [], note: "", homework: "已交", score: "98" },
+            { id: uid("stu"), number: "2", name: "小豪", tags: [], note: "", homework: "未交", score: "86" }
+          ],
+          seating: defaultSeating(),
+          honor: defaultHonor()
+        }, "五年四班")
+      ];
+      state.activeStudentPageId = state.studentPages[0].id;
+      state.seating = state.studentPages[0].seating;
+      state.honor = state.studentPages[0].honor;
+      state.daily = {
+        focus: "今天完成課務整理",
+        memo: "提醒學生準備下週考試",
+        memoLabels: defaultMemoLabels(),
+        scheduleImports: [],
+        calendarImports: [],
+        teaMenu: "鮮奶\n水果\n小點心",
+        schedule: "08:00 早自習\n10:10 數學\n13:30 午休後活動",
+        note: "課務提醒"
+      };
+      state.settings.theme = "light";
+      state.reminders = defaultReminders();
+      applyTheme();
+      persist();
+      render();
+      setPanel("dashboard");
+      showToast("已載入示範資料");
+    }
+
+    function bindEvents() {
+      buildNav($("sideNav"));
+      buildNav($("bottomNav"));
+      $("btnTheme").addEventListener("click", () => {
+        state.settings.theme = state.settings.theme === "dark" ? "light" : "dark";
+        applyTheme();
+        persist();
+        showToast(`已切換為${state.settings.theme === "dark" ? "深色模式" : "淺色模式"}`);
+      });
+      $("themeSelect").addEventListener("change", saveSettings);
+      $("btnSaveSettings").addEventListener("click", saveSettings);
+      ["studentPageName","className","teacherName","welcomeText","dailyFocus","dailyMemo","teaMenu","dailySchedule"].forEach((id) => {
+        $(id).addEventListener("input", () => {
+          if (id === "studentPageName" || id === "className") renameCurrentStudentPage($(id).value.trim());
+          if (id === "teacherName") state.teacherName = $(id).value.trim();
+          if (id === "welcomeText") state.daily.note = $(id).value.trim();
+          if (id === "dailyFocus") state.daily.focus = $(id).value.trim();
+          if (id === "dailyMemo") state.daily.memo = $(id).value.trim();
+          if (id === "teaMenu") state.daily.teaMenu = $(id).value.trim();
+          if (id === "dailySchedule") state.daily.schedule = $(id).value.trim();
+          persist();
+          refreshStats();
+        });
+      });
+      $("btnDemo").addEventListener("click", seedDemo);
+      $("btnBackup").addEventListener("click", backupJson);
+      $("btnRestore").addEventListener("click", () => $("fileRestore").click());
+      $("fileRestore").addEventListener("change", (e) => {
+        const file = e.target.files && e.target.files[0];
+        if (file) restoreBackup(file);
+        e.target.value = "";
+      });
+      $("btnQuickAdd").addEventListener("click", () => openModal("quick"));
+      $("btnCloseModal").addEventListener("click", closeModal);
+      $("btnModalCancel").addEventListener("click", closeModal);
+      $("btnModalSave").addEventListener("click", saveModal);
+      $("modalBackdrop").addEventListener("click", (event) => {
+        if (event.target === $("modalBackdrop")) closeModal();
+      });
+
+      $("btnAddStudent").addEventListener("click", () => openModal("student"));
+      $("btnApplyPaste").addEventListener("click", applyPasteStudents);
+      $("btnClearStudents").addEventListener("click", () => {
+        state.students = [];
+        syncTagsFromStudents();
+        persist();
+        render();
+      showToast("已完成");
+      });
+      $("btnExportStudentsCsv").addEventListener("click", exportStudentsCsv);
+      $("btnExportStudentsJson").addEventListener("click", exportStudentsJson);
+      $("btnImportStudents").addEventListener("click", () => $("studentsFile").click());
+      $("studentsFile").addEventListener("change", (e) => {
+        const file = e.target.files && e.target.files[0];
+        if (file) importStudents(file);
+        e.target.value = "";
+      });
+      $("studentSearch").addEventListener("input", renderStudentList);
+      $("seatStudentSearch").addEventListener("input", renderSeatStudentList);
+      $("btnImportSchedule").addEventListener("click", () => $("scheduleFile").click());
+      $("btnImportCalendar").addEventListener("click", () => $("calendarFile").click());
+      $("btnDownloadScheduleSample").addEventListener("click", downloadScheduleSample);
+      $("btnDownloadCalendarSample").addEventListener("click", downloadCalendarSample);
+      $("btnClearScheduleImport").addEventListener("click", clearScheduleImport);
+      $("btnClearCalendarImport").addEventListener("click", clearCalendarImport);
+      $("scheduleFile").addEventListener("change", (e) => {
+        const file = e.target.files && e.target.files[0];
+        if (file) importScheduleFile(file);
+        e.target.value = "";
+      });
+      $("calendarFile").addEventListener("change", (e) => {
+        const file = e.target.files && e.target.files[0];
+        if (file) importCalendarFile(file);
+        e.target.value = "";
+      });
+      $("btnAddTag").addEventListener("click", () => {
+        const tag = $("tagInput").value.trim();
+        if (!tag) return showToast("請先輸入標籤");
+        if (!state.tags.includes(tag)) state.tags.unshift(tag);
+        $("tagInput").value = "";
+        persist();
+        refreshTagChips();
+        showToast("標籤已新增");
+      });
+      $("btnAddMemoLabel").addEventListener("click", () => {
+        const input = $("memoLabelInput");
+        const label = input.value.trim();
+        if (!label) return showToast("請先輸入備註標籤");
+        state.daily.memoLabels = uniqueList([label, ...ensureMemoLabels()]);
+        input.value = "";
+        persist();
+        renderMemoLabels();
+        showToast("備註標籤已新增");
+      });
+      $("memoLabelInput").addEventListener("keydown", (event) => {
+        if (event.key === "Enter") {
+          event.preventDefault();
+          $("btnAddMemoLabel").click();
+        }
+      });
+      $("memoLabelList").addEventListener("click", (event) => {
+        const target = event.target;
+        if (!(target instanceof HTMLElement)) return;
+        const insert = target.getAttribute("data-memo-insert");
+        const removeIndex = target.getAttribute("data-memo-remove-index");
+        if (insert) {
+          insertIntoTextarea("dailyMemo", insert);
+          return;
+        }
+        if (removeIndex != null) {
+          const index = Number(removeIndex);
+          if (Number.isInteger(index)) {
+            state.daily.memoLabels.splice(index, 1);
+            persist();
+            renderMemoLabels();
+          }
+        }
+      });
+      $("memoLabelList").addEventListener("input", (event) => {
+        const target = event.target;
+        if (!(target instanceof HTMLInputElement)) return;
+        const index = Number(target.getAttribute("data-memo-edit-index"));
+        if (!Number.isInteger(index)) return;
+        const labels = ensureMemoLabels().slice();
+        labels[index] = target.value;
+        state.daily.memoLabels = normalizeMemoLabels(labels);
+        persist();
+      });
+      $("btnAddReminder").addEventListener("click", () => addReminder());
+      $("btnPresetExamReminder").addEventListener("click", () => applyReminderPreset("exam"));
+      $("btnPresetSubReminder").addEventListener("click", () => applyReminderPreset("substitute"));
+      $("btnPresetChangeReminder").addEventListener("click", () => applyReminderPreset("change"));
+      $("reminderExamLeadDays").addEventListener("input", () => {
+        state.reminders.examLeadDays = Math.max(0, Number($("reminderExamLeadDays").value || 0));
+        persist();
+      });
+      $("reminderSubLeadDays").addEventListener("input", () => {
+        state.reminders.substituteLeadDays = Math.max(0, Number($("reminderSubLeadDays").value || 0));
+        persist();
+      });
+      $("reminderChangeLeadDays").addEventListener("input", () => {
+        state.reminders.changeLeadDays = Math.max(0, Number($("reminderChangeLeadDays").value || 0));
+        persist();
+      });
+      $("reminderList").addEventListener("click", (event) => {
+        const target = event.target;
+        if (!(target instanceof HTMLElement)) return;
+        const toggleId = target.getAttribute("data-toggle-reminder");
+        const removeId = target.getAttribute("data-remove-reminder");
+        if (toggleId) toggleReminderDone(toggleId);
+        if (removeId) deleteReminder(removeId);
+      });
+      $("btnAddTodo").addEventListener("click", addTodo);
+      $("btnClearTodos").addEventListener("click", () => {
+        state.todos = [];
+        persist();
+        render();
+        showToast("已完成");
+      });
+      $("btnAddEvent").addEventListener("click", addEvent);
+      $("btnClearEvents").addEventListener("click", () => {
+        state.events = [];
+        persist();
+        render();
+        showToast("已完成");
+      });
+      $("btnSaveJournal").addEventListener("click", saveJournalEntry);
+      $("btnResetJournalForm").addEventListener("click", () => {
+        resetJournalForm();
+        showToast("表單已清空");
+      });
+      $("journalSearch").addEventListener("input", renderJournalList);
+      $("btnAddStudentPage").addEventListener("click", () => createStudentPage(`新班級 ${state.studentPages.length + 1}`));
+      $("btnDuplicateStudentPage").addEventListener("click", duplicateCurrentStudentPage);
+      $("btnDeleteStudentPage").addEventListener("click", deleteCurrentStudentPage);
+      $("studentPageTabs").addEventListener("click", (event) => {
+        const target = event.target;
+        if (!(target instanceof HTMLElement)) return;
+        const pageId = target.closest("[data-student-page-id]")?.getAttribute("data-student-page-id");
+        if (pageId) switchStudentPage(pageId);
+      });
+      $("studentList").addEventListener("input", (event) => {
+        const target = event.target;
+        if (!(target instanceof HTMLInputElement)) return;
+        const homeworkId = target.getAttribute("data-student-homework");
+        const scoreId = target.getAttribute("data-student-score");
+        const studentId = homeworkId || scoreId;
+        if (!studentId) return;
+        const student = state.students.find((item) => item.id === studentId);
+        if (!student) return;
+        if (homeworkId) student.homework = target.value;
+        if (scoreId) student.score = target.value;
+        persist();
+      });
+      $("tagInput").addEventListener("keydown", (event) => {
+        if (event.key === "Enter") {
+          event.preventDefault();
+          $("btnAddTag").click();
+        }
+      });
+
+      $("btnBuildSeats").addEventListener("click", rebuildSeatGrid);
+      $("btnClearSeats").addEventListener("click", clearSeats);
+      $("btnAddSeatSlot").addEventListener("click", () => addSeatSlot());
+      $("btnPresetGroupSeats").addEventListener("click", applyGroupSeatPreset);
+      $("btnPresetUSeats").addEventListener("click", applyUSeatPreset);
+      $("btnClearSeatSlots").addEventListener("click", () => {
+        if (!confirm("確定要清空所有任意座位框嗎？")) return;
+        state.seating.slots = [];
+        persist();
+        renderSeatLayout();
+        showToast("已完成");
+      });
+      $("seatRows").addEventListener("change", rebuildSeatGrid);
+      $("seatCols").addEventListener("change", rebuildSeatGrid);
+      $("seatLayoutMode").addEventListener("change", (event) => setSeatLayoutMode(event.target.value));
+      $("seatNote").addEventListener("input", () => {
+        state.seating.note = $("seatNote").value;
+        persist();
+      });
+      $("honorSearch").addEventListener("input", renderHonorPanel);
+      $("honorStudentSelect").addEventListener("change", renderHonorPanel);
+      $("btnHonorAdd").addEventListener("click", () => addHonorRecord());
+      $("btnHonorPlus1").addEventListener("click", () => addHonorRecord(1));
+      $("btnHonorPlus5").addEventListener("click", () => addHonorRecord(5));
+      $("btnHonorMinus1").addEventListener("click", () => addHonorRecord(-1));
+      $("btnHonorMinus5").addEventListener("click", () => addHonorRecord(-5));
+      $("btnHonorSaveReward").addEventListener("click", saveHonorReward);
+      $("btnHonorResetRewards").addEventListener("click", resetHonorRewards);
+
+      $("btnApplyTasks").addEventListener("click", applyTasksFromInput);
+      $("btnRotateTasks").addEventListener("click", rotateTasks);
+      $("btnClearTaskAssign").addEventListener("click", clearTaskAssignments);
+      $("btnSaveTemplate").addEventListener("click", saveCurrentTemplate);
+      $("btnResetTemplates").addEventListener("click", resetTemplates);
+      $("btnExportTemplates").addEventListener("click", exportTemplatesJson);
+      $("btnImportTemplates").addEventListener("click", () => $("templatesFile").click());
+      $("templatesFile").addEventListener("change", (e) => {
+        const file = e.target.files && e.target.files[0];
+        if (file) importTemplates(file);
+        e.target.value = "";
+      });
+      $("teaMenu").addEventListener("input", () => {
+        state.daily.teaMenu = $("teaMenu").value;
+        persist();
+      });
+      $("dailySchedule").addEventListener("input", () => {
+        state.daily.schedule = $("dailySchedule").value;
+        persist();
+      });
+      $("btnPrint").addEventListener("click", printPage);
+      $("btnPrintSeats").addEventListener("click", printSeatBoard);
+      document.addEventListener("click", (event) => {
+        const target = event.target;
+        if (target instanceof HTMLElement && target.hasAttribute("data-print-seats")) printSeatBoard();
+      });
+
+      $("templateList").addEventListener("click", (event) => {
+        const target = event.target;
+        if (!(target instanceof HTMLElement)) return;
+        const loadId = target.getAttribute("data-load-template");
+        const editId = target.getAttribute("data-edit-template");
+        const deleteId = target.getAttribute("data-delete-template");
+        if (loadId) applyTemplateBodyToDaily(loadId);
+        if (editId) loadTemplateToEditor(editId);
+        if (deleteId) deleteTemplate(deleteId);
+      });
+      $("templateList").addEventListener("input", (event) => {
+        const target = event.target;
+        if (!(target instanceof HTMLTextAreaElement)) return;
+        const id = target.getAttribute("data-template-body");
+        if (!id) return;
+        const template = state.templates.find((item) => item.id === id);
+        if (!template) return;
+        template.body = target.value;
+        persist();
+      });
+
+      $("tagChips").addEventListener("dragstart", (event) => {
+        const target = event.target;
+        if (!(target instanceof HTMLElement)) return;
+        const tag = target.getAttribute("data-tag");
+        if (!tag) return;
+        event.dataTransfer?.setData("text/plain", tag);
+        target.classList.add("dragging");
+      });
+      $("tagChips").addEventListener("dragend", (event) => {
+        const target = event.target;
+        if (target instanceof HTMLElement) target.classList.remove("dragging");
+      });
+      $("tagChips").addEventListener("dragover", (event) => {
+        event.preventDefault();
+      });
+      $("tagChips").addEventListener("drop", (event) => {
+        event.preventDefault();
+        const sourceTag = event.dataTransfer?.getData("text/plain");
+        const target = event.target;
+        if (!(target instanceof HTMLElement) || !sourceTag) return;
+        const targetTag = target.closest("[data-tag]")?.getAttribute("data-tag");
+        if (!targetTag || sourceTag === targetTag) return;
+        const fromIndex = state.tags.indexOf(sourceTag);
+        const toIndex = state.tags.indexOf(targetTag);
+        if (fromIndex >= 0 && toIndex >= 0) moveTag(fromIndex, toIndex);
+      });
+
+      $("studentList").addEventListener("dragstart", (event) => {
+        const target = event.target;
+        if (!(target instanceof HTMLElement)) return;
+        const item = target.closest("[data-student-id]");
+        if (!item) return;
+        event.dataTransfer?.setData("text/plain", item.getAttribute("data-student-id") || "");
+        item.classList.add("dragging");
+      });
+      $("studentList").addEventListener("dragend", (event) => {
+        const target = event.target;
+        if (target instanceof HTMLElement) {
+          const item = target.closest("[data-student-id]");
+          if (item) item.classList.remove("dragging");
+        }
+      });
+      $("studentList").addEventListener("dragover", (event) => {
+        event.preventDefault();
+        const item = event.target instanceof HTMLElement ? event.target.closest("[data-student-id]") : null;
+        if (item instanceof HTMLElement) item.classList.add("dragover");
+      });
+      $("studentList").addEventListener("dragleave", (event) => {
+        const item = event.target instanceof HTMLElement ? event.target.closest("[data-student-id]") : null;
+        if (item instanceof HTMLElement) item.classList.remove("dragover");
+      });
+      $("studentList").addEventListener("drop", (event) => {
+        event.preventDefault();
+        const sourceTag = event.dataTransfer?.getData("text/plain");
+        const item = event.target instanceof HTMLElement ? event.target.closest("[data-student-id]") : null;
+        if (item instanceof HTMLElement) item.classList.remove("dragover");
+        if (!sourceTag || !item) return;
+        const studentId = item.getAttribute("data-student-id") || "";
+        if (!studentId) return;
+        addTagToStudent(studentId, sourceTag);
+      });
+      $("seatStudentList").addEventListener("dragstart", (event) => {
+        const target = event.target;
+        if (!(target instanceof HTMLElement)) return;
+        const item = target.closest("[data-student-id]");
+        if (!item) return;
+        event.dataTransfer?.setData("text/plain", item.getAttribute("data-student-id") || "");
+        item.classList.add("dragging");
+      });
+      $("seatStudentList").addEventListener("dragend", (event) => {
+        const target = event.target;
+        if (target instanceof HTMLElement) {
+          const item = target.closest("[data-student-id]");
+          if (item) item.classList.remove("dragging");
+        }
+      });
+
+      $("seatGrid").addEventListener("dragover", (event) => {
+        event.preventDefault();
+        const cell = event.target instanceof HTMLElement ? event.target.closest("[data-seat-index]") : null;
+        if (cell instanceof HTMLElement) cell.classList.add("dragover");
+      });
+      $("seatGrid").addEventListener("dragleave", (event) => {
+        const cell = event.target instanceof HTMLElement ? event.target.closest("[data-seat-index]") : null;
+        if (cell instanceof HTMLElement) cell.classList.remove("dragover");
+      });
+      $("seatGrid").addEventListener("drop", (event) => {
+        event.preventDefault();
+        const cell = event.target instanceof HTMLElement ? event.target.closest("[data-seat-index]") : null;
+        const studentId = event.dataTransfer?.getData("text/plain");
+        if (!(cell instanceof HTMLElement) || !studentId) return;
+        const index = Number(cell.getAttribute("data-seat-index"));
+        if (Number.isNaN(index)) return;
+        if (!state.students.find((item) => item.id === studentId)) return;
+        state.seating.cells[index] = studentId;
+        persist();
+        renderSeatLayout();
+      showToast("已完成");
+      });
+      $("seatDropZone").addEventListener("dragover", (event) => event.preventDefault());
+      $("seatDropZone").addEventListener("drop", (event) => {
+        event.preventDefault();
+        if (seatMode() === "freeform") {
+          state.seating.slots = (state.seating.slots || []).map((slot) => ({ ...slot, studentIds: [] }));
+        } else {
+          state.seating.cells = state.seating.cells.map(() => "");
+        }
+        persist();
+        renderSeatLayout();
+      showToast("已完成");
+      });
+      $("seatFreeformBoard").addEventListener("dragover", (event) => {
+        event.preventDefault();
+      });
+      $("seatFreeformBoard").addEventListener("drop", (event) => {
+        event.preventDefault();
+        const payload = event.dataTransfer?.getData("text/plain") || "";
+        const board = $("seatFreeformBoard");
+        if (!(board instanceof HTMLElement)) return;
+        const slotTarget = event.target instanceof HTMLElement ? event.target.closest("[data-seat-slot-index]") : null;
+        const clientX = event.clientX;
+        const clientY = event.clientY;
+        const targetIndex = slotTarget ? Number(slotTarget.getAttribute("data-seat-slot-index")) : NaN;
+        if (Number.isFinite(targetIndex) && payload && !payload.startsWith("seat-slot:")) {
+          const studentId = payload;
+          addStudentToSeatSlot(studentId, targetIndex);
+          showToast("已放入座位框");
+          return;
+        }
+        if (payload.startsWith("seat-slot:")) {
+          const dragIndex = Number(payload.split(":")[1]);
+          if (!Number.isFinite(dragIndex)) return;
+          moveSeatSlot(dragIndex, clientX, clientY);
+        }
+      });
+      $("seatFreeformBoard").addEventListener("click", (event) => {
+        const target = event.target;
+        if (!(target instanceof HTMLElement)) return;
+        const clearIndex = target.getAttribute("data-seat-slot-clear");
+        const deleteIndex = target.getAttribute("data-seat-slot-delete");
+        if (clearIndex != null) {
+          clearSeatSlotStudent(Number(clearIndex));
+        }
+        if (deleteIndex != null) {
+          deleteSeatSlot(Number(deleteIndex));
+        }
+      });
+      $("seatFreeformBoard").addEventListener("dragstart", (event) => {
+        const target = event.target;
+        if (!(target instanceof HTMLElement)) return;
+        const slot = target.closest("[data-seat-slot-index]");
+        if (!slot) return;
+        const index = slot.getAttribute("data-seat-slot-index");
+        if (!index) return;
+        event.dataTransfer?.setData("text/plain", `seat-slot:${index}`);
+        target.classList.add("dragging");
+      });
+      $("seatFreeformBoard").addEventListener("dragend", (event) => {
+        const target = event.target;
+        if (target instanceof HTMLElement) {
+          const slot = target.closest("[data-seat-slot-index]");
+          if (slot) slot.classList.remove("dragging");
+        }
+      });
+
+      document.addEventListener("click", (event) => {
+        const target = event.target;
+        if (!(target instanceof HTMLElement)) return;
+        const editStudent = target.getAttribute("data-edit-student");
+        const deleteStudent = target.getAttribute("data-delete-student");
+        const editTask = target.getAttribute("data-edit-task");
+        const deleteTask = target.getAttribute("data-delete-task");
+        const assignTask = target.getAttribute("data-assign-task");
+        const deleteEvent = target.getAttribute("data-delete-event");
+        const editJournal = target.getAttribute("data-edit-journal");
+        const deleteJournal = target.getAttribute("data-delete-journal");
+        const toggleTodo = target.getAttribute("data-toggle-todo");
+        const deleteTodo = target.getAttribute("data-delete-todo");
+        if (editStudent) {
+          const student = state.students.find((item) => item.id === editStudent);
+          if (student) openModal("student", student);
+        }
+        if (deleteStudent) {
+          state.honor.logs = state.honor.logs.filter((log) => log.studentId !== deleteStudent);
+          delete state.honor.balances[deleteStudent];
+          state.students = state.students.filter((item) => item.id !== deleteStudent);
+          state.seating.slots = (state.seating.slots || []).map((slot) => ({
+            ...slot,
+            studentIds: uniqueList(Array.isArray(slot.studentIds) ? slot.studentIds : slot.studentId ? [slot.studentId] : []).filter((id) => id !== deleteStudent)
+          }));
+          syncTagsFromStudents();
+          persist();
+          render();
+      showToast("已完成");
+        }
+        if (editTask) {
+          const task = state.tasks.find((item) => item.id === editTask);
+          if (task) openModal("task", task);
+        }
+        if (deleteTask) {
+          state.tasks = state.tasks.filter((item) => item.id !== deleteTask);
+          persist();
+          render();
+      showToast("已完成");
+        }
+        if (assignTask) {
+          const task = state.tasks.find((item) => item.id === assignTask);
+          if (task) openModal("task", task);
+        }
+        if (deleteEvent) {
+          state.events = state.events.filter((item) => item.id !== deleteEvent);
+          persist();
+          render();
+      showToast("已完成");
+        }
+        if (editJournal) {
+          loadJournalToForm(editJournal);
+        }
+        if (deleteJournal) {
+          deleteJournalEntry(deleteJournal);
+        }
+        if (toggleTodo) {
+          const todo = state.todos.find((item) => item.id === toggleTodo);
+          if (todo) todo.done = !todo.done;
+          persist();
+          render();
+        }
+        if (deleteTodo) {
+          state.todos = state.todos.filter((item) => item.id !== deleteTodo);
+          persist();
+          render();
+      showToast("已完成");
+        }
+        const honorPlus = target.getAttribute("data-honor-plus");
+        const honorStudent = target.getAttribute("data-honor-student");
+        const redeemReward = target.getAttribute("data-redeem-reward");
+        const deleteReward = target.getAttribute("data-delete-reward");
+        if (honorPlus && honorStudent) {
+          const student = state.students.find((item) => item.id === honorStudent);
+          if (!student) return;
+          $("honorStudentSelect").value = honorStudent;
+          $("honorPoints").value = String(Number(honorPlus) || 0);
+          $("honorReason").value = "";
+          addHonorRecord(Number(honorPlus) || 0);
+        }
+        if (redeemReward) {
+          const reward = honorRewardById(redeemReward);
+          if (!reward) return;
+          $("honorStudentSelect").value = $("honorStudentSelect").value || honorSelectedStudentId();
+          redeemHonorReward(redeemReward);
+        }
+        if (deleteReward) {
+          deleteHonorReward(deleteReward);
+        }
+      });
+    }
+
+    function init() {
+      load();
+      bindEvents();
+      render();
+      resetJournalForm();
+      setPanel("dashboard");
+      if (!state.students.length && !state.tasks.length && !state.events.length && !state.todos.length) {
+        buildSuggestions();
+      }
+    }
+
+    function buildSuggestions() {
+      return null;
+    }
+
+    init();
+  </script>
+</body>
+</html>
+
