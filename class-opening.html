@@ -452,6 +452,32 @@
     .letter-print-qr{display:flex;align-items:center;gap:7mm;margin-top:12mm;padding-top:7mm;border-top:1px solid #e2e8f0;color:#475569;font-size:10pt}
     .letter-print-qr img{width:34mm;height:34mm;object-fit:contain;border:1px solid #e2e8f0;padding:2mm;background:#fff}
     .badge-grid{display:grid;gap:10px;grid-template-columns:repeat(var(--cols,3),1fr)}
+    #print .panel-body{grid-template-columns:minmax(210px,260px) minmax(0,1fr);align-items:stretch}
+    #print .badge-settings{
+      min-width:0;
+      align-content:start;
+      padding:14px;
+      border:2px solid color-mix(in srgb, var(--tab-color) 32%, var(--line));
+      border-radius:20px;
+      background:linear-gradient(145deg,rgba(255,255,255,.96),rgba(241,253,249,.92));
+      box-shadow:0 10px 20px color-mix(in srgb, var(--tab-color) 10%, transparent);
+    }
+    #print .badge-settings .settings-title{
+      margin:0;
+      color:var(--tab-color);
+      font-size:15px;
+      font-weight:900;
+    }
+    #print .badge-setting-fields{
+      display:grid;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:10px;
+      min-width:0;
+    }
+    #print .badge-setting-fields .field{min-width:0;gap:6px}
+    #print .badge-setting-fields label{white-space:nowrap;font-size:13px}
+    #print .badge-setting-fields input{min-width:0;max-width:100%;padding:10px 9px;text-align:center}
+    #print .badge-settings .preview-card{min-width:0;margin:0}
     .badge-card{
       min-height:104px;
       border:1px solid #000;
@@ -463,6 +489,12 @@
     }
     .badge-card .name{font-size:24px;font-weight:900;letter-spacing:1px}
     .badge-card .school{font-size:11px}
+    @media (max-width:760px){
+      #print .panel-body{grid-template-columns:minmax(0,1fr)}
+    }
+    @media (max-width:390px){
+      #print .badge-setting-fields{grid-template-columns:1fr}
+    }
     .desk-grid{display:grid;gap:18px}
     .desk-tent{
       border:2px solid #0f766e;
@@ -911,14 +943,17 @@
           </div>
         </div>
         <div class="panel-body subgrid">
-          <div class="stack no-print">
-            <div class="field">
-              <label for="badgeCols">欄數</label>
-              <input id="badgeCols" type="number" min="1" max="6" value="3" />
-            </div>
-            <div class="field">
-              <label for="badgeRows">列數</label>
-              <input id="badgeRows" type="number" min="1" max="8" value="4" />
+          <div class="stack no-print badge-settings">
+            <p class="settings-title">名牌版面設定</p>
+            <div class="badge-setting-fields">
+              <div class="field">
+                <label for="badgeCols">欄數</label>
+                <input id="badgeCols" type="number" min="1" max="6" value="3" />
+              </div>
+              <div class="field">
+                <label for="badgeRows">列數</label>
+                <input id="badgeRows" type="number" min="1" max="8" value="4" />
+              </div>
             </div>
             <div class="preview-card">
               <p class="small">名牌會依欄列自動排版成 A4 直印格式。</p>
