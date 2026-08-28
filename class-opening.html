@@ -548,41 +548,26 @@
       gap:3mm;
       grid-template-columns:repeat(var(--cols,1), minmax(0,1fr));
       grid-template-rows:repeat(var(--rows,1), minmax(0,1fr));
+      height:100%;
+      align-content:stretch;
       min-width:0;
       min-height:0;
     }
     .badge-print-card{
       position:relative;
+      height:100%;
       border:0.35mm solid #111827;
       border-radius:0;
       background:#fff;
       padding:5mm 4mm;
       box-sizing:border-box;
       display:grid;
-      align-content:center;
+      grid-template-rows:auto minmax(0,1fr) auto;
+      align-items:center;
+      justify-items:center;
       text-align:center;
       min-height:0;
       overflow:hidden;
-    }
-    .badge-print-card::before{
-      content:"裁切線";
-      position:absolute;
-      inset:2mm auto auto 2mm;
-      font-size:7pt;
-      color:#64748b;
-      background:#fff;
-      padding:0 1.5mm;
-      pointer-events:none;
-    }
-    .badge-print-card::after{
-      content:"出血線 / 安全區";
-      position:absolute;
-      inset:auto 2mm 2mm auto;
-      font-size:7pt;
-      color:#64748b;
-      background:#fff;
-      padding:0 1.5mm;
-      pointer-events:none;
     }
     .badge-print-card .school{
       font-size:8.5pt;
@@ -595,11 +580,15 @@
       font-weight:900;
       line-height:1.1;
       margin:0;
+      align-self:center;
+      justify-self:center;
+      max-width:100%;
     }
     .badge-print-card .classline{
       font-size:8.5pt;
       color:#64748b;
       margin-top:2mm;
+      align-self:start;
     }
     .desk-print-page{
       width:210mm;
@@ -1188,6 +1177,27 @@
       const size = Math.max(minimum, Math.round(base * Math.min(1, capacity / length) * 10) / 10);
       return `font-size:${size}${unit};white-space:nowrap;`;
     };
+    const badgeNameSizePt = (value, cols, rows) => {
+      const length = Math.max(1, Array.from(String(value ?? '').replace(/\s+/g, '')).length);
+      const safeCols = Math.max(1, Number(cols) || 1);
+      const safeRows = Math.max(1, Number(rows) || 1);
+      const pageWidthMm = 210 - 24;
+      const pageHeightMm = 297 - 24;
+      const gapMm = 3;
+      const headerMm = 18;
+      const cardWidthMm = (pageWidthMm - gapMm * (safeCols - 1)) / safeCols;
+      const cardHeightMm = (pageHeightMm - headerMm - gapMm * (safeRows - 1)) / safeRows;
+      const usableWidthMm = Math.max(16, cardWidthMm - 10);
+      const usableHeightMm = Math.max(16, cardHeightMm - 20);
+      const widthLimitPt = (usableWidthMm / (length * 0.3528)) * 0.92;
+      const heightLimitPt = (usableHeightMm / 1.25 / 0.3528);
+      return Math.max(16, Math.min(96, widthLimitPt, heightLimitPt));
+    };
+    const fitBadgeNameStyle = (value, cols, rows, unit = 'pt') => {
+      const sizePt = badgeNameSizePt(value, cols, rows);
+      const size = unit === 'px' ? sizePt * 1.333 : sizePt;
+      return `font-size:${Math.round(size * 10) / 10}${unit};line-height:1;white-space:nowrap;`;
+    };
     const todayIso = () => new Date().toISOString().slice(0,10);
     const loadState = () => { try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null'); } catch { return null; } };
     const saveState = () => localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
@@ -1664,7 +1674,7 @@
       state.students.forEach((student) => {
         const card = document.createElement('div');
         card.className = 'badge-card';
-        const nameStyle = fitNameStyle(student.name, 24, 14, 3.6, 'px');
+        const nameStyle = fitBadgeNameStyle(student.name, cols, rows, 'px');
         card.innerHTML = `<div class="school">${escapeHtml(state.meta.school || '學校')}</div><div class="name" style="${nameStyle}">${escapeHtml(student.name)}</div><div class="school">${escapeHtml(state.meta.className || '班級')}</div>`;
         root.appendChild(card);
       });
@@ -1692,7 +1702,7 @@
         slice.forEach((student) => {
           const card = document.createElement('div');
           card.className = 'badge-print-card';
-          const nameStyle = fitNameStyle(student.name, 20, 12, 3.6, 'pt');
+          const nameStyle = fitBadgeNameStyle(student.name, cols, rows, 'pt');
           card.innerHTML = `
             <div class="school">${escapeHtml(state.meta.school || '學校')}</div>
             <div class="name" style="${nameStyle}">${escapeHtml(student.name)}</div>
@@ -2185,4 +2195,3 @@
   </script>
 </body>
 </html>
-
