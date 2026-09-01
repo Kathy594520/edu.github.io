@@ -1,33 +1,28 @@
-<html lang="zh-TW">
+﻿<html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>班級自治小黑板</title>
     <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    
     
     <!-- 設定 Import Map -->
-    <script type="importmap">
-    {
-        "imports": {
-            "react": "https://esm.sh/react@18.2.0",
-            "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
-            "lucide-react": "https://esm.sh/lucide-react@0.292.0"
-        }
-    }
-    </script>
-    
-    <!-- Babel Standalone -->
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-
     <script>
-        tailwind.config = {
+        window.tailwind = window.tailwind || {};
+        window.tailwind.config = {
             theme: {
                 extend: {
                     colors: {
                         retro: {
-                            bg: '#f0e6d2', paper: '#fffbf0', ink: '#2c2c2c', red: '#c0392b',
-                            blue: '#2980b9', green: '#27ae60', board: '#2d3436', wood: '#8e44ad', line: '#bdc3c7'
+                            bg: '#f0e6d2',      /* 泛黃紙張背景 */
+                            paper: '#fffbf0',   /* 亮一點的紙 */
+                            ink: '#2c2c2c',     /* 墨色 */
+                            red: '#c0392b',     /* 印泥紅 */
+                            blue: '#2980b9',    /* 鋼筆藍 */
+                            green: '#27ae60',   /* 復古綠 */
+                            board: '#2d3436',   /* 黑板深灰 */
+                            wood: '#8e44ad',    /* 強調色 */
+                            line: '#bdc3c7'     /* 筆記本線條 */
                         }
                     },
                     boxShadow: {
@@ -45,98 +40,403 @@
         }
     </script>
 
+    <script src="./routines_offline_assets/tailwind.js?v=20260627-fix-assets"></script>
+    <script src="./routines_offline_assets/react.umd.js?v=20260627-fix-assets"></script>
+    <script src="./routines_offline_assets/react-dom.umd.js?v=20260627-fix-assets"></script>
+    <script src="./routines_offline_assets/babel.min.js?v=20260627-fix-assets"></script>
+
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;700;900&family=Noto+Sans+TC:wght@400;700&display=swap');
         body {
             background-color: #f0e6d2;
-            background-image: linear-gradient(#e5dcc5 1px, transparent 1px), linear-gradient(90deg, #e5dcc5 1px, transparent 1px);
-            background-size: 20px 20px; color: #2c2c2c;
+            background-image: 
+                linear-gradient(#e5dcc5 1px, transparent 1px),
+                linear-gradient(90deg, #e5dcc5 1px, transparent 1px);
+            background-size: 20px 20px;
+            color: #2c2c2c;
+            font-family: "Noto Sans TC", "Microsoft JhengHei", sans-serif;
         }
-        .retro-scrollbar::-webkit-scrollbar { width: 12px; height: 12px; }
-        .retro-scrollbar::-webkit-scrollbar-track { background: #e0d0b0; border-left: 2px solid #2c2c2c; }
-        .retro-scrollbar::-webkit-scrollbar-thumb { background: #2c2c2c; border: 2px solid #e0d0b0; }
-        .polaroid { background: white; padding: 10px 10px 30px 10px; box-shadow: 2px 2px 5px rgba(0,0,0,0.2); transition: box-shadow 0.2s, transform 0.1s; cursor: grab; }
-        .polaroid:active { cursor: grabbing; z-index: 50 !important; box-shadow: 10px 10px 20px rgba(0,0,0,0.4); }
-        .polaroid:hover { z-index: 40; }
-        @keyframes stamp-in { 0% { opacity: 0; transform: scale(1.5) rotate(15deg); } 100% { opacity: 1; transform: scale(1) rotate(-5deg); } }
-        .animate-stamp { animation: stamp-in 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
-        .noise-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 9999; opacity: 0.03; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E"); }
-        .writing-vertical { writing-mode: vertical-rl; text-orientation: upright; }
+
+        /* 復古捲軸 */
+        .retro-scrollbar::-webkit-scrollbar {
+            width: 12px;
+            height: 12px;
+        }
+        .retro-scrollbar::-webkit-scrollbar-track {
+            background: #e0d0b0;
+            border-left: 2px solid #2c2c2c;
+        }
+        .retro-scrollbar::-webkit-scrollbar-thumb {
+            background: #2c2c2c;
+            border: 2px solid #e0d0b0;
+        }
+        
+        /* 拍立得效果 */
+        .polaroid {
+            background: white;
+            padding: 10px 10px 30px 10px;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
+            transition: box-shadow 0.2s, transform 0.1s; /* 移除 width transition 以確保拖曳縮放流暢 */
+            cursor: grab;
+        }
+        .polaroid:active {
+            cursor: grabbing;
+            z-index: 50 !important;
+            box-shadow: 10px 10px 20px rgba(0,0,0,0.4);
+        }
+        .polaroid:hover {
+            z-index: 40;
+        }
+
+        /* 旋轉動畫 */
+        @keyframes stamp-in {
+            0% { opacity: 0; transform: scale(1.5) rotate(15deg); }
+            100% { opacity: 1; transform: scale(1) rotate(-5deg); }
+        }
+        .animate-stamp {
+            animation: stamp-in 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        /* 雜訊濾鏡效果 */
+        .noise-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 9999;
+            opacity: 0.03;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+        }
+        
+        /* 修正文字垂直排版 */
+        .writing-vertical {
+            writing-mode: vertical-rl;
+            text-orientation: mixed;
+        }
+
+        .note-editor-empty:empty::before {
+            content: attr(data-placeholder);
+            color: rgba(255, 255, 255, 0.45);
+            pointer-events: none;
+        }
+
+        .blackboard-selectable,
+        .blackboard-selectable * {
+            -webkit-user-select: text !important;
+            user-select: text !important;
+        }
+
+        .blackboard-selectable::selection,
+        .blackboard-selectable *::selection {
+            background: rgba(241, 196, 15, 0.65);
+            color: #ffffff;
+        }
+
     </style>
 </head>
 <body>
     <div id="root"></div>
     <div class="noise-overlay"></div>
 
-    <script type="text/babel" data-type="module">
-        import React, { useState, useEffect, useRef } from 'react';
-        import { createRoot } from 'react-dom/client';
-        import { 
-            Users, AlertCircle, Settings, RotateCcw, FileSpreadsheet, Star, Heart, 
-            Plus, Minus, ChevronLeft, ChevronRight, Check, Edit3, Trash2, 
-            Sparkles, Utensils, Award, Eraser, ClipboardList, X, Save, 
-            AlignVerticalJustifyStart, AlignHorizontalJustifyStart, AlertTriangle, BookOpen,
-            Clock, Calendar, PenTool, ExternalLink, Image as ImageIcon, Paperclip, Upload,
-            Maximize, ZoomIn, ZoomOut, UploadCloud, Loader2
-        } from 'lucide-react';
+    <!-- 主程式邏輯 -->
+    <script type="text/plain" id="app-code">
+        const { useState, useEffect, useRef } = React;
+        const createRoot = ReactDOM.createRoot;
 
-        // ===========================================================================
-        // 設定區
-        // ===========================================================================
-        const GAS_DEPLOY_URL = "https://script.google.com/macros/s/AKfycbxervEOO_P9pIeFeByRi21O6xT6SAMLzflWash-8T66tQZfdBsTWsDQMkBhaK0rA_hB/exec"; 
+        const makeIcon = (glyph) => ({ size = 24, className = "", style = {}, ...props }) => (
+            <span
+                {...props}
+                aria-hidden="true"
+                className={"inline-flex items-center justify-center leading-none select-none " + className}
+                style={{
+                    width: size,
+                    height: size,
+                    fontSize: Math.max(10, size * 0.8),
+                    lineHeight: 1,
+                    ...style
+                }}
+            >
+                {glyph}
+            </span>
+        );
+
+        const makeSvgIcon = (children) => ({ size = 24, className = "", style = {}, ...props }) => (
+            <svg
+                {...props}
+                aria-hidden="true"
+                viewBox="0 0 24 24"
+                className={"inline-flex shrink-0 " + className}
+                style={{
+                    width: size,
+                    height: size,
+                    ...style
+                }}
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+            >
+                {children}
+            </svg>
+        );
+
+        const Users = makeIcon('👥');
+        const AlertCircle = makeIcon('!');
+        const Settings = makeSvgIcon(<><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 0 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.2a2 2 0 0 1-4 0V21a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1A2 2 0 0 1 4.2 17l.1-.1A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.6-1H3a2 2 0 0 1 0-4h.2a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1A2 2 0 0 1 7.2 4.2l.1.1A1.7 1.7 0 0 0 9.2 4a1.7 1.7 0 0 0 1-1.6V2a2 2 0 0 1 4 0v.2a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1A2 2 0 0 1 20 6.2l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1H21a2 2 0 0 1 0 4h-.2a1.7 1.7 0 0 0-1.4.8Z" /></>);
+        const RotateCcw = makeSvgIcon(<><path d="M3 12a9 9 0 1 0 3-6.7" /><path d="M3 3v6h6" /></>);
+        const FileSpreadsheet = makeSvgIcon(<><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" /><path d="M14 2v6h6" /><path d="M8 13h8" /><path d="M8 17h8" /><path d="M8 9h2" /></>);
+        const Star = makeIcon('★');
+        const Heart = makeIcon('♥');
+        const Plus = makeIcon('+');
+        const Minus = makeIcon('−');
+        const ChevronLeft = makeIcon('‹');
+        const ChevronRight = makeIcon('›');
+        const Check = makeIcon('✓');
+        const Edit3 = makeIcon('✎');
+        const Trash2 = makeIcon('🗑');
+        const Sparkles = makeIcon('✦');
+        const Utensils = makeIcon('🍽');
+        const Award = makeIcon('🏅');
+        const Eraser = makeSvgIcon(<><path d="m7 21-4-4 9.5-9.5a2.8 2.8 0 0 1 4 0l2 2a2.8 2.8 0 0 1 0 4L11 21Z" /><path d="m14 7 4 4" /><path d="M7 21h12" /></>);
+        const ClipboardList = makeIcon('☰');
+        const X = makeIcon('×');
+        const Save = makeIcon('💾');
+        const AlignVerticalJustifyStart = makeIcon('↕');
+        const AlignHorizontalJustifyStart = makeIcon('↔');
+        const AlertTriangle = makeIcon('⚠');
+        const BookOpen = makeIcon('📖');
+        const Clock = makeIcon('🕒');
+        const Calendar = makeIcon('📅');
+        const PenTool = makeIcon('✒');
+        const ExternalLink = makeIcon('↗');
+        const ImageIcon = makeIcon('🖼');
+        const Paperclip = makeIcon('📎');
+        const Upload = makeSvgIcon(<><path d="M16 16h2a4 4 0 0 0 .5-8 6 6 0 0 0-11.4-2A5 5 0 0 0 6 16h2" /><path d="M12 12v9" /><path d="m8 16 4-4 4 4" /></>);
+        const Maximize = makeIcon('▢');
+        const ZoomIn = makeIcon('＋');
+        const ZoomOut = makeIcon('－');
+
+        const formatMixedVerticalText = (text, writingMode) => {
+            if (writingMode !== 'vertical') return text;
+            return text.split(/([A-Za-z0-9]+(?:[-_./:：+－–—][A-Za-z0-9]+)*|[-_./:：+－–—])/g).map((part, index) => {
+                if (/^[A-Za-z0-9]+(?:[-_./:：+－–—][A-Za-z0-9]+)*$/.test(part) || /^[-_./:：+－–—]$/.test(part)) {
+                    return (
+                        <span
+                            key={`h-${index}`}
+                            style={{
+                                textCombineUpright: 'all',
+                                WebkitTextCombine: 'horizontal',
+                                margin: '2px 0',
+                                fontFamily: '"Noto Sans TC", sans-serif'
+                            }}
+                        >
+                            {part}
+                        </span>
+                    );
+                }
+                return part;
+            });
+        };
+
+        const BlackboardFormattedContent = React.memo(({
+            content,
+            writingMode,
+            fontType,
+            showLineNumbers = true
+        }) => {
+            const noteLines = content.split('\n');
+
+            return (
+                <>
+                    {noteLines.map((line, idx) => (
+                    <div
+                        key={idx}
+                        className={`flex select-text ${writingMode === 'vertical' ? 'flex-row items-center gap-2 py-2 min-h-[1em]' : 'flex-row items-baseline gap-3 my-1'} text-white/95 font-medium`}
+                        style={{ textShadow: '1px 1px 0px rgba(0,0,0,0.5)' }}
+                    >
+                        {showLineNumbers && (
+                        <span
+                            className={`text-[#f1c40f] font-black font-mono opacity-80 ${writingMode === 'vertical' ? 'mb-2' : ''}`}
+                            style={writingMode === 'vertical' ? { writingMode: 'horizontal-tb' } : {}}
+                        >
+                        {idx + 1}.
+                        </span>
+                        )}
+                        <span
+                            className="whitespace-pre-wrap leading-relaxed tracking-wide select-text"
+                            style={{
+                                fontSize: fontType === 'zhuyin' ? '1.5em' : '1em',
+                                lineHeight: fontType === 'zhuyin' ? '1.2' : '1.55',
+                                textOrientation: 'mixed'
+                            }}
+                        >
+                            {formatMixedVerticalText(line, writingMode)}
+                        </span>
+                    </div>
+                    ))}
+                </>
+            );
+        });
+
+        const BlackboardNoteDisplay = React.memo(({
+            content,
+            writingMode,
+            fontType,
+            notebookFontSize,
+            currentFontFamily
+        }) => {
+            const noteLines = content.split('\n');
+            const copyText = noteLines.map((line, idx) => `${idx + 1}. ${line}`).join('\n');
+            const copyBlackboardText = (event) => {
+                const selectionText = String(window.getSelection?.() || '');
+                const plainText = selectionText || copyText;
+                if (!plainText) return;
+                event.clipboardData.setData('text/plain', plainText);
+                event.preventDefault();
+            };
+
+            return (
+                <div
+                className={`blackboard-selectable relative w-full h-full overflow-auto bg-transparent text-white/95 font-serif outline-none resize-none p-4 border border-white/10 select-text cursor-text ${writingMode === 'vertical' ? 'writing-vertical' : ''}`}
+                onCopy={copyBlackboardText}
+                style={{
+                    fontFamily: currentFontFamily,
+                    fontSize: `${notebookFontSize}px`,
+                    writingMode: writingMode === 'vertical' ? 'vertical-rl' : 'horizontal-tb',
+                    textOrientation: 'mixed',
+                    unicodeBidi: 'plaintext'
+                }}
+                >
+                    <BlackboardFormattedContent
+                    content={content}
+                    writingMode={writingMode}
+                    fontType={fontType}
+                    showLineNumbers={true}
+                    />
+                </div>
+            );
+        });
+
+        // ---------------------------------------------------------------------------
+        // 使用者設定區：直接鎖定注音字體網址 (.ttf/.woff)
+        // ---------------------------------------------------------------------------
         const DEFAULT_ZHUYIN_FONT_URL = "https://raw.githubusercontent.com/Kathy594520/-/main/BpmfZihiOnly-R.ttf"; 
 
         const App = () => {
+            // ---------------------------------------------------------------------------
+            // 狀態設定
+            // ---------------------------------------------------------------------------
             const DEFAULT_LATE_TIME = "07:50";
+
             const [students, setStudents] = useState([]);
             const [currentTime, setCurrentTime] = useState(new Date());
-            const [lateThreshold, setLateThreshold] = useState(DEFAULT_LATE_TIME);
+            const [lateThreshold, setLateThreshold] = useState(() => localStorage.getItem('class_late_threshold') || DEFAULT_LATE_TIME);
             const [classNameTitle, setClassNameTitle] = useState(() => localStorage.getItem('class_title') || "班級自治小黑板");
+            
+            // UI 狀態
             const [showSettings, setShowSettings] = useState(false);
             const [showBatchEdit, setShowBatchEdit] = useState(false);
             const [batchInput, setBatchInput] = useState(""); 
             const [isEditingNote, setIsEditingNote] = useState(false);
-            const [leftPanelMode, setLeftPanelMode] = useState('students');
+            
+            // 進階功能狀態：剪貼簿與拖曳
+            const [leftPanelMode, setLeftPanelMode] = useState('students'); // 'students' | 'scrapbook' | 'homework'
+            const [homeworkData, setHomeworkData] = useState(() => {
+                try {
+                    const saved = localStorage.getItem('class_homework_data');
+                    if (saved) {
+                        const parsed = JSON.parse(saved);
+                        if (parsed && Array.isArray(parsed.assignments)) {
+                            return {
+                                assignments: parsed.assignments,
+                                activeId: parsed.activeId ?? parsed.assignments[0]?.id ?? null
+                            };
+                        }
+                    }
+                } catch (e) {
+                    console.error("Failed to load homework data", e);
+                }
+                return { assignments: [], activeId: null };
+            });
+            const [homeworkForm, setHomeworkForm] = useState({ title: "", dueDate: "", description: "" });
             const [scrapbookImages, setScrapbookImages] = useState(() => {
                 try {
                     const saved = localStorage.getItem('class_scrapbook_images');
                     let images = saved ? JSON.parse(saved) : [];
-                    return images.map(img => ({ ...img, x: img.x ?? Math.random() * 100, y: img.y ?? Math.random() * 100, scale: img.scale ?? 1 }));
-                } catch (e) { return []; }
+                    // 資料遷移：確保所有舊圖片都有 x, y, scale 座標
+                    return images.map(img => ({
+                        ...img,
+                        x: img.x ?? Math.random() * 100, // 預設隨機位置
+                        y: img.y ?? Math.random() * 100,
+                        scale: img.scale ?? 1 // 預設比例 1
+                    }));
+                } catch (e) {
+                    console.error("Failed to load images", e);
+                    return [];
+                }
             });
+            // 固定使用預設注音字體連結
             const customFontUrl = DEFAULT_ZHUYIN_FONT_URL;
-            const [interactionState, setInteractionState] = useState({ mode: null, id: null });
+
+            // 拖曳與互動狀態
+            const [interactionState, setInteractionState] = useState({ 
+                mode: null, // 'move' | 'resize' | null
+                id: null 
+            });
             const dragOffset = useRef({ x: 0, y: 0, startX: 0, startY: 0, initialScale: 1 });
             const scrapbookRef = useRef(null);
+
+            // 確認視窗狀態
             const [confirmConfig, setConfirmConfig] = useState({ show: false, title: "", message: "", action: null, type: "danger" });
+            
+            // 模式與視圖
             const [checkInMode, setCheckInMode] = useState('attendance');
             const [viewMode, setViewMode] = useState('split');
+
+            // 持久化設定
             const [writingMode, setWritingMode] = useState(() => localStorage.getItem('class_note_writing_mode') || 'horizontal');
             const [clockStyleIndex, setClockStyleIndex] = useState(() => parseInt(localStorage.getItem('class_clock_style') || '0', 10));
             const [splitRatio, setSplitRatio] = useState(() => parseFloat(localStorage.getItem('class_split_ratio') || '50'));
             const [notebookFontSize, setNotebookFontSize] = useState(() => parseInt(localStorage.getItem('class_notebook_font_size') || '32', 10));
             const [fontType, setFontType] = useState(() => localStorage.getItem('class_font_type') || 'sans');
+            
+            // 聯絡簿資料
             const [notesData, setNotesData] = useState(() => {
                 const saved = localStorage.getItem('class_notes_data');
                 if (saved) { try { return JSON.parse(saved); } catch (e) { console.error(e); } }
                 const todayKey = new Date().toISOString().split('T')[0];
                 return { [todayKey]: "\n\n\n\n\n" };
             });
+
             const [notebookDate, setNotebookDate] = useState(new Date());
             const splitContainerRef = useRef(null);
+            const noteEditorRef = useRef(null);
             const fileInputRef = useRef(null);
-            
-            // 上傳狀態
-            const [isUploading, setIsUploading] = useState(false);
+            const backupFileInputRef = useRef(null);
 
+            // ---------------------------------------------------------------------------
+            // 字體與樣式系統
+            // ---------------------------------------------------------------------------
+            
+            // 動態注入注音字體
             useEffect(() => {
                 if (customFontUrl) {
                     const styleId = 'custom-zhuyin-font-style';
                     let styleTag = document.getElementById(styleId);
                     if (!styleTag) {
-                        styleTag = document.createElement('style'); styleTag.id = styleId; document.head.appendChild(styleTag);
+                        styleTag = document.createElement('style');
+                        styleTag.id = styleId;
+                        document.head.appendChild(styleTag);
                     }
-                    styleTag.textContent = `@font-face { font-family: 'ZhuyinCustom'; src: url('${customFontUrl}') format('truetype'); font-display: swap; }`;
+                    styleTag.textContent = `
+                        @font-face {
+                            font-family: 'ZhuyinCustom';
+                            src: url('${customFontUrl}') format('truetype');
+                            font-display: swap;
+                        }
+                    `;
                 }
             }, [customFontUrl]);
 
@@ -149,12 +449,33 @@
                 }
             };
             const currentFontFamily = getFontFamily(fontType);
-            const CLOCK_STYLES = [{ id: 'simple', name: '簡約白', text: 'text-retro-ink' }, { id: 'orange', name: '活力橘', text: 'text-retro-red' }, { id: 'blue', name: '天空藍', text: 'text-retro-blue' }, { id: 'purple', name: '優雅紫', text: 'text-retro-wood' }, { id: 'dark', name: '科技黑', text: 'text-retro-green' }];
+
+            // 標準時鐘樣式
+            const CLOCK_STYLES = [
+                { id: 'chalk', name: '粉筆白', text: 'text-[#2c2418]', ring: '#5d4037', bg: '#fcfbf2' },
+                { id: 'slate', name: '黑板綠', text: 'text-[#1f3a34]', ring: '#2f4f46', bg: '#eaf0e8' },
+                { id: 'amber', name: '粉筆黃', text: 'text-[#5d4215]', ring: '#8a6a24', bg: '#fff4c7' },
+                { id: 'blue', name: '值日藍', text: 'text-[#24465a]', ring: '#31566b', bg: '#e5eef2' },
+                { id: 'red', name: '印泥紅', text: 'text-[#743025]', ring: '#8b3f2f', bg: '#f4dfd6' }
+            ];
             const currentClockStyle = CLOCK_STYLES[clockStyleIndex % CLOCK_STYLES.length];
+
+            // ---------------------------------------------------------------------------
+            // 邏輯處理
+            // ---------------------------------------------------------------------------
 
             useEffect(() => {
                 const savedStudents = localStorage.getItem('class_students_v2'); 
-                if (savedStudents) { try { const parsed = JSON.parse(savedStudents); if (Array.isArray(parsed)) { const uniqueStudents = Array.from(new Map(parsed.map(item => [item.id, item])).values()); uniqueStudents.sort((a, b) => a.id - b.id); setStudents(uniqueStudents); } } catch(e) { setStudents([]); } } else { setStudents([]); }
+                if (savedStudents) {
+                try {
+                    const parsed = JSON.parse(savedStudents);
+                    if (Array.isArray(parsed)) {
+                        const uniqueStudents = Array.from(new Map(parsed.map(item => [item.id, item])).values());
+                        uniqueStudents.sort((a, b) => a.id - b.id);
+                        setStudents(uniqueStudents);
+                    } else { setStudents([]); }
+                } catch(e) { setStudents([]); }
+                } else { setStudents([]); }
             }, []);
 
             useEffect(() => { localStorage.setItem('class_students_v2', JSON.stringify(students)); }, [students]);
@@ -165,239 +486,726 @@
             useEffect(() => { localStorage.setItem('class_notebook_font_size', notebookFontSize); }, [notebookFontSize]);
             useEffect(() => { localStorage.setItem('class_font_type', fontType); }, [fontType]);
             useEffect(() => { localStorage.setItem('class_clock_style', clockStyleIndex); }, [clockStyleIndex]);
-            useEffect(() => { try { localStorage.setItem('class_scrapbook_images', JSON.stringify(scrapbookImages)); } catch (e) { console.warn("Storage full"); } }, [scrapbookImages]);
+            useEffect(() => { localStorage.setItem('class_homework_data', JSON.stringify(homeworkData)); }, [homeworkData]);
+            // 移除 font URL 的 local storage 寫入，因為已寫死
+            
+            // 剪貼簿存儲
+            useEffect(() => { 
+                try {
+                    localStorage.setItem('class_scrapbook_images', JSON.stringify(scrapbookImages)); 
+                } catch (e) {
+                    console.warn("Storage full, images not saved to disk.");
+                }
+            }, [scrapbookImages]);
 
+            const saveLateThreshold = () => {
+                localStorage.setItem('class_late_threshold', lateThreshold);
+            };
+
+            // 全局貼上監聽
             useEffect(() => {
-                const handlePaste = (e) => { if (leftPanelMode !== 'scrapbook') return; const items = e.clipboardData.items; for (let i = 0; i < items.length; i++) { if (items[i].type.indexOf('image') !== -1) { const blob = items[i].getAsFile(); processImageFile(blob); } } };
-                window.addEventListener('paste', handlePaste); return () => window.removeEventListener('paste', handlePaste);
+                const handlePaste = (e) => {
+                    if (leftPanelMode !== 'scrapbook') return;
+                    const items = e.clipboardData.items;
+                    for (let i = 0; i < items.length; i++) {
+                        if (items[i].type.indexOf('image') !== -1) {
+                            const blob = items[i].getAsFile();
+                            processImageFile(blob);
+                        }
+                    }
+                };
+                window.addEventListener('paste', handlePaste);
+                return () => window.removeEventListener('paste', handlePaste);
             }, [leftPanelMode]);
 
-            useEffect(() => { const timer = setInterval(() => { const now = new Date(); setCurrentTime(now); checkLateStatus(now); }, 1000); return () => clearInterval(timer); }, [lateThreshold]);
+            useEffect(() => {
+                const timer = setInterval(() => {
+                const now = new Date();
+                setCurrentTime(now);
+                checkLateStatus(now);
+                }, 1000);
+                return () => clearInterval(timer);
+            }, [lateThreshold]);
 
             const checkLateStatus = (now) => {
                 const [h, m] = lateThreshold.split(':').map(Number);
-                const thresholdDate = new Date(now); thresholdDate.setHours(h, m, 0, 0);
-                const resetDate = new Date(now); resetDate.setHours(17, 0, 0, 0);
+                const thresholdDate = new Date(now);
+                thresholdDate.setHours(h, m, 0, 0);
+                const resetDate = new Date(now);
+                resetDate.setHours(17, 0, 0, 0);
                 const isLateAlertPeriod = now >= thresholdDate && now < resetDate;
-                setStudents(prev => prev.map(s => { if (s.status === 'idle' && isLateAlertPeriod) return { ...s, status: 'late_absent' }; if (s.status === 'late_absent' && !isLateAlertPeriod) return { ...s, status: 'idle' }; return s; }));
+
+                setStudents(prev => prev.map(s => {
+                if (s.status === 'idle' && isLateAlertPeriod) return { ...s, status: 'late_absent' };
+                if (s.status === 'late_absent' && !isLateAlertPeriod) return { ...s, status: 'idle' };
+                return s;
+                }));
             };
 
             const handleStudentClick = (id) => {
                 setStudents(prev => prev.map(s => {
-                    if (s.id !== id) return s;
-                    switch (checkInMode) {
-                        case 'attendance': {
-                            const now = new Date(); const timeString = now.toTimeString().slice(0, 5);
-                            const [h, m] = lateThreshold.split(':').map(Number);
-                            const thresholdDate = new Date(now); thresholdDate.setHours(h, m, 0, 0);
-                            const isLate = now >= thresholdDate;
-                            const resetDate = new Date(now); resetDate.setHours(17, 0, 0, 0);
-                            const isLateAlertPeriod = now >= thresholdDate && now < resetDate;
-                            if (s.status === 'present' || s.status === 'late_arrived') return { ...s, status: isLateAlertPeriod ? 'late_absent' : 'idle', arrivalTime: null };
-                            return { ...s, status: isLate ? 'late_arrived' : 'present', arrivalTime: timeString };
-                        }
-                        case 'brushing': return { ...s, brushing: !s.brushing };
-                        case 'lunch': return { ...s, lunch: !s.lunch };
-                        case 'duty': return { ...s, isDuty: !s.isDuty };
-                        case 'correction': return { ...s, correction: !s.correction }; 
-                        default: return s;
+                if (s.id !== id) return s;
+                
+                switch (checkInMode) {
+                    case 'attendance': {
+                    const now = new Date();
+                    const timeString = now.toTimeString().slice(0, 5);
+                    const [h, m] = lateThreshold.split(':').map(Number);
+                    const thresholdDate = new Date(now);
+                    thresholdDate.setHours(h, m, 0, 0);
+                    const isLate = now >= thresholdDate;
+                    const resetDate = new Date(now);
+                    resetDate.setHours(17, 0, 0, 0);
+                    const isLateAlertPeriod = now >= thresholdDate && now < resetDate;
+
+                    if (s.status === 'present' || s.status === 'late_arrived') {
+                        return { ...s, status: isLateAlertPeriod ? 'late_absent' : 'idle', arrivalTime: null };
                     }
+                    return { ...s, status: isLate ? 'late_arrived' : 'present', arrivalTime: timeString };
+                    }
+                    case 'brushing': return { ...s, brushing: !s.brushing };
+                    case 'lunch': return { ...s, lunch: !s.lunch };
+                    case 'duty': return { ...s, isDuty: !s.isDuty };
+                    case 'correction': return { ...s, correction: !s.correction }; 
+                    default: return s;
+                }
                 }));
             };
 
             const updateStudentData = (originalId, field, value) => {
                 setStudents(prev => {
-                    const newList = prev.map(s => { if (s.id !== originalId) return s; if (field === 'name') return { ...s, name: value }; if (field === 'id') { const newId = parseInt(value, 10); if (!isNaN(newId) && newId > 0) return { ...s, id: newId }; } return s; });
+                    const newList = prev.map(s => {
+                        if (s.id !== originalId) return s;
+                        if (field === 'name') return { ...s, name: value };
+                        if (field === 'id') {
+                            const newId = parseInt(value, 10);
+                            if (!isNaN(newId) && newId > 0) return { ...s, id: newId };
+                        }
+                        return s;
+                    });
                     return newList.sort((a, b) => a.id - b.id);
                 });
             };
+
+            const homeworkAssignments = homeworkData.assignments || [];
+            const currentHomework = homeworkAssignments.find(item => item.id === homeworkData.activeId) || homeworkAssignments[0] || null;
+            const submittedCount = currentHomework ? students.filter(student => currentHomework.submissions?.[student.id]).length : 0;
+
+            const createHomeworkAssignment = () => {
+                const title = homeworkForm.title.trim();
+                if (!title) return;
+
+                const id = Date.now();
+                const nextItem = {
+                    id,
+                    title,
+                    dueDate: homeworkForm.dueDate,
+                    description: homeworkForm.description.trim(),
+                    submissions: {},
+                    createdAt: new Date().toISOString()
+                };
+
+                setHomeworkData(prev => ({
+                    assignments: [nextItem, ...prev.assignments],
+                    activeId: id
+                }));
+                setHomeworkForm({ title: "", dueDate: "", description: "" });
+            };
+
+            const removeHomeworkAssignment = (id) => {
+                setHomeworkData(prev => {
+                    const assignments = prev.assignments.filter(item => item.id !== id);
+                    const nextActiveId = prev.activeId === id ? (assignments[0]?.id ?? null) : prev.activeId;
+                    return { assignments, activeId: nextActiveId };
+                });
+            };
+
+            const toggleHomeworkSubmission = (studentId) => {
+                if (!currentHomework) return;
+                setHomeworkData(prev => ({
+                    ...prev,
+                    assignments: prev.assignments.map(item => {
+                        if (item.id !== currentHomework.id) return item;
+                        const submissions = { ...(item.submissions || {}) };
+                        submissions[studentId] = !submissions[studentId];
+                        return { ...item, submissions };
+                    })
+                }));
+            };
+
+            const clearHomeworkSubmissions = () => {
+                if (!currentHomework) return;
+                setHomeworkData(prev => ({
+                    ...prev,
+                    assignments: prev.assignments.map(item => item.id === currentHomework.id ? { ...item, submissions: {} } : item)
+                }));
+            };
+
+            // ---------------------------------------------------------------------------
+            // 剪貼簿邏輯
+            // ---------------------------------------------------------------------------
             
             const processImageFile = (file) => {
                 const reader = new FileReader();
                 reader.onload = (e) => {
-                    setScrapbookImages(prev => [...prev, { id: Date.now(), src: e.target.result, rotation: Math.random() * 10 - 5, timestamp: new Date().toLocaleString(), x: 20 + Math.random() * 200, y: 20 + Math.random() * 200, scale: 1 }]);
+                    const randomX = 20 + Math.random() * 200;
+                    const randomY = 20 + Math.random() * 200;
+                    
+                    const newImage = {
+                        id: Date.now(),
+                        src: e.target.result,
+                        rotation: Math.random() * 10 - 5,
+                        timestamp: new Date().toLocaleString(),
+                        x: randomX,
+                        y: randomY,
+                        scale: 1
+                    };
+                    setScrapbookImages(prev => [...prev, newImage]);
                 };
                 reader.readAsDataURL(file);
             };
 
-            const handleImageUpload = (e) => { const file = e.target.files[0]; if (file) processImageFile(file); e.target.value = null; };
-            const removeImage = (id) => { setScrapbookImages(prev => prev.filter(img => img.id !== id)); };
-            const updateImageScale = (id, delta) => { setScrapbookImages(prev => prev.map(img => { if (img.id === id) { return { ...img, scale: Math.max(0.5, Math.min(3.0, (img.scale || 1) + delta)) }; } return img; })); };
-            const onMouseDownMove = (e, id, currentX, currentY) => { e.stopPropagation(); if (leftPanelMode !== 'scrapbook') return; dragOffset.current = { x: e.clientX - currentX, y: e.clientY - currentY }; setInteractionState({ mode: 'move', id: id }); };
-            const onMouseDownResize = (e, id, currentScale) => { e.stopPropagation(); e.preventDefault(); if (leftPanelMode !== 'scrapbook') return; dragOffset.current = { startX: e.clientX, startY: e.clientY, initialScale: currentScale }; setInteractionState({ mode: 'resize', id: id }); };
-            
+            const handleImageUpload = (e) => {
+                const file = e.target.files[0];
+                if (file) processImageFile(file);
+                e.target.value = null; // 重置 input
+            };
+
+            const removeImage = (id) => {
+                setScrapbookImages(prev => prev.filter(img => img.id !== id));
+            };
+
+            const updateImageScale = (id, delta) => {
+                setScrapbookImages(prev => prev.map(img => {
+                    if (img.id === id) {
+                        const newScale = Math.max(0.5, Math.min(3.0, (img.scale || 1) + delta));
+                        return { ...img, scale: newScale };
+                    }
+                    return img;
+                }));
+            };
+
+            // 拖曳處理邏輯 (移動)
+            const onMouseDownMove = (e, id, currentX, currentY) => {
+                e.stopPropagation();
+                if (leftPanelMode !== 'scrapbook') return;
+                
+                dragOffset.current = {
+                    x: e.clientX - currentX,
+                    y: e.clientY - currentY
+                };
+                setInteractionState({ mode: 'move', id: id });
+            };
+
+            // 拖曳處理邏輯 (縮放)
+            const onMouseDownResize = (e, id, currentScale) => {
+                e.stopPropagation();
+                e.preventDefault();
+                if (leftPanelMode !== 'scrapbook') return;
+
+                dragOffset.current = {
+                    startX: e.clientX,
+                    startY: e.clientY,
+                    initialScale: currentScale
+                };
+                setInteractionState({ mode: 'resize', id: id });
+            };
+
             const onMouseMoveScrapbook = (e) => {
                 if (!interactionState.mode) return;
-                if (interactionState.mode === 'move') { setScrapbookImages(prev => prev.map(img => img.id === interactionState.id ? { ...img, x: e.clientX - dragOffset.current.x, y: e.clientY - dragOffset.current.y } : img)); } 
-                else if (interactionState.mode === 'resize') { const deltaX = e.clientX - dragOffset.current.startX; setScrapbookImages(prev => prev.map(img => img.id === interactionState.id ? { ...img, scale: Math.max(0.5, Math.min(3.0, dragOffset.current.initialScale + deltaX * 0.005)) } : img)); }
-            };
-            const onMouseUpScrapbook = () => { setInteractionState({ mode: null, id: null }); };
+                
+                if (interactionState.mode === 'move') {
+                    // 計算新位置
+                    const newX = e.clientX - dragOffset.current.x;
+                    const newY = e.clientY - dragOffset.current.y;
 
-            const executeConfirmAction = () => { if (confirmConfig.action) { confirmConfig.action(); } setConfirmConfig({ ...confirmConfig, show: false }); };
+                    setScrapbookImages(prev => prev.map(img => 
+                        img.id === interactionState.id ? { ...img, x: newX, y: newY } : img
+                    ));
+                } else if (interactionState.mode === 'resize') {
+                    // 計算新比例
+                    const deltaX = e.clientX - dragOffset.current.startX;
+                    const scaleChange = deltaX * 0.005; // 調整靈敏度
+                    const newScale = Math.max(0.5, Math.min(3.0, dragOffset.current.initialScale + scaleChange));
+
+                    setScrapbookImages(prev => prev.map(img => 
+                        img.id === interactionState.id ? { ...img, scale: newScale } : img
+                    ));
+                }
+            };
+
+            const onMouseUpScrapbook = () => {
+                if (!interactionState.mode) return;
+                setInteractionState({ mode: null, id: null });
+            };
+
+
+            const executeConfirmAction = () => {
+                if (confirmConfig.action) { confirmConfig.action(); }
+                setConfirmConfig({ ...confirmConfig, show: false });
+            };
+
             const cancelConfirmAction = () => { setConfirmConfig({ ...confirmConfig, show: false }); };
-            const confirmRemoveStudent = (e, id) => { e.stopPropagation(); setConfirmConfig({ show: true, title: "移除學生", message: `確定要將座號 ${id} 從名冊中移除嗎？此操作不可逆。`, type: "danger", action: () => { setStudents(prev => prev.filter(s => s.id !== id)); } }); };
-            const confirmClearNote = () => { setConfirmConfig({ show: true, title: "黑板擦", message: "確定要擦掉所有板書嗎？", type: "warning", action: () => { updateCurrentNote("\n\n\n\n\n"); } }); };
-            
-            const confirmResetMode = () => {
+
+            const confirmRemoveStudent = (e, id) => {
+                e.stopPropagation();
                 setConfirmConfig({
-                    show: true, title: `重置${getModeName(checkInMode)}`, message: `確定要重置所有學生的「${getModeName(checkInMode)}」紀錄嗎？`, type: "warning",
-                    action: () => { setStudents(prev => prev.map(s => { switch (checkInMode) { case 'attendance': return { ...s, status: s.status === 'empty' ? 'empty' : 'idle', arrivalTime: null }; case 'brushing': return { ...s, brushing: false }; case 'lunch': return { ...s, lunch: false }; case 'duty': return { ...s, isDuty: false }; case 'correction': return { ...s, correction: false }; default: return s; } })); }
+                show: true,
+                title: "移除學生",
+                message: `確定要將座號 ${id} 從名冊中移除嗎？此操作不可逆。`,
+                type: "danger",
+                action: () => { setStudents(prev => prev.filter(s => s.id !== id)); }
                 });
             };
 
-            const openBatchEdit = () => { const textList = students.map(s => `${s.id} ${s.name}`).join('\n'); setBatchInput(textList); setShowBatchEdit(true); };
+            const confirmClearNote = () => {
+                setConfirmConfig({
+                show: true,
+                title: "黑板擦",
+                message: "確定要擦掉所有板書嗎？",
+                type: "warning",
+                action: () => { updateCurrentNote("\n\n\n\n\n"); }
+                });
+            };
+
+            const confirmResetMode = () => {
+                setConfirmConfig({
+                show: true,
+                title: `重置${getModeName(checkInMode)}`,
+                message: `確定要重置所有學生的「${getModeName(checkInMode)}」紀錄嗎？`,
+                type: "warning",
+                action: () => {
+                    setStudents(prev => prev.map(s => {
+                    switch (checkInMode) {
+                        case 'attendance': return { ...s, status: s.status === 'empty' ? 'empty' : 'idle', arrivalTime: null };
+                        case 'brushing': return { ...s, brushing: false };
+                        case 'lunch': return { ...s, lunch: false };
+                        case 'duty': return { ...s, isDuty: false };
+                        case 'correction': return { ...s, correction: false };
+                        default: return s;
+                    }
+                    }));
+                }
+                });
+            };
+
+            const openBatchEdit = () => {
+                const textList = students.map(s => `${s.id} ${s.name}`).join('\n');
+                setBatchInput(textList);
+                setShowBatchEdit(true);
+            };
+
             const saveBatchEdit = () => {
                 const lines = batchInput.split(/\r\n|\n|\r/).filter(line => line.trim() !== '');
-                const newStudents = []; const usedIds = new Set();
-                lines.forEach(line => { const match = line.trim().match(/^(\d+)[\s,，.]+(.*)$/); if (match) { const id = parseInt(match[1], 10); const name = match[2].trim(); if (!isNaN(id) && id > 0 && name) { if (usedIds.has(id)) { const index = newStudents.findIndex(s => s.id === id); if (index !== -1) newStudents[index].name = name; } else { newStudents.push({ id: id, name: name, status: 'idle', arrivalTime: null, brushing: false, lunch: false, isDuty: false, correction: false }); usedIds.add(id); } } } });
-                if (newStudents.length > 0) { newStudents.sort((a, b) => a.id - b.id); setStudents(prev => { const prevMap = new Map(prev.map(s => [s.id, s])); return newStudents.map(newS => { const oldS = prevMap.get(newS.id); if (oldS) return { ...oldS, name: newS.name }; return newS; }); }); setShowBatchEdit(false); } else { alert("名冊格式錯誤"); }
+                const newStudents = [];
+                const usedIds = new Set();
+
+                lines.forEach(line => {
+                    const match = line.trim().match(/^(\d+)[\s,，.]+(.*)$/);
+                    let id, name;
+
+                    if (match) {
+                        id = parseInt(match[1], 10);
+                        name = match[2].trim();
+                    } else { return; }
+
+                    if (!isNaN(id) && id > 0 && name) {
+                        if (usedIds.has(id)) {
+                            const index = newStudents.findIndex(s => s.id === id);
+                            if (index !== -1) newStudents[index].name = name;
+                        } else {
+                            newStudents.push({
+                                id: id, name: name,
+                                status: 'idle', arrivalTime: null, brushing: false, lunch: false, isDuty: false, correction: false
+                            });
+                            usedIds.add(id);
+                        }
+                    }
+                });
+
+                if (newStudents.length > 0) {
+                    newStudents.sort((a, b) => a.id - b.id);
+                    setStudents(prev => {
+                        const prevMap = new Map(prev.map(s => [s.id, s]));
+                        return newStudents.map(newS => {
+                            const oldS = prevMap.get(newS.id);
+                            if (oldS) return { ...oldS, name: newS.name };
+                            return newS;
+                        });
+                    });
+                    setShowBatchEdit(false);
+                } else {
+                    alert("名冊格式錯誤。\n請使用：[座號] [姓名]\n例如：1 王小明");
+                }
             };
-            const addStudent = () => { setStudents(prev => { const maxId = prev.length > 0 ? Math.max(...prev.map(s => s.id)) : 0; return [...prev, { id: maxId + 1, name: "", status: 'idle', arrivalTime: null, brushing: false, lunch: false, isDuty: false, correction: false }].sort((a, b) => a.id - b.id); }); };
-            const getModeName = (mode) => { const map = { attendance: '出勤點名', brushing: '潔牙檢查', lunch: '午餐整潔', duty: '值日輪值', correction: '作業訂正' }; return map[mode]; };
+
+            const addStudent = () => {
+                setStudents(prev => {
+                    const maxId = prev.length > 0 ? Math.max(...prev.map(s => s.id)) : 0;
+                    return [...prev, { 
+                        id: maxId + 1, name: "", 
+                        status: 'idle', arrivalTime: null, brushing: false, lunch: false, isDuty: false, correction: false
+                    }].sort((a, b) => a.id - b.id);
+                });
+            };
+
+            const getModeName = (mode) => {
+                const map = { 
+                attendance: '出勤點名', 
+                brushing: '潔牙檢查', 
+                lunch: '午餐整潔', 
+                duty: '值日輪值',
+                correction: '作業訂正'
+                };
+                return map[mode];
+            };
 
             const handleExportCSV = () => {
-                const dateStr = currentTime.toLocaleDateString('zh-TW'); let csvContent = "\ufeff日期,座號,姓名,打卡狀態,到校時間,潔牙,午餐整理,值日生,作業訂正\n"; const statusMap = { 'idle': '未到', 'present': '準時', 'late_absent': '遲到未到', 'late_arrived': '遲到已到' };
-                [...students].sort((a, b) => a.id - b.id).forEach(s => { csvContent += `${dateStr},${s.id},${s.name},${statusMap[s.status] || '未到'},${s.arrivalTime || '--'},${s.brushing?'V':''},${s.lunch?'V':''},${s.isDuty?'V':''},${s.correction?'V':''}\n`; });
-                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' }); const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = `班級紀錄_${dateStr.replace(/\//g, '-')}.csv`; link.click();
+                const dateStr = currentTime.toLocaleDateString('zh-TW');
+                let csvContent = "\ufeff日期,座號,姓名,打卡狀態,到校時間,潔牙,午餐整理,值日生,作業訂正\n";
+                const statusMap = { 'idle': '未到', 'present': '準時', 'late_absent': '遲到未到', 'late_arrived': '遲到已到' };
+                
+                const sortedStudents = [...students].sort((a, b) => a.id - b.id);
+                
+                sortedStudents.forEach(s => {
+                csvContent += `${dateStr},${s.id},${s.name},${statusMap[s.status] || '未到'},${s.arrivalTime || '--'},${s.brushing?'V':''},${s.lunch?'V':''},${s.isDuty?'V':''},${s.correction?'V':''}\n`;
+                });
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement("a");
+                link.href = URL.createObjectURL(blob);
+                link.download = `班級紀錄_${dateStr.replace(/\//g, '-')}.csv`;
+                link.click();
             };
 
-            // -------------------------------------------------------------------------
-            // 雲端上傳功能
-            // -------------------------------------------------------------------------
-            const handleUploadToCloud = async () => {
-                if (GAS_DEPLOY_URL === "https://script.google.com/macros/s/AKfycbw_Si1J7MoQt760XIZTHkbb1ZfRfCOSCegebLLt1D46r2io0-VYcYY7YPcSSKd20Ro/exec") {
-                    alert("請先在程式碼中設定 GAS_DEPLOY_URL！");
-                    return;
-                }
-                
-                if (students.length === 0) {
-                    alert("名冊是空的，無法上傳！請先新增學生。");
-                    return;
+            const clampNumber = (value, min, max, fallback) => {
+                const number = Number(value);
+                if (!Number.isFinite(number)) return fallback;
+                return Math.max(min, Math.min(max, number));
+            };
+
+            const sanitizeBackupFileName = (name) => {
+                const safeName = String(name || '班級自治小黑板').trim().replace(/[\\/:*?"<>|]/g, '-');
+                return safeName || '班級自治小黑板';
+            };
+
+            const normalizeBackupData = (payload) => {
+                const data = payload?.data || payload;
+                if (!data || !Array.isArray(data.students)) {
+                    throw new Error('這不是小黑板匯出的 JSON 備份檔。');
                 }
 
-                setIsUploading(true);
-                const dateStr = currentTime.toLocaleDateString('zh-TW', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '-');
-                // 使用 [...students] 建立副本再排序，避免修改原始狀態
-                const payload = {
-                    date: dateStr,
-                    students: [...students].sort((a, b) => a.id - b.id)
+                return {
+                    students: data.students,
+                    classNameTitle: typeof data.classNameTitle === 'string' ? data.classNameTitle : '班級自治小黑板',
+                    lateThreshold: typeof data.lateThreshold === 'string' && /^([01]\d|2[0-3]):[0-5]\d$/.test(data.lateThreshold) ? data.lateThreshold : DEFAULT_LATE_TIME,
+                    notesData: data.notesData && typeof data.notesData === 'object' && !Array.isArray(data.notesData) ? data.notesData : {},
+                    writingMode: data.writingMode === 'vertical' ? 'vertical' : 'horizontal',
+                    clockStyleIndex: clampNumber(data.clockStyleIndex, 0, CLOCK_STYLES.length - 1, 0),
+                    splitRatio: clampNumber(data.splitRatio, 20, 80, 50),
+                    notebookFontSize: clampNumber(data.notebookFontSize, 16, 72, 32),
+                    fontType: ['zhuyin', 'kai', 'rounded', 'sans'].includes(data.fontType) ? data.fontType : 'sans',
+                    homeworkData: data.homeworkData && Array.isArray(data.homeworkData.assignments) ? data.homeworkData : { assignments: [], activeId: null },
+                    scrapbookImages: Array.isArray(data.scrapbookImages) ? data.scrapbookImages : [],
+                    checkInMode: ['attendance', 'brushing', 'lunch', 'duty', 'correction'].includes(data.checkInMode) ? data.checkInMode : 'attendance',
+                    leftPanelMode: ['students', 'scrapbook', 'homework'].includes(data.leftPanelMode) ? data.leftPanelMode : 'students',
+                    viewMode: ['split', 'checkin', 'notebook'].includes(data.viewMode) ? data.viewMode : 'split'
                 };
-                
-                console.log("正在準備上傳資料:", payload);
+            };
 
-                try {
-                    // 使用 no-cors 模式，並且明確指定 charset=utf-8
-                    const response = await fetch(GAS_DEPLOY_URL, {
-                        method: "POST",
-                        mode: "no-cors", 
-                        headers: { "Content-Type": "text/plain;charset=utf-8" }, 
-                        body: JSON.stringify(payload)
-                    });
+            const handleExportJSON = () => {
+                const exportedAt = new Date().toISOString();
+                const backup = {
+                    app: 'class-autonomy-blackboard',
+                    schemaVersion: 1,
+                    exportedAt,
+                    data: {
+                        students,
+                        classNameTitle,
+                        lateThreshold,
+                        notesData,
+                        writingMode,
+                        clockStyleIndex,
+                        splitRatio,
+                        notebookFontSize,
+                        fontType,
+                        homeworkData,
+                        scrapbookImages,
+                        checkInMode,
+                        leftPanelMode,
+                        viewMode
+                    }
+                };
 
-                    alert("資料已傳送至雲端試算表！\n(由於安全限制，瀏覽器無法確認是否成功，請直接檢查試算表。\n若試算表仍為空白，請檢查 GAS 後端的【執行項目】紀錄。)");
-                } catch (error) {
-                    console.error("Upload failed", error);
-                    alert("上傳失敗，請檢查網路或 GAS 設定。");
-                } finally {
-                    setIsUploading(false);
-                }
+                const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json;charset=utf-8;' });
+                const link = document.createElement("a");
+                const stamp = exportedAt.slice(0, 19).replace(/[T:]/g, '-');
+                link.href = URL.createObjectURL(blob);
+                link.download = `${sanitizeBackupFileName(classNameTitle)}_小黑板備份_${stamp}.json`;
+                link.click();
+                URL.revokeObjectURL(link.href);
+            };
+
+            const applyImportedBackup = (data) => {
+                setStudents(data.students);
+                setClassNameTitle(data.classNameTitle);
+                setLateThreshold(data.lateThreshold);
+                setNotesData(data.notesData);
+                setWritingMode(data.writingMode);
+                setClockStyleIndex(data.clockStyleIndex);
+                setSplitRatio(data.splitRatio);
+                setNotebookFontSize(data.notebookFontSize);
+                setFontType(data.fontType);
+                setHomeworkData(data.homeworkData);
+                setScrapbookImages(data.scrapbookImages);
+                setCheckInMode(data.checkInMode);
+                setLeftPanelMode(data.leftPanelMode);
+                setViewMode(data.viewMode);
+                setShowSettings(false);
+                window.alert('JSON 備份已匯入完成。');
+            };
+
+            const handleImportJSON = (event) => {
+                const file = event.target.files?.[0];
+                event.target.value = null;
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.onload = () => {
+                    try {
+                        const payload = JSON.parse(reader.result);
+                        const data = normalizeBackupData(payload);
+                        setConfirmConfig({
+                            show: true,
+                            title: "匯入 JSON 備份",
+                            message: `確定要匯入「${file.name}」嗎？目前這台載具上的名冊、聯絡簿、作業、剪貼簿與版面設定會被備份檔覆蓋。`,
+                            type: "warning",
+                            action: () => applyImportedBackup(data)
+                        });
+                    } catch (error) {
+                        window.alert(error.message || 'JSON 匯入失敗，請確認檔案格式。');
+                    }
+                };
+                reader.onerror = () => window.alert('讀取 JSON 檔案失敗，請重新選擇檔案。');
+                reader.readAsText(file, 'utf-8');
             };
 
             const getNoteDateKey = (date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
             const currentNoteKey = getNoteDateKey(notebookDate);
             const currentNoteContent = notesData[currentNoteKey] || ""; 
             const updateCurrentNote = (content) => setNotesData(prev => ({ ...prev, [currentNoteKey]: content }));
-            const noteLines = currentNoteContent.split('\n');
+            
             const toggleClockStyle = () => setClockStyleIndex(prev => (prev + 1) % CLOCK_STYLES.length);
-            const getGridColsClass = () => { const n = students.length; if (n === 0) return "grid-cols-1"; if (n <= 30) return "grid-cols-5"; if (n <= 42) return "grid-cols-6"; if (n <= 56) return "grid-cols-8"; return "grid-cols-10"; };
-            const handleDragStart = (e) => { e.preventDefault(); document.addEventListener('mousemove', handleDragMove); document.addEventListener('mouseup', handleDragEnd); };
-            const handleDragMove = (e) => { if (splitContainerRef.current) { const rect = splitContainerRef.current.getBoundingClientRect(); setSplitRatio(Math.max(20, Math.min(((e.clientX - rect.left) / rect.width) * 100, 80))); } };
-            const handleDragEnd = () => { document.removeEventListener('mousemove', handleDragMove); document.removeEventListener('mouseup', handleDragEnd); };
-
-            const formatVerticalContent = (text) => {
-                if (writingMode !== 'vertical') return text;
-                const parts = text.split(/(\d+)/);
-                return parts.map((part, index) => {
-                    if (/\d+/.test(part)) return <span key={`num-${index}`} style={{ textCombineUpright: 'all', WebkitTextCombine: 'horizontal', margin: '2px 0', fontFamily: '"Noto Sans TC", sans-serif' }}>{part}</span>;
-                    if (/[-－–—]/.test(part)) return part.split('').map((char, cIdx) => (['-', '－', '–', '—'].includes(char) ? <span key={`dash-${index}-${cIdx}`} style={{ display: 'inline-block', transform: 'rotate(90deg)', verticalAlign: 'middle', position: 'relative', left: '1px', fontFamily: '"Noto Sans TC", sans-serif' }}>{char}</span> : char));
-                    return part;
-                });
+            
+            // 修正Grid邏輯：復古風格稍微寬一點
+            const getGridColsClass = () => {
+                const n = students.length;
+                if (n === 0) return "grid-cols-1"; 
+                if (n <= 30) return "grid-cols-5";
+                if (n <= 42) return "grid-cols-6";
+                if (n <= 56) return "grid-cols-8";
+                return "grid-cols-10";
             };
 
+            const handleDragStart = (e) => { e.preventDefault(); document.addEventListener('mousemove', handleDragMove); document.addEventListener('mouseup', handleDragEnd); };
+            const handleDragMove = (e) => {
+                if (splitContainerRef.current) {
+                const rect = splitContainerRef.current.getBoundingClientRect();
+                const newRatio = Math.max(20, Math.min(((e.clientX - rect.left) / rect.width) * 100, 80));
+                setSplitRatio(newRatio);
+                }
+            };
+            const handleDragEnd = () => { document.removeEventListener('mousemove', handleDragMove); document.removeEventListener('mouseup', handleDragEnd); };
+
+            useEffect(() => {
+                if (!isEditingNote || !noteEditorRef.current) return;
+                noteEditorRef.current.focus();
+            }, [isEditingNote, currentNoteKey]);
+
+            // ---------------------------------------------------------------------------
+            // 復古 UI 元件
+            // ---------------------------------------------------------------------------
+
             return (
-                <div className="h-screen flex flex-col overflow-hidden relative selection:bg-retro-red selection:text-white font-serif" onMouseMove={onMouseMoveScrapbook} onMouseUp={onMouseUpScrapbook}>
+                <div 
+                    className="h-screen flex flex-col overflow-hidden relative selection:bg-retro-red selection:text-white font-serif"
+                    onMouseMove={onMouseMoveScrapbook}
+                    onMouseUp={onMouseUpScrapbook}
+                >
+                
+                {/* 裝飾：四周的暗角效果 */}
                 <div className="absolute inset-0 pointer-events-none shadow-[inset_0_0_100px_rgba(44,44,44,0.15)] z-40"></div>
-                <div className="bg-white border-b-2 border-retro-ink shadow-hard px-4 py-3 flex justify-between items-center z-20 shrink-0 mx-4 mt-4 mb-2">
+
+                {/* 頂部導航列：木製標尺與標籤風格 */}
+                <div className="bg-[#f7f1e3] border-2 border-[#5d4037] shadow-hard px-4 py-3 flex justify-between items-center z-20 shrink-0 mx-4 mt-4 mb-2 rounded-[1.5rem]">
+                    
+                    {/* 左側：班級名稱與模式切換 */}
                     <div className="flex items-center gap-4">
                         <div className="flex items-center gap-3 relative group min-w-[200px]">
                             <div className="absolute inset-0 bg-[#f1c40f] opacity-20 rotate-[-1deg] transform scale-105 -z-10 skew-x-12"></div>
-                            <div className="p-1 border-2 border-retro-ink bg-white flex items-center justify-center shrink-0"><Users className="w-5 h-5 text-retro-ink" strokeWidth={2.5} /></div>
-                            <input type="text" value={classNameTitle} onChange={(e) => setClassNameTitle(e.target.value)} placeholder="輸入班級..." className="text-2xl font-black text-retro-ink bg-transparent outline-none w-full placeholder-gray-400 font-serif tracking-widest" style={{ fontFamily: '"Noto Serif TC", serif' }} />
+                            <div className="p-1 border-2 border-[#5d4037] bg-[#fcfbf9] flex items-center justify-center shrink-0 rounded-lg">
+                                <Users className="w-5 h-5 text-retro-ink" strokeWidth={2.5} />
+                            </div>
+                            <input 
+                            type="text" 
+                            value={classNameTitle} 
+                            onChange={(e) => setClassNameTitle(e.target.value)}
+                            placeholder="輸入班級..."
+                            className="text-2xl font-black text-retro-ink bg-transparent outline-none w-full placeholder-gray-400 font-serif tracking-widest select-text"
+                            style={{ fontFamily: '"Noto Serif TC", serif' }}
+                            />
                         </div>
-                        <div className="flex bg-white border-2 border-retro-ink rounded-sm shadow-sm overflow-hidden ml-2">
-                            <button onClick={() => setLeftPanelMode('students')} className={`px-3 py-1 text-xs font-bold font-mono transition-colors flex items-center gap-1 ${leftPanelMode === 'students' ? 'bg-retro-ink text-white' : 'text-retro-ink hover:bg-gray-100'}`}><Users className="w-3 h-3" /> 名冊</button>
+
+                        {/* 左側面板切換按鈕 (名冊/剪貼簿) */}
+                        <div className="flex bg-[#fcfbf9] border-2 border-[#5d4037] rounded-xl shadow-sm overflow-hidden ml-2">
+                            <button 
+                                onClick={() => setLeftPanelMode('students')}
+                                className={`px-3 py-1 text-xs font-bold font-mono transition-colors flex items-center gap-1 ${leftPanelMode === 'students' ? 'bg-retro-paper text-retro-ink' : 'text-retro-ink hover:bg-gray-100'}`}
+                            >
+                                <Users className="w-3 h-3" /> 名冊
+                            </button>
                             <div className="w-[1px] bg-retro-ink"></div>
-                            <button onClick={() => setLeftPanelMode('scrapbook')} className={`px-3 py-1 text-xs font-bold font-mono transition-colors flex items-center gap-1 ${leftPanelMode === 'scrapbook' ? 'bg-retro-ink text-white' : 'text-retro-ink hover:bg-gray-100'}`}><ImageIcon className="w-3 h-3" /> 剪貼</button>
+                            <button 
+                                onClick={() => setLeftPanelMode('scrapbook')}
+                                className={`px-3 py-1 text-xs font-bold font-mono transition-colors flex items-center gap-1 ${leftPanelMode === 'scrapbook' ? 'bg-retro-paper text-retro-ink' : 'text-retro-ink hover:bg-gray-100'}`}
+                            >
+                                <ImageIcon className="w-3 h-3" /> 剪貼
+                            </button>
+                            <div className="w-[1px] bg-retro-ink"></div>
+                            <button 
+                                onClick={() => setLeftPanelMode('homework')}
+                                className={`px-3 py-1 text-xs font-bold font-mono transition-colors flex items-center gap-1 ${leftPanelMode === 'homework' ? 'bg-retro-paper text-retro-ink' : 'text-retro-ink hover:bg-gray-100'}`}
+                            >
+                                <ClipboardList className="w-3 h-3" /> 作業繳交
+                            </button>
                         </div>
                     </div>
 
+                    {/* 中間：點名模式 (僅在名冊模式顯示) */}
                     {leftPanelMode === 'students' && (
                         <div className="flex gap-2 overflow-x-auto no-scrollbar mx-4">
-                            <ModeButton active={checkInMode === 'attendance'} onClick={() => setCheckInMode('attendance')} icon={<Users className="w-4 h-4" />} label="點名簿" color="border-retro-ink bg-retro-paper" />
-                            <ModeButton active={checkInMode === 'brushing'} onClick={() => setCheckInMode('brushing')} icon={<Sparkles className="w-4 h-4" />} label="潔牙卡" color="border-retro-green bg-green-50" />
-                            <ModeButton active={checkInMode === 'lunch'} onClick={() => setCheckInMode('lunch')} icon={<Utensils className="w-4 h-4" />} label="午餐值日" color="border-retro-red bg-red-50" />
-                            <ModeButton active={checkInMode === 'duty'} onClick={() => setCheckInMode('duty')} icon={<Award className="w-4 h-4" />} label="值日生" color="border-retro-wood bg-purple-50" />
-                            <ModeButton active={checkInMode === 'correction'} onClick={() => setCheckInMode('correction')} icon={<BookOpen className="w-4 h-4" />} label="訂正欄" color="border-retro-blue bg-blue-50" />
+                            <ModeButton active={checkInMode === 'attendance'} onClick={() => setCheckInMode('attendance')} icon={<Users size={20} />} label="點名簿" color="border-[#2f2a24] bg-[#f4d35e] text-[#2c2418]" />
+                            <ModeButton active={checkInMode === 'brushing'} onClick={() => setCheckInMode('brushing')} icon={<Sparkles size={20} />} label="潔牙卡" color="border-[#3f5f4b] bg-[#e8efe6] text-[#263b2d]" />
+                            <ModeButton active={checkInMode === 'lunch'} onClick={() => setCheckInMode('lunch')} icon={<Utensils size={20} />} label="午餐值日" color="border-[#8b3f2f] bg-[#f4e1d2] text-[#5a2a20]" />
+                            <ModeButton active={checkInMode === 'duty'} onClick={() => setCheckInMode('duty')} icon={<Award size={20} />} label="值日生" color="border-[#5d4037] bg-[#e8dccb] text-[#3e2723]" />
+                            <ModeButton active={checkInMode === 'correction'} onClick={() => setCheckInMode('correction')} icon={<BookOpen size={20} />} label="訂正欄" color="border-[#31566b] bg-[#dfeaf0] text-[#203845]" />
                         </div>
                     )}
-                    {leftPanelMode === 'scrapbook' && ( <div className="flex-1 flex justify-center items-center text-retro-ink/50 font-serif font-bold italic"><span className="bg-white px-4 py-1 border-b-2 border-retro-ink/20">SCRAPBOOK - 支持貼上(Ctrl+V)與拖拉縮放</span></div> )}
-
-                    <div className="flex items-center gap-4 shrink-0">
-                        <div className="flex items-center bg-retro-ink p-1 gap-1 border-2 border-retro-ink hidden md:flex">
-                        {['split', 'checkin', 'notebook'].map(m => (<button key={m} onClick={() => setViewMode(m)} className={`px-3 py-1 text-xs font-bold font-mono transition-all ${viewMode === m ? 'bg-[#f1c40f] text-retro-ink border border-black shadow-[2px_2px_0_0_white]' : 'text-white hover:text-[#f1c40f]'}`}>{m === 'split' ? '分屏' : m === 'checkin' ? '左屏' : '黑板'}</button>))}
+                    {leftPanelMode === 'scrapbook' && (
+                        <div className="flex-1 flex justify-center items-center text-retro-ink/50 font-serif font-bold italic">
+                            <span className="bg-white px-4 py-1 border-b-2 border-retro-ink/20">SCRAPBOOK - 支持貼上(Ctrl+V)與拖拉縮放</span>
                         </div>
+                    )}
+
+                    {/* 右側：工具箱 (筆盒風格) */}
+                    <div className="flex items-center gap-4 shrink-0">
+                        {/* 視圖切換 */}
+                        <div className="flex items-center bg-[#5d4037] p-1 gap-1 border-2 border-[#3e2723] hidden md:flex rounded-xl shadow-hard-sm">
+                        {['split', 'checkin', 'notebook'].map(m => (
+                            <button key={m} onClick={() => setViewMode(m)} className={`px-3 py-1 text-xs font-bold font-mono transition-all border border-transparent ${viewMode === m ? 'bg-[#f1c40f] text-retro-ink border-black shadow-[2px_2px_0_0_white] drop-shadow-[0_1px_0_rgba(255,255,255,0.35)]' : 'text-white hover:text-[#f1c40f] hover:drop-shadow-[0_1px_0_rgba(255,255,255,0.35)]'}`}>
+                            {m === 'split' ? '分屏' : m === 'checkin' ? '左屏' : '黑板'}
+                            </button>
+                        ))}
+                        </div>
+
                         <div className="w-0.5 h-8 bg-retro-ink/20 mx-1"></div>
+
                         <div className="flex items-center gap-2">
-                        {/* 新增：上傳雲端按鈕 */}
-                        <button 
-                            onClick={handleUploadToCloud} 
-                            disabled={isUploading}
-                            className={`p-2 border-2 shadow-hard-sm transition-transform active:translate-y-[2px] active:shadow-none bg-white ${isUploading ? 'cursor-not-allowed opacity-50' : 'text-retro-blue border-retro-blue hover:bg-blue-50'}`} 
-                            title="上傳雲端資料庫"
-                        >
-                            {isUploading ? <Loader2 className="w-5 h-5 animate-spin" /> : <UploadCloud className="w-5 h-5" />}
-                        </button>
-                        
-                        <ToolButton onClick={() => setShowSettings(!showSettings)} icon={<Settings className="w-5 h-5" />} title="設定" />
-                        <ToolButton onClick={handleExportCSV} icon={<FileSpreadsheet className="w-5 h-5" />} title="匯出報表" />
-                        <ToolButton onClick={confirmResetMode} icon={<RotateCcw className="w-5 h-5" />} title="重置狀態" danger />
+                        <input
+                            type="file"
+                            ref={backupFileInputRef}
+                            accept="application/json,.json"
+                            className="hidden"
+                            onChange={handleImportJSON}
+                        />
+                        <ToolButton onClick={() => setShowSettings(!showSettings)} icon={<Settings size={28} />} title="設定" />
+                        <ToolButton onClick={handleExportCSV} icon={<FileSpreadsheet size={28} />} title="匯出報表" />
+                        <ToolButton onClick={handleExportJSON} icon={<Save size={28} />} title="匯出 JSON" />
+                        <ToolButton onClick={() => backupFileInputRef.current?.click()} icon={<Upload size={28} />} title="匯入 JSON" />
+                        <ToolButton onClick={confirmResetMode} icon={<RotateCcw size={28} />} title="重置狀態" danger />
                         </div>
                     </div>
                 </div>
 
-                <div className={`fixed inset-y-0 right-0 w-96 bg-retro-paper border-l-4 border-retro-ink transform transition-transform duration-300 z-50 flex flex-col shadow-[-10px_0_20px_rgba(0,0,0,0.1)] ${showSettings ? 'translate-x-0' : 'translate-x-full'}`}>
-                    <div className="p-5 border-b-2 border-retro-ink flex justify-between items-center bg-[#e0d0b0]">
-                        <h3 className="font-black text-xl text-retro-ink flex items-center gap-2 font-serif"><span className="bg-retro-ink text-white px-2 py-1 text-sm font-mono">CONFIG</span> 系統設定</h3>
-                        <button onClick={() => setShowSettings(false)} className="w-8 h-8 flex items-center justify-center border-2 border-retro-ink bg-white hover:bg-retro-red hover:text-white transition-colors">✕</button>
+                {/* 側邊設定面板：檔案夾風格 */}
+                <div className={`fixed inset-y-0 right-0 w-96 bg-retro-paper border-l-4 border-[#5d4037] transform transition-transform duration-300 z-50 flex flex-col shadow-[-10px_0_20px_rgba(0,0,0,0.1)] rounded-l-[1.5rem] ${showSettings ? 'translate-x-0' : 'translate-x-full'}`}>
+                    <div className="p-5 border-b-2 border-[#5d4037] flex justify-between items-center bg-[#e0d0b0] rounded-tl-[1.5rem]">
+                        <h3 className="font-black text-xl text-retro-ink flex items-center gap-2 font-serif">
+                            <span className="bg-retro-ink text-white px-2 py-1 text-sm font-mono">CONFIG</span> 
+                            系統設定
+                        </h3>
+                        <button onClick={() => setShowSettings(false)} className="w-8 h-8 flex items-center justify-center border-2 border-[#5d4037] bg-white hover:bg-[#c0392b] hover:text-white transition-colors rounded-full">✕</button>
                     </div>
-                    <div className="flex-1 overflow-y-auto p-6 space-y-8 retro-scrollbar bg-[url('https://www.transparenttextures.com/patterns/lined-paper.png')]">
-                        <div className="bg-white p-4 border-2 border-retro-ink shadow-hard relative">
-                            <div className="absolute -top-3 left-3 bg-retro-ink text-white px-2 text-xs font-mono">TIME & FONT</div>
+                    
+                    <div className="flex-1 overflow-y-auto p-6 space-y-8 retro-scrollbar bg-[#f7f1e3]">
+                        {/* 時間與字體設定 */}
+                        <div className="bg-[#fcfbf9] p-4 border-2 border-[#5d4037] shadow-hard relative rounded-2xl">
+                            <div className="absolute -top-3 left-3 bg-[#c0392b] text-white px-2 text-xs font-mono rounded-full">TIME & FONT</div>
                             <div className="mt-2 space-y-4">
-                                <div><label className="block text-sm font-bold text-retro-ink mb-1 font-serif">遲到界線</label><input type="time" value={lateThreshold} onChange={(e) => setLateThreshold(e.target.value)} className="w-full px-2 py-2 bg-retro-bg border-b-2 border-retro-ink outline-none font-mono text-lg focus:bg-white transition-colors" /></div>
-                                <div><label className="block text-sm font-bold text-retro-ink mb-1 font-serif">黑板字體風格</label><div className="grid grid-cols-2 gap-2">{['sans', 'kai', 'rounded', 'zhuyin'].map(ft => (<button key={ft} onClick={() => setFontType(ft)} className={`py-1 text-xs font-bold border-2 transition-all ${fontType === ft ? 'bg-retro-ink text-white border-retro-ink' : 'bg-white text-retro-ink border-retro-ink hover:bg-gray-100'}`}>{ft === 'sans' ? '黑體' : ft === 'kai' ? '楷體' : ft === 'rounded' ? '圓體' : '注音體'}</button>))}</div></div>
+                                <div>
+                                    <label className="block text-sm font-bold text-retro-ink mb-1 font-serif">遲到界線</label>
+                                    <input type="time" value={lateThreshold} onChange={(e) => setLateThreshold(e.target.value)} className="w-full px-2 py-2 bg-retro-bg border-b-2 border-retro-ink outline-none font-mono text-lg focus:bg-white transition-colors" />
+                                </div>
+                                <button onClick={saveLateThreshold} className="w-full py-2 bg-[#c0392b] text-white border-2 border-[#8b2e22] font-bold hover:bg-[#a93226] shadow-hard-sm flex items-center justify-center gap-2 rounded-xl">
+                                    <Save className="w-4 h-4" /> 儲存設定
+                                </button>
+                                <div>
+                                    <label className="block text-sm font-bold text-retro-ink mb-1 font-serif">黑板字體風格</label>
+                                    <div className="grid grid-cols-2 gap-2">
+                                        {['sans', 'kai', 'rounded', 'zhuyin'].map(ft => (
+                                            <button key={ft} onClick={() => setFontType(ft)} className={`py-1 text-xs font-bold border-2 transition-all rounded-lg ${fontType === ft ? 'bg-[#f7f1e3] text-retro-ink border-[#5d4037]' : 'bg-white text-retro-ink border-[#5d4037] hover:bg-gray-100'}`}>
+                                            {ft === 'sans' ? '黑體' : ft === 'kai' ? '楷體' : ft === 'rounded' ? '圓體' : '注音體'}
+                                            </button>
+                                        ))}
+                                    </div>
+                                    {/* Removed: 已鎖定使用專屬注音字體 */}
+                                </div>
                             </div>
                         </div>
-                        <div className="bg-white p-4 border-2 border-retro-ink shadow-hard relative">
-                            <div className="absolute -top-3 left-3 bg-retro-red text-white px-2 text-xs font-mono">STUDENTS</div>
+
+                        {/* 名單管理 */}
+                        <div className="bg-[#fcfbf9] p-4 border-2 border-[#5d4037] shadow-hard relative rounded-2xl">
+                            <div className="absolute -top-3 left-3 bg-[#c0392b] text-white px-2 text-xs font-mono rounded-full">STUDENTS</div>
                             <div className="mt-2">
                                 <div className="flex justify-end gap-2 mb-4">
-                                    <button onClick={openBatchEdit} className="text-xs bg-white text-retro-ink border-2 border-retro-ink px-2 py-1 hover:bg-retro-ink hover:text-white transition-colors font-bold shadow-hard-sm">批次貼上</button>
-                                    <button onClick={addStudent} className="text-xs bg-retro-ink text-white border-2 border-retro-ink px-2 py-1 hover:bg-gray-800 transition-colors font-bold shadow-hard-sm flex items-center gap-1"><Plus className="w-3 h-3" /> 新增</button>
+                                    <button onClick={openBatchEdit} className="text-xs bg-[#f7f1e3] text-retro-ink border-2 border-[#5d4037] px-2 py-1 hover:bg-gray-100 transition-colors font-bold shadow-hard-sm rounded-lg">
+                                    批次貼上
+                                    </button>
+                                    <button onClick={addStudent} className="text-xs bg-[#c0392b] text-white border-2 border-[#8b2e22] px-2 py-1 hover:bg-[#a93226] transition-colors font-bold shadow-hard-sm flex items-center gap-1 rounded-lg">
+                                    <Plus className="w-3 h-3" /> 新增
+                                    </button>
                                 </div>
+                                
                                 <div className="space-y-2 max-h-[400px] overflow-y-auto retro-scrollbar pr-2">
-                                {students.length === 0 ? ( <div className="text-center text-gray-400 py-6 text-sm border-2 border-dashed border-gray-300 font-serif">名冊空白</div> ) : (
-                                    students.map((s) => ( <div key={s.id} className="flex items-center gap-2 group"><input type="number" value={s.id} onChange={(e) => updateStudentData(s.id, 'id', e.target.value)} className="w-12 h-8 px-1 text-sm border-b-2 border-gray-300 text-center font-mono font-bold bg-transparent focus:border-retro-ink outline-none" title="座號" /><input type="text" value={s.name} onChange={(e) => updateStudentData(s.id, 'name', e.target.value)} className="flex-1 h-8 px-2 text-sm border-b-2 border-gray-300 focus:border-retro-ink outline-none bg-transparent font-serif" placeholder="姓名" /><button onClick={(e) => confirmRemoveStudent(e, s.id)} className="p-1.5 text-gray-400 hover:text-retro-red transition-colors" title="移除"><Trash2 className="w-4 h-4" /></button></div> ))
+                                {students.length === 0 ? (
+                                    <div className="text-center text-gray-400 py-6 text-sm border-2 border-dashed border-gray-300 font-serif">
+                                    名冊空白
+                                    </div>
+                                ) : (
+                                    students.map((s) => (
+                                    <div key={s.id} className="flex items-center gap-2 group">
+                                        <input 
+                                        type="number" 
+                                        value={s.id} 
+                                        onChange={(e) => updateStudentData(s.id, 'id', e.target.value)} 
+                                        className="w-12 h-8 px-1 text-sm border-b-2 border-gray-300 text-center font-mono font-bold bg-transparent focus:border-retro-ink outline-none select-text"
+                                        title="座號"
+                                        />
+                                        <input 
+                                        type="text" 
+                                        value={s.name} 
+                                        onChange={(e) => updateStudentData(s.id, 'name', e.target.value)} 
+                                        className="flex-1 h-8 px-2 text-sm border-b-2 border-gray-300 focus:border-retro-ink outline-none bg-transparent font-serif select-text" 
+                                        placeholder="姓名"
+                                        />
+                                        <button 
+                                            onClick={(e) => confirmRemoveStudent(e, s.id)} 
+                                            className="p-1.5 text-gray-400 hover:text-retro-red transition-colors" 
+                                            title="移除"
+                                        >
+                                            <Trash2 className="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                    ))
                                 )}
                                 </div>
                             </div>
@@ -405,47 +1213,612 @@
                     </div>
                 </div>
                 
-                {showBatchEdit && ( <div className="fixed inset-0 z-[60] bg-retro-ink/80 flex items-center justify-center p-4"><div className="bg-[#f39c12] p-1 rounded-sm shadow-2xl w-full max-w-lg transform rotate-1"><div className="bg-retro-paper border-2 border-retro-ink p-1"><div className="border border-retro-ink border-dashed p-4 flex flex-col gap-4"><div className="flex justify-between items-center border-b-2 border-retro-ink pb-2"><h3 className="text-lg font-black text-retro-ink font-serif flex items-center gap-2"><ClipboardList className="w-5 h-5" /> 匯入名單</h3><button onClick={() => setShowBatchEdit(false)}><X className="w-6 h-6 hover:scale-110 transition-transform" /></button></div><div className="bg-white border-2 border-retro-ink p-3 shadow-inner-hard"><p className="text-xs font-mono text-gray-500 mb-2">FORMAT: ID [SPACE] NAME</p><textarea value={batchInput} onChange={(e) => setBatchInput(e.target.value)} className="w-full h-64 outline-none font-mono text-sm resize-none leading-relaxed bg-transparent" placeholder={`1 王小明\n2 陳大文`} /></div><div className="flex justify-end gap-3"><button onClick={() => setShowBatchEdit(false)} className="px-4 py-2 border-2 border-retro-ink text-retro-ink font-bold hover:bg-gray-100 shadow-hard-sm">取消</button><button onClick={saveBatchEdit} className="px-4 py-2 bg-retro-ink text-white border-2 border-retro-ink font-bold hover:bg-black shadow-hard-sm flex items-center gap-2"><Save className="w-4 h-4" /> 寫入</button></div></div></div></div></div> )}
+                {/* 批次編輯 Modal */}
+                {showBatchEdit && (
+                    <div className="fixed inset-0 z-[60] bg-retro-ink/80 flex items-center justify-center p-4">
+                    <div className="bg-[#f39c12] p-1 rounded-2xl shadow-2xl w-full max-w-lg transform rotate-1">
+                        <div className="bg-retro-paper border-2 border-[#5d4037] p-1 rounded-2xl">
+                            <div className="border border-[#5d4037] border-dashed p-4 flex flex-col gap-4 rounded-2xl">
+                                <div className="flex justify-between items-center border-b-2 border-[#5d4037] pb-2">
+                                    <h3 className="text-lg font-black text-retro-ink font-serif flex items-center gap-2">
+                                    <ClipboardList className="w-5 h-5" /> 匯入名單
+                                    </h3>
+                                    <button onClick={() => setShowBatchEdit(false)}><X className="w-6 h-6 hover:scale-110 transition-transform" /></button>
+                                </div>
+                                <div className="bg-white border-2 border-retro-ink p-3 shadow-inner-hard">
+                                    <p className="text-xs font-mono text-gray-500 mb-2">FORMAT: ID [SPACE] NAME</p>
+                                    <textarea 
+                                    value={batchInput}
+                                    onChange={(e) => setBatchInput(e.target.value)}
+                                        className="w-full h-64 outline-none font-mono text-sm resize-none leading-relaxed bg-transparent select-text"
+                                    placeholder={`1 王小明\n2 陳大文`}
+                                    />
+                                </div>
+                                <div className="flex justify-end gap-3">
+                                    <button onClick={() => setShowBatchEdit(false)} className="px-4 py-2 border-2 border-[#5d4037] text-retro-ink font-bold hover:bg-gray-100 shadow-hard-sm rounded-xl">取消</button>
+                                    <button onClick={saveBatchEdit} className="px-4 py-2 bg-[#c0392b] text-white border-2 border-[#8b2e22] font-bold hover:bg-[#a93226] shadow-hard-sm flex items-center gap-2 rounded-xl">
+                                    <Save className="w-4 h-4" /> 寫入
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    </div>
+                )}
 
-                {confirmConfig.show && ( <div className="fixed inset-0 z-[70] bg-retro-ink/50 backdrop-blur-sm flex items-center justify-center p-4"><div className="bg-[#fff176] border-4 border-retro-ink p-6 w-full max-w-sm shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] relative"><div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-retro-ink text-[#fff176] px-3 py-1 font-black font-mono tracking-widest border-2 border-white">WARNING</div><div className="flex flex-col items-center text-center gap-4 mt-2"><AlertTriangle className={`w-12 h-12 ${confirmConfig.type === 'danger' ? 'text-retro-red' : 'text-orange-500'}`} strokeWidth={2} /><h3 className="text-xl font-black font-serif text-retro-ink">{confirmConfig.title}</h3><p className="text-retro-ink font-medium leading-relaxed font-serif">{confirmConfig.message}</p></div><div className="mt-6 flex justify-center gap-4"><button onClick={cancelConfirmAction} className="px-6 py-2 border-2 border-retro-ink font-bold hover:bg-white transition-colors">取消</button><button onClick={executeConfirmAction} className={`px-6 py-2 border-2 border-retro-ink text-white font-bold shadow-hard-sm active:translate-y-1 active:shadow-none transition-all ${confirmConfig.type === 'danger' ? 'bg-retro-red' : 'bg-orange-500'}`}>確認執行</button></div></div></div> )}
+                {/* 確認視窗 */}
+                {confirmConfig.show && (
+                    <div className="fixed inset-0 z-[70] bg-retro-ink/50 backdrop-blur-sm flex items-center justify-center p-4">
+                    <div className="bg-[#fff176] border-4 border-retro-ink p-6 w-full max-w-sm shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] relative">
+                        <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-retro-ink text-[#fff176] px-3 py-1 font-black font-mono tracking-widest border-2 border-white">
+                            WARNING
+                        </div>
+                        <div className="flex flex-col items-center text-center gap-4 mt-2">
+                            <AlertTriangle className={`w-12 h-12 ${confirmConfig.type === 'danger' ? 'text-retro-red' : 'text-orange-500'}`} strokeWidth={2} />
+                            <h3 className="text-xl font-black font-serif text-retro-ink">{confirmConfig.title}</h3>
+                            <p className="text-retro-ink font-medium leading-relaxed font-serif">{confirmConfig.message}</p>
+                        </div>
+                        <div className="mt-6 flex justify-center gap-4">
+                            <button onClick={cancelConfirmAction} className="px-6 py-2 border-2 border-retro-ink font-bold hover:bg-white transition-colors">取消</button>
+                            <button 
+                            onClick={executeConfirmAction} 
+                            className={`px-6 py-2 border-2 border-retro-ink text-white font-bold shadow-hard-sm active:translate-y-1 active:shadow-none transition-all ${confirmConfig.type === 'danger' ? 'bg-retro-red' : 'bg-orange-500'}`}
+                            >
+                            確認執行
+                            </button>
+                        </div>
+                    </div>
+                    </div>
+                )}
 
+                {/* 主內容區 */}
                 <div ref={splitContainerRef} className="flex-1 flex flex-col lg:flex-row overflow-hidden p-4 gap-4 z-0">
-                    <div className={`flex flex-col bg-[#8d6e63] border-4 border-[#5d4037] shadow-2xl relative transition-all duration-300 ${viewMode === 'notebook' ? 'hidden' : ''}`} style={viewMode === 'split' && typeof window !== 'undefined' && window.innerWidth >= 1024 ? { width: `calc(${splitRatio}% - 1rem)`, flex: 'none' } : { flex: 1 }} ref={scrapbookRef}>
-                        <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cork-board.png')] opacity-70 pointer-events-none"></div>
-                        {leftPanelMode === 'students' && ( <>
-                                <div className="flex-none flex flex-col items-center justify-center py-6 border-b-4 border-[#5d4037] shadow-lg bg-[#fcfbf9] relative z-10 cursor-pointer group" onClick={toggleClockStyle}><div className="flex items-baseline gap-2"><span className={`font-mono font-black text-6xl tracking-tighter ${currentClockStyle.text}`} style={{ textShadow: '2px 2px 0px rgba(0,0,0,0.1)' }}>{currentTime.toLocaleTimeString('zh-TW', { hour12: false, hour: '2-digit', minute: '2-digit' })}</span><span className="text-sm font-bold text-gray-400 font-mono animate-pulse">{currentTime.getSeconds()}</span></div><div className="flex items-center justify-center gap-4 mt-2 w-full px-4"><div className="flex items-center gap-2 text-sm font-bold text-retro-ink border border-retro-ink px-3 py-1 bg-white shadow-sm rotate-1"><Clock className="w-4 h-4" /><span className="font-mono">遲到線: {lateThreshold}</span></div><div className={`text-sm font-black px-4 py-1 border-2 border-retro-ink shadow-hard-sm -rotate-1 ${checkInMode === 'attendance' ? 'bg-retro-paper text-retro-ink' : checkInMode === 'brushing' ? 'bg-green-100 text-retro-green' : checkInMode === 'lunch' ? 'bg-orange-100 text-retro-red' : checkInMode === 'correction' ? 'bg-blue-100 text-retro-blue' : 'bg-purple-100 text-purple-700'}`}>{getModeName(checkInMode)}</div></div></div>
-                                <div className="flex-1 p-4 overflow-hidden z-10 h-full relative">{students.length === 0 ? ( <div className="flex flex-col items-center justify-center h-full text-[#5d4037]/50 gap-4" onClick={() => setShowSettings(true)}><div className="border-4 border-dashed border-[#5d4037]/30 p-8 rounded-full"><Users className="w-16 h-16" /></div><p className="text-xl font-bold font-serif">尚未建立名冊</p></div> ) : ( <div className={`grid ${getGridColsClass()} gap-3 h-full`} style={{ fontFamily: currentFontFamily, gridAutoRows: 'minmax(0, 1fr)' }}>{students.map((student) => <StudentCard key={student.id} student={student} mode={checkInMode} fontFamily={currentFontFamily} onClick={() => handleStudentClick(student.id)} />)}</div> )}</div>
-                            </> )}
-                        {leftPanelMode === 'scrapbook' && ( <div className="flex-1 flex flex-col relative z-10 h-full"><div className="flex justify-between items-center px-4 py-2 border-b-4 border-[#5d4037] bg-[#fcfbf9]/80 backdrop-blur-sm shadow-md z-30"><h3 className="font-black text-retro-ink flex items-center gap-2 font-serif"><Paperclip className="w-4 h-4" /> 班級剪貼簿</h3><div className="flex gap-2"><input type="file" ref={fileInputRef} onChange={handleImageUpload} accept="image/*" className="hidden" /><button onClick={() => fileInputRef.current.click()} className="flex items-center gap-1 bg-white border-2 border-retro-ink px-2 py-1 text-xs font-bold shadow-hard-sm hover:translate-y-1 hover:shadow-none transition-all"><Upload className="w-3 h-3" /> 上傳照片</button><button onClick={() => setScrapbookImages([])} className="flex items-center gap-1 bg-retro-red text-white border-2 border-retro-ink px-2 py-1 text-xs font-bold shadow-hard-sm hover:translate-y-1 hover:shadow-none transition-all"><Trash2 className="w-3 h-3" /> 清空</button></div></div><div className="flex-1 relative overflow-hidden">{scrapbookImages.length === 0 ? ( <div className="absolute inset-0 flex flex-col items-center justify-center text-[#5d4037]/40 gap-4 pointer-events-none"><div className="w-24 h-24 border-4 border-dashed border-[#5d4037]/30 flex items-center justify-center rounded-lg rotate-3"><ImageIcon className="w-10 h-10" /></div><p className="font-serif text-lg font-bold">這裡空空的...</p><p className="text-sm font-mono">按 Ctrl+V 貼上圖片或點擊上傳</p></div> ) : ( scrapbookImages.map((img) => ( <div key={img.id} className="polaroid absolute group cursor-move" style={{ left: img.x, top: img.y, width: `${200 * (img.scale || 1)}px`, transform: `rotate(${img.rotation}deg)`, zIndex: interactionState.id === img.id ? 100 : 10 }} onMouseDown={(e) => onMouseDownMove(e, img.id, img.x, img.y)}><img src={img.src} alt="scrapbook" className="w-full h-auto grayscale-[20%] contrast-125 sepia-[30%] pointer-events-none select-none" /><div className="mt-2 text-center font-mono text-[10px] text-gray-400 truncate select-none">{img.timestamp}</div><button onClick={(e) => { e.stopPropagation(); removeImage(img.id); }} className="absolute -top-2 -right-2 bg-retro-red text-white w-6 h-6 rounded-full border-2 border-white shadow-md flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-50 cursor-pointer"><X className="w-3 h-3" /></button><div className="absolute -top-8 right-8 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-50"><button onClick={(e) => { e.stopPropagation(); updateImageScale(img.id, 0.1); }} className="bg-white border-2 border-retro-ink w-6 h-6 flex items-center justify-center shadow-sm hover:bg-gray-100" title="放大"><Plus className="w-3 h-3" /></button><button onClick={(e) => { e.stopPropagation(); updateImageScale(img.id, -0.1); }} className="bg-white border-2 border-retro-ink w-6 h-6 flex items-center justify-center shadow-sm hover:bg-gray-100" title="縮小"><Minus className="w-3 h-3" /></button></div><div className="absolute bottom-0 right-0 w-6 h-6 cursor-nwse-resize z-50 opacity-0 group-hover:opacity-100" onMouseDown={(e) => onMouseDownResize(e, img.id, img.scale || 1)}><div className="absolute bottom-1 right-1 w-0 h-0 border-b-[8px] border-r-[8px] border-l-[8px] border-l-transparent border-t-transparent border-b-retro-red border-r-retro-red rotate-0"></div></div><div className="absolute -top-3 left-1/2 -translate-x-1/2 w-4 h-12 bg-[#f1c40f]/50 rotate-45 backdrop-blur-sm shadow-sm pointer-events-none"></div></div> )) )}</div></div> )}
+                    
+                    {/* 左側面板 (根據 leftPanelMode 切換) */}
+                    <div 
+                        className={`flex flex-col bg-[#8d6e63] border-4 border-[#5d4037] shadow-2xl relative transition-all duration-300 ${viewMode === 'notebook' ? 'hidden' : ''}`}
+                        style={viewMode === 'split' && typeof window !== 'undefined' && window.innerWidth >= 1024 ? { width: `calc(${splitRatio}% - 1rem)`, flex: 'none' } : { flex: 1 }}
+                        ref={scrapbookRef}
+                    >
+                        {/* 軟木塞背景紋理 */}
+                        <div className="absolute inset-0 bg-[#b08968] opacity-35 pointer-events-none"></div>
+
+                        {/* 名冊模式：顯示時鐘與名單 */}
+                        {leftPanelMode === 'students' && (
+                            <>
+                                <button
+                                    type="button"
+                                    onClick={toggleClockStyle}
+                                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') toggleClockStyle(); }}
+                                    className="flex-none flex flex-col items-center justify-center py-6 border-b-4 shadow-lg relative z-10 cursor-pointer group select-none w-full text-left"
+                                    style={{
+                                        borderColor: currentClockStyle.ring,
+                                        backgroundColor: currentClockStyle.bg
+                                    }}
+                                    aria-label="切換時鐘顏色"
+                                >
+                                    <div className="flex items-baseline gap-2">
+                                        <span className={`font-mono font-black text-6xl tracking-tighter ${currentClockStyle.text}`} style={{ textShadow: '2px 2px 0px rgba(0,0,0,0.1)', userSelect: 'none', WebkitUserSelect: 'none' }}>
+                                            {currentTime.toLocaleTimeString('zh-TW', { hour12: false, hour: '2-digit', minute: '2-digit' })}
+                                        </span>
+                                        <span className={`text-sm font-bold font-mono animate-pulse ${currentClockStyle.text}`} style={{ userSelect: 'none', WebkitUserSelect: 'none' }}>{currentTime.getSeconds()}</span>
+                                    </div>
+                                    <div className="flex items-center justify-center gap-4 mt-2 w-full px-4">
+                                        <div className="flex items-center gap-2 text-sm font-bold text-retro-ink border border-retro-ink px-3 py-1 bg-white shadow-sm rotate-1">
+                                            <Clock className="w-4 h-4" />
+                                            <span className="font-mono">遲到線: {lateThreshold}</span>
+                                        </div>
+                                        <div className={`text-sm font-black px-4 py-1 border-2 border-retro-ink shadow-hard-sm -rotate-1 ${
+                                        checkInMode === 'attendance' ? 'bg-retro-paper text-retro-ink' :
+                                        checkInMode === 'brushing' ? 'bg-green-100 text-retro-green' :
+                                        checkInMode === 'lunch' ? 'bg-orange-100 text-retro-red' : 
+                                        checkInMode === 'correction' ? 'bg-blue-100 text-retro-blue' : 'bg-purple-100 text-purple-700'}`}>
+                                            {getModeName(checkInMode)}
+                                        </div>
+                                    </div>
+                                </button>
+                                <div className="flex-1 p-4 overflow-hidden z-10 h-full relative">
+                                    {students.length === 0 ? (
+                                    <div className="flex flex-col items-center justify-center h-full text-[#5d4037]/50 gap-4" onClick={() => setShowSettings(true)}>
+                                        <div className="border-4 border-dashed border-[#5d4037]/30 p-8 rounded-full">
+                                            <Users className="w-16 h-16" />
+                                        </div>
+                                        <p className="text-xl font-bold font-serif">尚未建立名冊</p>
+                                    </div>
+                                    ) : (
+                                    <div 
+                                        className={`grid ${getGridColsClass()} gap-3 h-full`} 
+                                        style={{ fontFamily: currentFontFamily, gridAutoRows: 'minmax(0, 1fr)' }}
+                                    >
+                                        {students.map((student) => <StudentCard key={student.id} student={student} mode={checkInMode} fontFamily={currentFontFamily} onClick={() => handleStudentClick(student.id)} />)}
+                                    </div>
+                                    )}
+                                </div>
+                            </>
+                        )}
+
+                        {/* 剪貼簿模式 - 自由拖曳畫布 */}
+                        {leftPanelMode === 'scrapbook' && (
+                            <div className="flex-1 flex flex-col relative z-10 h-full">
+                                {/* 剪貼簿工具列 */}
+                                <div className="flex justify-between items-center px-4 py-2 border-b-4 border-[#5d4037] bg-[#fcfbf9]/80 backdrop-blur-sm shadow-md z-30">
+                                    <h3 className="font-black text-retro-ink flex items-center gap-2 font-serif">
+                                        <Paperclip className="w-4 h-4" /> 班級剪貼簿
+                                    </h3>
+                                    <div className="flex gap-2">
+                                        <input 
+                                            type="file" 
+                                            ref={fileInputRef} 
+                                            onChange={handleImageUpload} 
+                                            accept="image/*" 
+                                            className="hidden" 
+                                        />
+                                        <button 
+                                            onClick={() => fileInputRef.current.click()}
+                                            className="flex items-center gap-1 bg-white border-2 border-retro-ink px-2 py-1 text-xs font-bold shadow-hard-sm hover:translate-y-1 hover:shadow-none transition-all"
+                                        >
+                                            <Upload className="w-3 h-3" /> 上傳照片
+                                        </button>
+                                        <button 
+                                            onClick={() => setScrapbookImages([])}
+                                            className="flex items-center gap-1 bg-retro-red text-white border-2 border-retro-ink px-2 py-1 text-xs font-bold shadow-hard-sm hover:translate-y-1 hover:shadow-none transition-all"
+                                        >
+                                            <Trash2 className="w-3 h-3" /> 清空
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                {/* 圖片展示區 - 使用 overflow-hidden 模擬有限的軟木塞板 */}
+                                <div className="flex-1 relative overflow-hidden">
+                                    {scrapbookImages.length === 0 ? (
+                                        <div className="absolute inset-0 flex flex-col items-center justify-center text-[#5d4037]/40 gap-4 pointer-events-none">
+                                            <div className="w-24 h-24 border-4 border-dashed border-[#5d4037]/30 flex items-center justify-center rounded-lg rotate-3">
+                                                <ImageIcon className="w-10 h-10" />
+                                            </div>
+                                            <p className="font-serif text-lg font-bold">這裡空空的...</p>
+                                            <p className="text-sm font-mono">按 Ctrl+V 貼上圖片或點擊上傳</p>
+                                        </div>
+                                    ) : (
+                                        scrapbookImages.map((img) => (
+                                            <div 
+                                                key={img.id} 
+                                                className="polaroid absolute group cursor-move"
+                                                style={{ 
+                                                    left: img.x, 
+                                                    top: img.y,
+                                                    width: `${200 * (img.scale || 1)}px`, // 應用縮放比例
+                                                    transform: `rotate(${img.rotation}deg)`,
+                                                    zIndex: interactionState.id === img.id ? 100 : 10
+                                                }}
+                                                onMouseDown={(e) => onMouseDownMove(e, img.id, img.x, img.y)}
+                                            >
+                                                <img src={img.src} alt="scrapbook" className="w-full h-auto grayscale-[20%] contrast-125 sepia-[30%] pointer-events-none select-none" />
+                                                <div className="mt-2 text-center font-mono text-[10px] text-gray-400 truncate select-none">{img.timestamp}</div>
+                                                
+                                                {/* 刪除按鈕 */}
+                                                <button 
+                                                    onClick={(e) => { e.stopPropagation(); removeImage(img.id); }}
+                                                    className="absolute -top-2 -right-2 bg-retro-red text-white w-6 h-6 rounded-full border-2 border-white shadow-md flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-50 cursor-pointer"
+                                                >
+                                                    <X className="w-3 h-3" />
+                                                </button>
+
+                                                {/* 縮放工具列 */}
+                                                <div className="absolute -top-8 right-8 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-50">
+                                                    <button 
+                                                        onClick={(e) => { e.stopPropagation(); updateImageScale(img.id, 0.1); }}
+                                                        className="bg-white border-2 border-retro-ink w-6 h-6 flex items-center justify-center shadow-sm hover:bg-gray-100"
+                                                        title="放大"
+                                                    >
+                                                        <Plus className="w-3 h-3" />
+                                                    </button>
+                                                    <button 
+                                                        onClick={(e) => { e.stopPropagation(); updateImageScale(img.id, -0.1); }}
+                                                        className="bg-white border-2 border-retro-ink w-6 h-6 flex items-center justify-center shadow-sm hover:bg-gray-100"
+                                                        title="縮小"
+                                                    >
+                                                        <Minus className="w-3 h-3" />
+                                                    </button>
+                                                </div>
+
+                                                {/* 拖拉縮放控制點 */}
+                                                <div 
+                                                    className="absolute bottom-0 right-0 w-6 h-6 cursor-nwse-resize z-50 opacity-0 group-hover:opacity-100"
+                                                    onMouseDown={(e) => onMouseDownResize(e, img.id, img.scale || 1)}
+                                                >
+                                                    <div className="absolute bottom-1 right-1 w-0 h-0 border-b-[8px] border-r-[8px] border-l-[8px] border-l-transparent border-t-transparent border-b-retro-red border-r-retro-red rotate-0"></div>
+                                                </div>
+
+                                                <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-4 h-12 bg-[#f1c40f]/50 rotate-45 backdrop-blur-sm shadow-sm pointer-events-none"></div> {/* 膠帶裝飾 */}
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
+                            </div>
+                        )}
+                        
+                        {/* 作業繳交 */}
+                        {leftPanelMode === 'homework' && (
+                            <div className="flex-1 flex flex-col relative z-10 h-full">
+                                <div className="flex justify-between items-center px-4 py-2 border-b-4 border-[#5d4037] bg-[#fcfbf9]/80 backdrop-blur-sm shadow-md z-30">
+                                    <h3 className="font-black text-retro-ink flex items-center gap-2 font-serif">
+                                        <ClipboardList className="w-4 h-4" /> 作業繳交
+                                    </h3>
+                                    <button
+                                        onClick={clearHomeworkSubmissions}
+                                        className="flex items-center gap-1 bg-white border-2 border-retro-ink px-2 py-1 text-xs font-bold shadow-hard-sm hover:translate-y-1 hover:shadow-none transition-all"
+                                        disabled={!currentHomework}
+                                    >
+                                        <Check className="w-3 h-3" /> 清空勾選
+                                    </button>
+                                </div>
+
+                                <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                                    <div className="bg-white border-2 border-retro-ink shadow-hard p-4 space-y-3">
+                                        <div className="text-sm font-black text-retro-ink flex items-center gap-2">
+                                            <ClipboardList className="w-4 h-4" /> 新增作業
+                                        </div>
+                                        <input
+                                            type="text"
+                                            value={homeworkForm.title}
+                                            onChange={(e) => setHomeworkForm(prev => ({ ...prev, title: e.target.value }))}
+                                            placeholder="作業名稱"
+                                        className="w-full px-3 py-2 border-2 border-retro-ink bg-retro-paper outline-none font-bold select-text"
+                                        />
+                                        <input
+                                            type="date"
+                                            value={homeworkForm.dueDate}
+                                            onChange={(e) => setHomeworkForm(prev => ({ ...prev, dueDate: e.target.value }))}
+                                            className="w-full px-3 py-2 border-2 border-retro-ink bg-retro-paper outline-none font-mono select-text"
+                                        />
+                                        <textarea
+                                            value={homeworkForm.description}
+                                            onChange={(e) => setHomeworkForm(prev => ({ ...prev, description: e.target.value }))}
+                                            placeholder="作業說明"
+                                            className="w-full min-h-24 px-3 py-2 border-2 border-retro-ink bg-retro-paper outline-none resize-none font-serif select-text"
+                                        />
+                                        <button
+                                            onClick={createHomeworkAssignment}
+                                            className="w-full py-2 bg-white text-retro-ink border-2 border-retro-ink font-bold hover:bg-gray-100 shadow-hard-sm"
+                                        >
+                                            新增作業
+                                        </button>
+                                    </div>
+
+                                    <div className="bg-[#fcfbf9] border-2 border-retro-ink shadow-hard p-4">
+                                        <div className="text-sm font-black text-retro-ink mb-3 flex items-center gap-2">
+                                            <BookOpen className="w-4 h-4" /> 作業列表
+                                        </div>
+                                        {homeworkAssignments.length === 0 ? (
+                                            <div className="text-center text-gray-400 py-6 text-sm border-2 border-dashed border-gray-300 font-serif">
+                                                尚未建立作業
+                                            </div>
+                                        ) : (
+                                            <div className="space-y-2">
+                                                {homeworkAssignments.map((item) => (
+                                                    <div
+                                                        key={item.id}
+                                                        role="button"
+                                                        tabIndex={0}
+                                                        onClick={() => setHomeworkData(prev => ({ ...prev, activeId: item.id }))}
+                                                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setHomeworkData(prev => ({ ...prev, activeId: item.id })); }}
+                                                        className={`w-full text-left p-3 border-2 transition-all cursor-pointer ${currentHomework?.id === item.id ? 'border-retro-ink bg-yellow-50 shadow-hard-sm' : 'border-gray-300 bg-white hover:border-retro-ink'}`}
+                                                    >
+                                                        <div className="flex items-start justify-between gap-2">
+                                                            <div>
+                                                                <div className="font-bold text-retro-ink">{item.title}</div>
+                                                                <div className="text-xs text-gray-500 font-mono">
+                                                                    {item.dueDate ? `截止 ${item.dueDate}` : '未設定截止日'}
+                                                                </div>
+                                                            </div>
+                                                            <button
+                                                                onClick={(e) => { e.stopPropagation(); removeHomeworkAssignment(item.id); }}
+                                                                className="text-retro-red hover:scale-110 transition-transform"
+                                                                title="刪除"
+                                                            >
+                                                                <Trash2 className="w-4 h-4" />
+                                                            </button>
+                                                        </div>
+                                                        {item.description ? (
+                                                            <div className="mt-2 text-sm text-gray-700 line-clamp-2">{item.description}</div>
+                                                        ) : null}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <div className="bg-white border-2 border-retro-ink shadow-hard p-4">
+                                        <div className="flex items-center justify-between gap-2 mb-3">
+                                            <div className="text-sm font-black text-retro-ink flex items-center gap-2">
+                                                <Users className="w-4 h-4" /> 繳交狀態
+                                            </div>
+                                            <div className="text-xs font-mono text-gray-500">
+                                                {currentHomework ? `${submittedCount}/${students.length}` : '0/0'}
+                                            </div>
+                                        </div>
+                                        {currentHomework ? (
+                                            students.length === 0 ? (
+                                                <div className="text-center text-gray-400 py-6 text-sm border-2 border-dashed border-gray-300 font-serif">
+                                                    先建立名冊再勾選
+                                                </div>
+                                            ) : (
+                                                <div className="grid grid-cols-2 gap-2 max-h-[320px] overflow-y-auto retro-scrollbar pr-1">
+                                                    {students.map((student) => {
+                                                        const done = !!currentHomework.submissions?.[student.id];
+                                                        return (
+                                                            <button
+                                                                key={student.id}
+                                                                onClick={() => toggleHomeworkSubmission(student.id)}
+                                                                className={`text-left p-2 border-2 transition-all ${done ? 'bg-green-50 border-retro-green text-retro-green' : 'bg-white border-gray-300 hover:border-retro-ink text-retro-ink'}`}
+                                                            >
+                                                                <div className="flex items-center justify-between gap-2">
+                                                                    <div className="font-bold truncate">
+                                                                        <span className="font-mono text-xs opacity-60 mr-1">{student.id}</span>
+                                                                        {student.name || '未命名'}
+                                                                    </div>
+                                                                    <div className={`w-5 h-5 border-2 flex items-center justify-center ${done ? 'bg-retro-green border-retro-green text-white' : 'border-gray-300'}`}>
+                                                                        {done ? <Check className="w-3 h-3" /> : null}
+                                                                    </div>
+                                                                </div>
+                                                            </button>
+                                                        );
+                                                    })}
+                                                </div>
+                                            )
+                                        ) : (
+                                            <div className="text-center text-gray-400 py-6 text-sm border-2 border-dashed border-gray-300 font-serif">
+                                                先新增一份作業
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
                     </div>
 
-                    {viewMode === 'split' && ( <div className="hidden lg:flex w-4 cursor-col-resize items-center justify-center z-30 -ml-2 -mr-2 group" onMouseDown={handleDragStart}><div className="w-1.5 h-16 bg-[#5d4037] border border-[#3e2723] rounded-full group-hover:bg-[#8d6e63] transition-colors shadow-lg"></div></div> )}
+                    {/* 分隔條 */}
+                    {viewMode === 'split' && (
+                    <div className="hidden lg:flex w-4 cursor-col-resize items-center justify-center z-30 -ml-2 -mr-2 group" onMouseDown={handleDragStart}>
+                        <div className="w-1.5 h-16 bg-[#5d4037] border border-[#3e2723] rounded-full group-hover:bg-[#8d6e63] transition-colors shadow-lg"></div>
+                    </div>
+                    )}
 
-                    <div className={`flex flex-col relative rounded-sm shadow-2xl overflow-hidden transition-all duration-300 ${viewMode === 'checkin' ? 'hidden' : ''}`} style={viewMode === 'split' && typeof window !== 'undefined' && window.innerWidth >= 1024 ? { width: `calc(${100 - splitRatio}% - 1rem)`, flex: 'none' } : { flex: 1 }}>
+                    {/* 右側：黑板區 */}
+                    <div 
+                    className={`flex flex-col relative rounded-sm shadow-2xl overflow-hidden transition-all duration-300 ${viewMode === 'checkin' ? 'hidden' : ''}`}
+                    style={viewMode === 'split' && typeof window !== 'undefined' && window.innerWidth >= 1024 ? { width: `calc(${100 - splitRatio}% - 1rem)`, flex: 'none' } : { flex: 1 }}
+                    >
+                        {/* 實木邊框 */}
                         <div className="absolute inset-0 border-[16px] border-[#3e2723] pointer-events-none z-20 shadow-[inset_0_0_20px_rgba(0,0,0,0.8)]"></div>
-                        <div className="absolute inset-0 bg-[#263238] z-0"><div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/black-scales.png')] opacity-30"></div><div className="absolute inset-0 bg-gradient-to-br from-white/5 via-transparent to-white/5 pointer-events-none"></div></div>
-                        <div className="relative z-10 flex justify-between items-center p-6 text-gray-200 mt-2"><div className="flex items-center gap-3"><div className="bg-red-600/20 p-2 rounded-full border border-red-500/50"><Star className="w-6 h-6 text-red-400 fill-red-400/50 animate-pulse" /></div><h2 className="text-2xl font-black font-serif tracking-widest text-[#eceff1] opacity-90" style={{ textShadow: '1px 1px 2px black' }}>聯絡事項</h2></div><div className="flex items-center gap-4 font-mono text-lg text-[#eceff1]"><button onClick={() => setNotebookDate(d => { const n = new Date(d); n.setDate(n.getDate()-1); return n; })} className="hover:text-white hover:scale-125 transition-transform"><ChevronLeft /></button><span className="border-b-2 border-white/20 px-2">{getNoteDateKey(notebookDate)}</span><button onClick={() => setNotebookDate(d => { const n = new Date(d); n.setDate(n.getDate()+1); return n; })} className="hover:text-white hover:scale-125 transition-transform"><ChevronRight /></button></div></div>
-                        <div className="relative z-10 flex justify-end gap-3 px-6 pb-2 mr-4"><div className="flex items-center bg-white/10 rounded-sm border border-white/20"><button onClick={() => setNotebookFontSize(p => Math.max(16, p-2))} className="p-1.5 hover:bg-white/10 text-white"><Minus className="w-4 h-4" /></button><span className="text-xs font-mono w-8 text-center text-white/80">{notebookFontSize}</span><button onClick={() => setNotebookFontSize(p => Math.min(72, p+2))} className="p-1.5 hover:bg-white/10 text-white"><Plus className="w-4 h-4" /></button></div><button onClick={() => setWritingMode(prev => prev === 'horizontal' ? 'vertical' : 'horizontal')} className="p-1.5 text-white/80 hover:text-white border border-white/20 bg-white/5">{writingMode === 'horizontal' ? <AlignVerticalJustifyStart className="w-4 h-4" /> : <AlignHorizontalJustifyStart className="w-4 h-4" />}</button><button onClick={confirmClearNote} className="p-1.5 text-rose-300 hover:text-rose-100 border border-rose-500/30 bg-rose-500/10"><Eraser className="w-4 h-4" /></button><button onClick={() => setIsEditingNote(!isEditingNote)} className={`p-1.5 border transition-all ${isEditingNote ? 'bg-green-600/50 border-green-400 text-green-100' : 'bg-white/5 border-white/20 text-white/80'}`}>{isEditingNote ? <Check className="w-4 h-4" /> : <Edit3 className="w-4 h-4" />}</button></div>
-                        <div className="flex-1 p-8 relative overflow-hidden z-10 mb-8 mx-4">
-                        {isEditingNote ? ( <textarea value={currentNoteContent} onChange={(e) => updateCurrentNote(e.target.value)} className={`w-full h-full bg-transparent text-white/90 font-serif outline-none resize-none p-4 leading-relaxed tracking-wider border border-white/10 ${writingMode === 'vertical' ? 'writing-vertical' : ''}`} style={{ fontFamily: currentFontFamily, fontSize: fontType === 'zhuyin' ? `${notebookFontSize * 1.5}px` : `${notebookFontSize}px` }} placeholder="今日事項..." /> ) : ( <div className={`w-full h-full content-start gap-x-12 gap-y-4 ${writingMode === 'vertical' ? 'flex flex-col flex-wrap writing-vertical items-start content-start' : 'flex flex-col'}`} style={{ fontFamily: currentFontFamily, fontSize: `${notebookFontSize}px` }}>{noteLines.map((line, idx) => ( <div key={idx} className={`flex ${writingMode === 'vertical' ? 'flex-row items-center gap-2 py-2 min-h-[1em]' : 'flex-row items-baseline gap-3 my-1'} text-white/95 font-medium`} style={{ textShadow: '1px 1px 0px rgba(0,0,0,0.5)' }}><span className={`text-[#f1c40f] font-black font-mono select-none opacity-80 ${writingMode === 'vertical' ? 'mb-2' : ''}`} style={writingMode === 'vertical' ? { writingMode: 'horizontal-tb' } : {}}>{idx + 1}.</span><span className={`whitespace-pre-wrap leading-relaxed tracking-wide ${writingMode === 'vertical' ? 'rotate-0' : ''}`} style={{ fontSize: fontType === 'zhuyin' ? '1.5em' : '1em', lineHeight: fontType === 'zhuyin' ? '1.2' : 'relaxed' }}>{formatVerticalContent(line)}</span></div> ))}</div> )}
+                        
+                        {/* 黑板背景 */}
+                        <div className="absolute inset-0 bg-[#263238] z-0">
+                             <div className="absolute inset-0 bg-white/5 opacity-30"></div>
+                             {/* 粉筆灰髒跡 */}
+                             <div className="absolute inset-0 bg-gradient-to-br from-white/5 via-transparent to-white/5 pointer-events-none"></div>
                         </div>
-                        <div className="absolute bottom-4 left-0 right-0 h-4 bg-transparent z-20 px-12 flex items-end gap-8 opacity-80 pointer-events-none"><div className="w-12 h-2 bg-white rounded-full shadow-sm transform rotate-1"></div><div className="w-8 h-2 bg-red-300 rounded-full shadow-sm transform -rotate-2"></div><div className="w-20 h-4 bg-[#5d4037] ml-auto rounded-sm border-t border-[#8d6e63]"></div></div>
+
+                        {/* 黑板頂部資訊列 */}
+                        <div className="relative z-10 flex justify-between items-center p-6 text-gray-200 mt-2">
+                            <div className="flex items-center gap-3">
+                                <div className="bg-red-600/20 p-2 rounded-full border border-red-500/50">
+                                    <Star className="w-6 h-6 text-red-400 fill-red-400/50 animate-pulse" />
+                                </div>
+                                <h2 className="text-2xl font-black font-serif tracking-widest text-[#eceff1] opacity-90" style={{ textShadow: '1px 1px 2px black' }}>聯絡事項</h2>
+                            </div>
+                            <div className="flex items-center gap-4 font-mono text-lg text-[#eceff1]">
+                                <button onClick={() => setNotebookDate(d => { const n = new Date(d); n.setDate(n.getDate()-1); return n; })} className="hover:text-white hover:scale-125 transition-transform"><ChevronLeft /></button>
+                                <span className="border-b-2 border-white/20 px-2">{getNoteDateKey(notebookDate)}</span>
+                                <button onClick={() => setNotebookDate(d => { const n = new Date(d); n.setDate(n.getDate()+1); return n; })} className="hover:text-white hover:scale-125 transition-transform"><ChevronRight /></button>
+                            </div>
+                        </div>
+
+                        {/* 黑板控制按鈕 */}
+                        <div className="relative z-10 flex justify-end gap-3 px-6 pb-2 mr-4">
+                            <div className="flex items-center bg-[#182326]/80 rounded-sm border border-[#d8c67a]/35 shadow-sm">
+                                <button title="縮小黑板文字" aria-label="縮小黑板文字" onClick={() => setNotebookFontSize(p => Math.max(16, p-2))} className="p-1.5 text-[#f7f1d0] hover:bg-[#f4d35e]/20"><Minus size={18} /></button>
+                                <span className="text-xs font-mono w-9 text-center text-[#f7f1d0]">{notebookFontSize}</span>
+                                <button title="放大黑板文字" aria-label="放大黑板文字" onClick={() => setNotebookFontSize(p => Math.min(72, p+2))} className="p-1.5 text-[#f7f1d0] hover:bg-[#f4d35e]/20"><Plus size={18} /></button>
+                            </div>
+                            <button title={writingMode === 'horizontal' ? '切換為直式書寫' : '切換為橫式書寫'} aria-label={writingMode === 'horizontal' ? '切換為直式書寫' : '切換為橫式書寫'} onClick={() => setWritingMode(prev => prev === 'horizontal' ? 'vertical' : 'horizontal')} className="p-1.5 text-[#f7f1d0] hover:text-white border border-[#d8c67a]/35 bg-[#182326]/80 hover:bg-[#f4d35e]/20">
+                                {writingMode === 'horizontal' ? <AlignVerticalJustifyStart size={20} /> : <AlignHorizontalJustifyStart size={20} />}
+                            </button>
+                            <button title="清空黑板文字" aria-label="清空黑板文字" onClick={confirmClearNote} className="p-1.5 text-[#ef9f9f] hover:text-[#ffd6d6] border border-[#b46b6b]/45 bg-[#2a2022]/80 hover:bg-[#6d2f2f]/35">
+                                <Eraser size={20} />
+                            </button>
+                            <button title={isEditingNote ? '完成編輯' : '編輯黑板文字'} aria-label={isEditingNote ? '完成編輯' : '編輯黑板文字'} onClick={() => setIsEditingNote(!isEditingNote)} className={`p-1.5 border transition-all ${isEditingNote ? 'bg-[#466c4f]/80 border-[#b8d6b9] text-[#f1fff0]' : 'bg-[#182326]/80 border-[#d8c67a]/35 text-[#f7f1d0] hover:bg-[#f4d35e]/20'}`}>
+                                {isEditingNote ? <Check size={20} /> : <Edit3 size={20} />}
+                            </button>
+                        </div>
+
+                        {/* 書寫區域 */}
+                        <div
+                        className="flex-1 p-8 relative overflow-hidden z-10 mb-8 mx-4"
+                        onMouseMove={(e) => e.stopPropagation()}
+                        onMouseUp={(e) => e.stopPropagation()}
+                        >
+                        {isEditingNote ? (
+                            <textarea
+                            ref={noteEditorRef}
+                            value={currentNoteContent}
+                            onChange={(e) => updateCurrentNote(e.target.value)}
+                            spellCheck={false}
+                            className={`w-full h-full overflow-auto bg-transparent text-white/90 font-serif outline-none resize-none p-4 leading-relaxed tracking-wider border border-white/10 ${writingMode === 'vertical' ? 'writing-vertical' : ''}`}
+                            style={{ 
+                                fontFamily: currentFontFamily, 
+                                fontSize: fontType === 'zhuyin' ? `${notebookFontSize * 1.5}px` : `${notebookFontSize}px`,
+                                writingMode: writingMode === 'vertical' ? 'vertical-rl' : 'horizontal-tb',
+                                textOrientation: 'mixed',
+                                unicodeBidi: 'plaintext',
+                                caretColor: '#ffffff'
+                            }}
+                            placeholder="今日事項..."
+                            />
+                        ) : (
+                            <BlackboardNoteDisplay
+                            content={currentNoteContent}
+                            writingMode={writingMode}
+                            fontType={fontType}
+                            notebookFontSize={notebookFontSize}
+                            currentFontFamily={currentFontFamily}
+                            />
+                        )}
+                        </div>
+
+                        {/* 粉筆槽裝飾 */}
+                        <div className="absolute bottom-4 left-0 right-0 h-4 bg-transparent z-20 px-12 flex items-end gap-8 opacity-80 pointer-events-none">
+                            <div className="w-12 h-2 bg-white rounded-full shadow-sm transform rotate-1"></div>
+                            <div className="w-8 h-2 bg-red-300 rounded-full shadow-sm transform -rotate-2"></div>
+                            <div className="w-20 h-4 bg-[#5d4037] ml-auto rounded-sm border-t border-[#8d6e63]"></div> {/* 板擦 */}
+                        </div>
                     </div>
                 </div>
 
-                <div className="bg-[#5d4037] py-1 text-center text-[10px] text-[#d7ccc8] font-mono shrink-0 border-t border-[#3e2723] z-50 relative">Classroom routines Created with Google Apps Script & Tailwind CSS</div>
+                {/* Footer 區塊 */}
+                <div className="bg-[#5d4037] py-1 text-center text-[10px] text-[#d7ccc8] font-mono shrink-0 border-t border-[#3e2723] z-50 relative">
+                    Classroom routines Created with Google Apps Script & Tailwind CSS
+                </div>
+
                 </div>
             );
         };
-        const ModeButton = ({ active, onClick, icon, label, color }) => ( <button onClick={onClick} className={`flex items-center gap-2 px-3 py-1.5 border-2 transition-all shrink-0 font-serif relative overflow-hidden group ${active ? `${color} shadow-hard-sm -translate-y-1` : 'bg-white border-gray-300 text-gray-400 hover:border-retro-ink hover:text-retro-ink'}`}>{active && <div className="absolute -right-2 -top-2 w-6 h-6 bg-white rotate-45 border border-retro-ink"></div>}{icon}<span className="text-sm font-bold tracking-wider">{label}</span></button> );
-        const ToolButton = ({ onClick, icon, title, danger }) => ( <button onClick={onClick} className={`p-2 border-2 shadow-hard-sm transition-transform active:translate-y-[2px] active:shadow-none bg-white ${danger ? 'text-retro-red border-retro-red hover:bg-red-50' : 'text-retro-ink border-retro-ink hover:bg-yellow-50'}`} title={title}>{icon}</button> );
+
+        // 元件：模式切換按鈕
+        const ModeButton = ({ active, onClick, icon, label, color }) => (
+                <button onClick={onClick} className={`flex items-center gap-2 px-3 py-1.5 border-2 transition-all shrink-0 font-serif relative overflow-hidden group rounded-lg ${active ? `${color} shadow-hard-sm -translate-y-1` : 'bg-[#fffaf0] border-[#9b8b75] text-[#51463a] hover:bg-[#f7efd9] hover:border-[#5d4037] hover:text-[#2c2418]'}`}>
+                {active && <div className="absolute -right-2 -top-2 w-6 h-6 bg-white rotate-45 border border-retro-ink"></div>}
+                {icon}
+                <span className="text-sm font-bold tracking-wider">{label}</span>
+            </button>
+        );
+
+        // 元件：工具列按鈕
+        const ToolButton = ({ onClick, icon, title, danger }) => (
+            <button 
+                onClick={onClick} 
+                className={`w-12 h-12 inline-flex items-center justify-center border-2 shadow-hard-sm transition-transform active:translate-y-[2px] active:shadow-none bg-[#fcfbf9] rounded-lg ${danger ? 'text-[#a23a2a] border-[#a23a2a] hover:bg-[#f4dfd6]' : 'text-[#2c2418] border-[#2c2418] hover:bg-[#fff4c7]'}`} 
+                title={title}
+                aria-label={title}
+            >
+                {icon}
+            </button>
+        );
+
+        // 元件：學生卡片
         const StudentCard = ({ student, onClick, fontFamily, mode }) => {
-            let bgStyle = "bg-[#fffbf0]", borderStyle = "border-gray-300", textStyle = "text-gray-700", stamp = null;
-            if (mode === 'attendance') { switch (student.status) { case 'idle': bgStyle = "bg-[#fffbf0]"; borderStyle = "border-gray-300 group-hover:border-retro-ink"; textStyle = "text-retro-ink"; break; case 'present': bgStyle = "bg-[#fffbf0]"; borderStyle = "border-retro-blue"; textStyle = "text-retro-blue"; stamp = ( <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[80%] h-[80%] border-4 border-retro-blue rounded-full opacity-30 animate-stamp flex items-center justify-center"><span className="text-[10px] font-black -rotate-12 bg-white px-1">{student.arrivalTime}</span></div> ); break; case 'late_absent': bgStyle = "bg-red-50"; borderStyle = "border-retro-red border-dashed"; textStyle = "text-retro-red"; stamp = <div className="absolute top-1 right-1 text-retro-red opacity-80 animate-bounce"><AlertCircle size={16} /></div>; break; case 'late_arrived': bgStyle = "bg-orange-50"; borderStyle = "border-retro-red"; textStyle = "text-retro-ink"; stamp = ( <div className="absolute top-1 right-1 border-2 border-retro-red px-1 py-0.5 text-[10px] font-black text-retro-red rotate-12 animate-stamp">LATE {student.arrivalTime}</div> ); break; } } else if (mode === 'brushing' && student.brushing) { bgStyle = "bg-green-50"; borderStyle = "border-retro-green"; textStyle = "text-retro-green"; stamp = <div className="absolute bottom-1 right-1 text-retro-green opacity-50"><Sparkles size={24} /></div>; } else if (mode === 'lunch' && student.lunch) { bgStyle = "bg-orange-50"; borderStyle = "border-orange-400"; textStyle = "text-orange-600"; stamp = <div className="absolute bottom-1 right-1 text-orange-400 opacity-50 rotate-12"><Utensils size={24} /></div>; } else if (mode === 'duty' && student.isDuty) { bgStyle = "bg-purple-50"; borderStyle = "border-purple-400 double-4"; textStyle = "text-purple-700"; stamp = <div className="absolute top-0 right-2 bg-purple-600 text-white text-[10px] px-1 shadow-sm">值日</div>; } else if (mode === 'correction' && student.correction) { bgStyle = "bg-blue-50"; borderStyle = "border-retro-blue"; textStyle = "text-retro-blue"; stamp = <div className="absolute inset-0 border-2 border-retro-blue rounded-full scale-75 opacity-20"></div>; }
-            return ( <button onClick={onClick} style={{ containerType: 'size' }} className={`relative w-full h-full min-h-0 flex flex-col items-center justify-center transition-all duration-100 cursor-pointer select-none border-2 p-1 overflow-hidden group shadow-sm active:scale-95 active:shadow-inner ${bgStyle} ${borderStyle} ${textStyle}`}><div className="absolute top-1/2 left-1 w-2 h-2 bg-retro-bg rounded-full shadow-inner opacity-40"></div><div className="absolute top-1/2 right-1 w-2 h-2 bg-retro-bg rounded-full shadow-inner opacity-40"></div>{stamp}<span className="font-bold leading-tight w-full text-center whitespace-nowrap z-10 font-serif" style={{ fontFamily, fontSize: 'clamp(1rem, min(18cqw, 35cqh), 4rem)' }}><span className="mr-[0.3em] font-mono text-[0.7em] align-middle opacity-50">{student.id}</span>{student.name}</span><div className="absolute bottom-2 w-3/4 h-[1px] bg-current opacity-10"></div></button> );
+            let bgStyle = "bg-[#fffbf0]", 
+                borderStyle = "border-gray-300", 
+                textStyle = "text-gray-700", 
+                stamp = null;
+
+            if (mode === 'attendance') {
+                switch (student.status) {
+                case 'idle': 
+                    bgStyle = "bg-[#fffbf0]"; 
+                    borderStyle = "border-gray-300 group-hover:border-retro-ink";
+                    textStyle = "text-retro-ink";
+                    break; 
+                case 'present': 
+                    bgStyle = "bg-[#fffbf0]"; 
+                    borderStyle = "border-[#c0392b]"; 
+                    textStyle = "text-[#c0392b]"; 
+                    stamp = (
+                        <div className="absolute top-1 right-1 border-2 border-[#c0392b] bg-[#fff7f4] px-1.5 py-0.5 text-[10px] font-black text-[#c0392b] rounded-md shadow-sm rotate-6 animate-stamp">
+                            {student.arrivalTime}
+                        </div>
+                    );
+                    break;
+                case 'late_absent': 
+                    bgStyle = "bg-red-50"; 
+                    borderStyle = "border-retro-red border-dashed"; 
+                    textStyle = "text-retro-red"; 
+                    stamp = <div className="absolute top-1 right-1 text-retro-red opacity-80 animate-bounce"><AlertCircle size={16} /></div>;
+                    break;
+                case 'late_arrived': 
+                    bgStyle = "bg-orange-50"; 
+                    borderStyle = "border-[#c0392b]"; 
+                    textStyle = "text-[#c0392b]"; 
+                    stamp = (
+                        <div className="absolute top-1 right-1 border-2 border-[#c0392b] bg-[#fff7f4] px-1.5 py-0.5 text-[10px] font-black text-[#c0392b] rounded-md shadow-sm rotate-6 animate-stamp">
+                            LATE {student.arrivalTime}
+                        </div>
+                    );
+                    break;
+                }
+            } else if (mode === 'brushing' && student.brushing) { 
+                bgStyle = "bg-[#eef7ec]";
+                borderStyle = "border-[#2f6f4e]";
+                textStyle = "text-[#214f36]";
+                stamp = <div className="absolute top-0 right-2 bg-[#2f6f4e] text-white text-[10px] px-1 shadow-sm">潔牙</div>;
+            }
+            else if (mode === 'lunch' && student.lunch) { 
+                bgStyle = "bg-[#fff0de]";
+                borderStyle = "border-[#9a4d20]";
+                textStyle = "text-[#703515]";
+                stamp = <div className="absolute top-0 right-2 bg-[#9a4d20] text-white text-[10px] px-1 shadow-sm">午餐</div>;
+            }
+            else if (mode === 'duty' && student.isDuty) { 
+                bgStyle = "bg-purple-50"; borderStyle = "border-purple-400 double-4"; textStyle = "text-purple-700"; 
+                stamp = <div className="absolute top-0 right-2 bg-purple-600 text-white text-[10px] px-1 shadow-sm">值日</div>; 
+            }
+            else if (mode === 'correction' && student.correction) { 
+                bgStyle = "bg-[#e6f0f5]";
+                borderStyle = "border-[#31566b]";
+                textStyle = "text-[#203845]";
+                stamp = <div className="absolute top-0 right-2 bg-[#31566b] text-white text-[10px] px-1 shadow-sm">訂正</div>;
+            }
+
+            return (
+                <button 
+                    onClick={onClick} 
+                    style={{ containerType: 'size' }}
+                    className={`relative w-full h-full min-h-0 flex flex-col items-center justify-center transition-all duration-100 cursor-pointer select-none border-2 p-1 overflow-hidden group shadow-sm active:scale-95 active:shadow-inner ${bgStyle} ${borderStyle} ${textStyle}`}
+                >
+                <div className="absolute top-1/2 left-1 w-2 h-2 bg-retro-bg rounded-full shadow-inner opacity-40"></div>
+                <div className="absolute top-1/2 right-1 w-2 h-2 bg-retro-bg rounded-full shadow-inner opacity-40"></div>
+                
+                {stamp}
+
+                <span 
+                    className="font-bold leading-tight w-full text-center whitespace-nowrap z-10 font-serif" 
+                    style={{ 
+                        fontFamily, 
+                        fontSize: 'clamp(1rem, min(18cqw, 35cqh), 4rem)' 
+                    }}
+                >
+                    <span className="mr-[0.3em] font-mono text-[0.7em] align-middle opacity-50">{student.id}</span>
+                    {student.name}
+                </span>
+                
+                <div className="absolute bottom-2 w-3/4 h-[1px] bg-current opacity-10"></div>
+                </button>
+            );
         };
+
         const root = createRoot(document.getElementById('root'));
         root.render(<App />);
     </script>
+
+    <script>
+        (function () {
+            function runApp() {
+                if (!window.Babel || !window.React || !window.ReactDOM) {
+                    setTimeout(runApp, 25);
+                    return;
+                }
+                const source = document.getElementById('app-code');
+                if (!source) return;
+                const compiled = Babel.transform(source.textContent, {
+                    presets: [['react', { runtime: 'classic' }], 'env']
+                }).code;
+                const script = document.createElement('script');
+                script.text = compiled;
+                document.body.appendChild(script);
+            }
+            runApp();
+        })();
+    </script>
 </body>
+
 </html>
