@@ -1747,20 +1747,26 @@
                     break;
                 }
             } else if (mode === 'brushing' && student.brushing) { 
-                bgStyle = "bg-green-50"; borderStyle = "border-retro-green"; textStyle = "text-retro-green"; 
-                stamp = <div className="absolute bottom-1 right-1 text-retro-green opacity-50"><Sparkles size={24} /></div>; 
+                bgStyle = "bg-[#eef7ec]";
+                borderStyle = "border-[#2f6f4e]";
+                textStyle = "text-[#214f36]";
+                stamp = <div className="absolute top-0 right-2 bg-[#2f6f4e] text-white text-[10px] px-1 shadow-sm">潔牙</div>;
             }
             else if (mode === 'lunch' && student.lunch) { 
-                bgStyle = "bg-orange-50"; borderStyle = "border-orange-400"; textStyle = "text-orange-600"; 
-                stamp = <div className="absolute bottom-1 right-1 text-orange-400 opacity-50 rotate-12"><Utensils size={24} /></div>; 
+                bgStyle = "bg-[#fff0de]";
+                borderStyle = "border-[#9a4d20]";
+                textStyle = "text-[#703515]";
+                stamp = <div className="absolute top-0 right-2 bg-[#9a4d20] text-white text-[10px] px-1 shadow-sm">午餐</div>;
             }
             else if (mode === 'duty' && student.isDuty) { 
                 bgStyle = "bg-purple-50"; borderStyle = "border-purple-400 double-4"; textStyle = "text-purple-700"; 
                 stamp = <div className="absolute top-0 right-2 bg-purple-600 text-white text-[10px] px-1 shadow-sm">值日</div>; 
             }
             else if (mode === 'correction' && student.correction) { 
-                bgStyle = "bg-blue-50"; borderStyle = "border-retro-blue"; textStyle = "text-retro-blue"; 
-                stamp = <div className="absolute inset-0 border-2 border-retro-blue rounded-full scale-75 opacity-20"></div>; 
+                bgStyle = "bg-[#e6f0f5]";
+                borderStyle = "border-[#31566b]";
+                textStyle = "text-[#203845]";
+                stamp = <div className="absolute top-0 right-2 bg-[#31566b] text-white text-[10px] px-1 shadow-sm">訂正</div>;
             }
 
             return (
